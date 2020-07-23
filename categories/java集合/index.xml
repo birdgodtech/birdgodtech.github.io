@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>java集合 on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/categories/java%E9%9B%86%E5%90%88/</link>
+    <description>Recent content in java集合 on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Fri, 10 Mar 2017 21:30:11 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/categories/java%E9%9B%86%E5%90%88/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>TreeSet</title>
+      <link>https://birdgodtech.github.io/post/collection/16.TreeSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Fri, 10 Mar 2017 21:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/16.TreeSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>TreeSet源码分析 简介 TreeSet 是一个有序的集合，它的作用是提供有序的Set集合。它继承于AbstractSet抽象类，实现了Navigable</description>
+    </item>
+    
+    <item>
+      <title>LinkedHashSet</title>
+      <link>https://birdgodtech.github.io/post/collection/15.LinkedHashSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Fri, 03 Mar 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/15.LinkedHashSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>LinkedHashSet源码分析 简介 LinkedHashSet基于LinkedHashMap扩展。源码其次很简单。 LinkedHashSe</description>
+    </item>
+    
+    <item>
+      <title>HashSet</title>
+      <link>https://birdgodtech.github.io/post/collection/14.HashSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Wed, 01 Mar 2017 21:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/14.HashSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>HashSet源码分析 简介 HashSet实现Set接口，由哈希表（实际上是一个HashMap实例）支持。它不保证set 的迭代顺序；特别是它不</description>
+    </item>
+    
+    <item>
+      <title>Hashtable</title>
+      <link>https://birdgodtech.github.io/post/collection/13.Hashtable%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 21 Feb 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/13.Hashtable%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>Hashtable源码分析 简介 Hashtable 继承于Dictionary ，实现了Map、Cloneable、java.io.Serializable接口。</description>
+    </item>
+    
+    <item>
+      <title>TreeMap</title>
+      <link>https://birdgodtech.github.io/post/collection/12.TreeMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 20 Feb 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/12.TreeMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>TreeMap 源码分析 简介 TreeMap是一种有序的Map(K，V)容器，Key在容器中按照某种顺序排列，该顺序由给定的比较器或者Key自身的顺序来决定</description>
+    </item>
+    
+    <item>
+      <title>WeakHashMap</title>
+      <link>https://birdgodtech.github.io/post/collection/11.WeakHashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sun, 19 Feb 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/11.WeakHashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>WeakHashMap源码分析.md 简介 WeakHashMap和HashMap一样，WeakHashMap 也是一个散列表，它存储的内容也是键</description>
+    </item>
+    
+    <item>
+      <title>IdentityHashMap</title>
+      <link>https://birdgodtech.github.io/post/collection/10.IdentityHashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sat, 18 Feb 2017 19:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/10.IdentityHashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>IdentityHashMap源码分析 简介 IdentityHashMap与HashMap一样，也是一个通过键值对来存储元素的集合，但是Ide</description>
+    </item>
+    
+    <item>
+      <title>LinkedHashMap</title>
+      <link>https://birdgodtech.github.io/post/collection/09.LinkedHashMap/</link>
+      <pubDate>Fri, 17 Feb 2017 23:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/09.LinkedHashMap/</guid>
+      <description>一、 LinkedHashMap概述: LinkedHashMap是HashMap的子类，与HashMap有着同样的存储结构，但它加入了一个双向</description>
+    </item>
+    
+    <item>
+      <title>HashMap_1.7</title>
+      <link>https://birdgodtech.github.io/post/collection/08.HashMap_1.7/</link>
+      <pubDate>Thu, 16 Feb 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/08.HashMap_1.7/</guid>
+      <description>一、 HashMap概述: HashMap是基于哈希表实现的，每一个元素是一个key-value对，其内部通过单链表解决冲突问题，容量不足（超过</description>
+    </item>
+    
+    <item>
+      <title>ArrayDeque</title>
+      <link>https://birdgodtech.github.io/post/collection/07.ArrayDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Wed, 15 Feb 2017 22:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/07.ArrayDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>ArrayDeque源码分析 简介 ArrayDeque为双端队列，支持首部，尾部两端的操作，因此做双端操作可用于FIFO等queue, 做单端操</description>
+    </item>
+    
+    <item>
+      <title>PriorityQueue</title>
+      <link>https://birdgodtech.github.io/post/collection/06.PriorityQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 14 Feb 2017 21:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/06.PriorityQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>PriorityQueue源码分析 简介 PriorityQueue是有限队列，基于优先堆实现； 一、PriorityQueue内部结构实现 1 2 3</description>
+    </item>
+    
+    <item>
+      <title>Stack</title>
+      <link>https://birdgodtech.github.io/post/collection/05.Stack%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 13 Feb 2017 20:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/05.Stack%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>Stack源码分析 简介 Stack类表示后进先出（LIFO）的对象堆栈。继承Vector类，实现很简单。 源码分析 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15</description>
+    </item>
+    
+    <item>
+      <title>Vector</title>
+      <link>https://birdgodtech.github.io/post/collection/04.Vector%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 13 Feb 2017 18:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/04.Vector%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>Vector源码分析 简介 Vector也是基于数组实现的，是一个动态数组，其容量能自动增长。 Vector是JDK1.0引入了，它的很多实现方法</description>
+    </item>
+    
+    <item>
+      <title>LinkedList</title>
+      <link>https://birdgodtech.github.io/post/collection/03.LinkedList/</link>
+      <pubDate>Sun, 12 Feb 2017 19:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/03.LinkedList/</guid>
+      <description>一、 LinkedList概述: LinkedList双向链表实现。 LinkedList实现List,Deque接口，提供栈、队列、双端队列的方</description>
+    </item>
+    
+    <item>
+      <title>java集合框架</title>
+      <link>https://birdgodtech.github.io/post/collection/01.java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6/</link>
+      <pubDate>Fri, 10 Feb 2017 20:12:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/01.java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6/</guid>
+      <description>Java集合框架是java提供的工具包，在java.util.*中，这个包中包含了常用的数据结构：集合、数组、链表、栈、队列、映射等. jav</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Unsafe on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/Unsafe/</link>
+    <description>Recent content in Unsafe on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Mon, 13 Mar 2017 21:00:11 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/Unsafe/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Unsafe</title>
+      <link>https://birdgodtech.github.io/post/concurrent/01.Unsafe/</link>
+      <pubDate>Mon, 13 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/01.Unsafe/</guid>
+      <description>#说明 java不能直接访问操作系统底层，而是通过本地方法来访问。Unsafe类提供了硬件级别的原子操作，主要提供了以下功能： 一、通过Unsa</description>
+    </item>
+    
+  </channel>
+</rss>

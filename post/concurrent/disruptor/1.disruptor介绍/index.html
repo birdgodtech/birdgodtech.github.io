@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>disruptor介绍 - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="disruptor介绍 简介 从功能上来看，Disruptor 是实现了&amp;quot;队列&amp;quot;的功能，而且是一个有界队列。那么它的应用场景自" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/disruptor/1.disruptor%E4%BB%8B%E7%BB%8D/" />
+<link href="/post/concurrent/disruptor/1.disruptor%E4%BB%8B%E7%BB%8D/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/disruptor/1.disruptor%E4%BB%8B%E7%BB%8D/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="disruptor介绍" />
+<meta property="og:description" content="disruptor介绍 简介 从功能上来看，Disruptor 是实现了&quot;队列&quot;的功能，而且是一个有界队列。那么它的应用场景自" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/disruptor/1.disruptor%E4%BB%8B%E7%BB%8D/" />
+<meta property="article:published_time" content="2018-05-05T18:18:08+00:00" />
+<meta property="article:modified_time" content="2018-05-05T18:18:08+00:00" />
+<meta itemprop="name" content="disruptor介绍">
+<meta itemprop="description" content="disruptor介绍 简介 从功能上来看，Disruptor 是实现了&quot;队列&quot;的功能，而且是一个有界队列。那么它的应用场景自">
+<meta itemprop="datePublished" content="2018-05-05T18:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2018-05-05T18:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="1095">
+
+
+
+<meta itemprop="keywords" content="disruptor," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="disruptor介绍"/>
+<meta name="twitter:description" content="disruptor介绍 简介 从功能上来看，Disruptor 是实现了&quot;队列&quot;的功能，而且是一个有界队列。那么它的应用场景自"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">disruptor介绍</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2018-05-05 18:18 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 1095 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#disruptor-的核心概念">Disruptor 的核心概念</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2018-05-05T18:18:08" title="May 5, 2018">May 5, 2018</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="disruptor介绍">disruptor介绍</h1>
+<h2 id="简介">简介</h2>
+<p>从功能上来看，Disruptor 是实现了&quot;队列&quot;的功能，而且是一个有界队列。那么它的应用场景自然就是&quot;生产者-消费者&quot;模型的应用场合了。
+可以拿 JDK 的 BlockingQueue 做一个简单对比，以便更好地认识 Disruptor 是什么。我们知道BlockingQueue是一个FIFO堵塞队列；
+这些都是 Disruptor 能做到的，与之不同的是，Disruptor 能做更多：</p>
+<ul>
+<li>同一个&quot;事件&quot;可以有多个消费者，消费者之间既可以并行处理，也可以相互依赖形成处理的先后次序(形成一个依赖图)；</li>
+<li>预分配用于存储事件内容的内存空间；</li>
+<li>无锁的设计；</li>
+</ul>
+<h2 id="disruptor-的核心概念">Disruptor 的核心概念</h2>
+<p>先从了解 Disruptor 的核心概念开始，来了解它是如何运作的。下面介绍的概念模型，既是领域对象，也是映射到代码实现上的核心对象。</p>
+<ul>
+<li>
+<p>Ring Buffer</p>
+<p>如其名，环形的缓冲区。曾经 RingBuffer 是 Disruptor 中的最主要的对象，但从3.0版本开始，其职责被简化为仅仅负责对通过 Disruptor 进行交换的数据（事件）
+进行存储和更新。在一些更高级的应用场景中，Ring Buffer 可以由用户的自定义实现来完全替代。</p>
+</li>
+<li>
+<p>Sequence</p>
+<p>Disruptor使用序列作为一种手段来确定特定组件的位置。每个消费者（EventProcessor）都像Disruptor本身一样维护一个Sequence。大部分并发代码依赖于这些Sequence值
+的移动，因此Sequence支持AtomicLong的许多当前特性。事实上，2之间唯一真正的区别是序列包含额外的功能，以防止序列和其他值之间的错误共享(CPU缓存伪共享(Flase Sharing)问题)。</p>
+</li>
+<li>
+<p>Sequencer</p>
+<p>Sequencer是Disruptor的真正核心。这个接口的2个实现（单生产者，多生产者）实现了所有的并发算法，用于在生产者和消费者之间快速正确地传递数据。</p>
+</li>
+<li>
+<p>Sequence Barrier</p>
+<p>序列屏障由序列发生器产生，包含对序列发生器的主要发布序列和任何相关消费者的序列的引用。它包含确定消费者是否有任何事件可供处理的逻辑。</p>
+</li>
+<li>
+<p>Wait Strategy</p>
+<p>定义 Consumer 如何进行等待下一个事件的策略。 （注：Disruptor 定义了多种不同的策略，针对不同的场景，提供了不一样的性能表现）</p>
+</li>
+<li>
+<p>Event</p>
+<p>在 Disruptor 的语义中，生产者和消费者之间进行交换的数据被称为事件(Event)。事件没有特定的代码表示，因为它完全由用户定义。</p>
+</li>
+<li>
+<p>EventProcessor</p>
+<p>EventProcessor 持有特定消费者(Consumer)的 Sequence，并提供用于调用事件处理实现的事件循环(Event Loop)。
+BatchEventProcessor 包含事件循环的有效实现，并将回调到EventHandler接口的已使用提供的实现。</p>
+</li>
+<li>
+<p>EventHandler</p>
+<p>Disruptor 定义的事件处理接口，由用户实现，用于处理事件，是 Consumer 的真正实现。</p>
+</li>
+<li>
+<p>Producer</p>
+<p>即生产者，只是泛指调用 Disruptor 发布事件的用户代码，Disruptor 没有定义特定接口或类型。</p>
+</li>
+</ul>
+<p><img src="/concurrent//disruptor03.png" alt=""></p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2018-05-05 18:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/disruptor/">disruptor</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/disruptor/2.Sequence%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Sequence源码分析</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/collection/11.ConcurrentHashMap1.7%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">ConcurrentLinkedQueue</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>CLH锁 、MCS锁 on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/CLH%E9%94%81-MCS%E9%94%81/</link>
+    <description>Recent content in CLH锁 、MCS锁 on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Mon, 15 May 2017 18:11:08 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/CLH%E9%94%81-MCS%E9%94%81/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>StamppedLock</title>
+      <link>https://birdgodtech.github.io/post/concurrent/CLH%E9%94%81%E5%92%8CMCS%E9%94%81/</link>
+      <pubDate>Mon, 15 May 2017 18:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/CLH%E9%94%81%E5%92%8CMCS%E9%94%81/</guid>
+      <description>分析CLH锁 、MCS锁 原博客地址 一、引文 1. SMP(Symmetric Multi-Processor) 对称多处理器结构，指服务器中多个CPU对称工作，每个CPU访问内存地址所需时间相同。其主要特征</description>
+    </item>
+    
+  </channel>
+</rss>

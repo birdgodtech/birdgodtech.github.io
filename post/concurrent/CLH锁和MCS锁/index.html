@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>StamppedLock - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="分析CLH锁 、MCS锁 原博客地址 一、引文 1. SMP(Symmetric Multi-Processor) 对称多处理器结构，指服务器中多个CPU对称工作，每个CPU访问内存地址所需时间相同。其主要特征" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/CLH%E9%94%81%E5%92%8CMCS%E9%94%81/" />
+<link href="/post/concurrent/CLH%E9%94%81%E5%92%8CMCS%E9%94%81/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/CLH%E9%94%81%E5%92%8CMCS%E9%94%81/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="StamppedLock" />
+<meta property="og:description" content="分析CLH锁 、MCS锁 原博客地址 一、引文 1. SMP(Symmetric Multi-Processor) 对称多处理器结构，指服务器中多个CPU对称工作，每个CPU访问内存地址所需时间相同。其主要特征" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/CLH%E9%94%81%E5%92%8CMCS%E9%94%81/" />
+<meta property="article:published_time" content="2017-05-15T18:11:08+00:00" />
+<meta property="article:modified_time" content="2017-05-15T18:11:08+00:00" />
+<meta itemprop="name" content="StamppedLock">
+<meta itemprop="description" content="分析CLH锁 、MCS锁 原博客地址 一、引文 1. SMP(Symmetric Multi-Processor) 对称多处理器结构，指服务器中多个CPU对称工作，每个CPU访问内存地址所需时间相同。其主要特征">
+<meta itemprop="datePublished" content="2017-05-15T18:11:08&#43;00:00" />
+<meta itemprop="dateModified" content="2017-05-15T18:11:08&#43;00:00" />
+<meta itemprop="wordCount" content="2007">
+
+
+
+<meta itemprop="keywords" content="CLH锁 、MCS锁," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="StamppedLock"/>
+<meta name="twitter:description" content="分析CLH锁 、MCS锁 原博客地址 一、引文 1. SMP(Symmetric Multi-Processor) 对称多处理器结构，指服务器中多个CPU对称工作，每个CPU访问内存地址所需时间相同。其主要特征"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">StamppedLock</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-05-15 18:11 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 2007 字 </span>
+      <span class="more-meta"> 预计阅读 5 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#一引文">一、引文</a>
+      <ul>
+        <li><a href="#1-smpsymmetric-multi-processor">1. SMP(Symmetric Multi-Processor)</a></li>
+      </ul>
+    </li>
+    <li><a href="#2-numanon-uniform-memory-access">2 NUMA(Non-Uniform Memory Access)</a></li>
+    <li><a href="#二clh">二、CLH</a></li>
+    <li><a href="#三clh分析">三、CLH分析</a></li>
+    <li><a href="#四mcs">四、MCS</a></li>
+    <li><a href="#五clh-vs-mcs差异">五、CLH VS MCS差异：</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-05-15T18:11:08" title="May 15, 2017">May 15, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="分析clh锁-mcs锁">分析CLH锁 、MCS锁</h1>
+<p><a href="http://www.cnblogs.com/yuyutianxia/p/4296220.html">原博客地址</a></p>
+<h2 id="一引文">一、引文</h2>
+<h3 id="1-smpsymmetric-multi-processor">1. SMP(Symmetric Multi-Processor)</h3>
+<p>　　对称多处理器结构，指服务器中多个CPU对称工作，每个CPU访问内存地址所需时间相同。其主要特征是共享，
+包含对CPU，内存，I/O等进行共享。SMP能够保证内存一致性，但这些共享的资源很可能成为性能瓶颈，随着CPU数
+量的增加，每个CPU都要访问相同的内存资源，可能导致内存访问冲突，可能会导致CPU资源的浪费。常用的PC机就
+属于这种。</p>
+<h2 id="2-numanon-uniform-memory-access">2 NUMA(Non-Uniform Memory Access)</h2>
+<p>　　非一致存储访问，将CPU分为CPU模块，每个CPU模块由多个CPU组成，并且具有独立的本地内存、I/O槽口等，模块
+之间可以通过互联模块相互访问，访问本地内存的速度将远远高于访问远地内存(系统内其它节点的内存)的速度，这也
+是非一致存储访问的由来。NUMA较好地解决SMP的扩展问题，当CPU数量增加时，因为访问远地内存的延时远远超过本地
+内存，系统性能无法线性增加。</p>
+<h2 id="二clh">二、CLH</h2>
+<p>　　CLH(Craig, Landin, and Hagersten  locks): 是一个自旋锁，能确保无饥饿性，提供先来先服务的公平性。
+CLH锁也是一种基于链表的可扩展、高性能、公平的自旋锁，申请线程只在本地变量上自旋，它不断轮询前驱的状态，
+如果发现前驱释放了锁就结束自旋。</p>
+<p>　　当一个线程需要获取锁时：</p>
+<ul>
+<li>1.创建一个的QNode，将其中的locked设置为true表示需要获取锁</li>
+<li>2.线程对tail域调用getAndSet方法，使自己成为队列的尾部，同时获取一个指向其前趋结点的引用myPred</li>
+<li>3.该线程就在前趋结点的locked字段上旋转，直到前趋结点释放锁</li>
+<li>4.当一个线程需要释放锁时，将当前结点的locked域设置为false，同时回收前趋结点</li>
+</ul>
+<p>如下图，线程A需要获取锁，其myNode域为true，tail指向线程A的结点，然后线程B也加入到线程A后面，tail指向线程B的结点。
+然后线程A和B都在其myPred域上旋转，一旦它的myPred结点的locked字段变为false，它就可以获取锁。明显线程A的myPred locked域
+为false，此时线程A获取到了锁。
+<img src="/concurrent//CLH01.png" alt=""></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">CLHLock</span> <span class="kd">implements</span> <span class="n">Lock</span> <span class="o">{</span>  
+    <span class="n">AtomicReference</span><span class="o">&lt;</span><span class="n">QNode</span><span class="o">&gt;</span> <span class="n">tail</span> <span class="o">;</span>  
+    <span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">QNode</span><span class="o">&gt;</span> <span class="n">myPred</span><span class="o">;</span>  
+    <span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">QNode</span><span class="o">&gt;</span> <span class="n">myNode</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="nf">CLHLock</span><span class="o">()</span> <span class="o">{</span>  
+
+         <span class="n">tail</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AtomicReference</span><span class="o">&lt;</span><span class="n">QNode</span><span class="o">&gt;(</span><span class="k">new</span> <span class="n">QNode</span><span class="o">());</span>  
+        <span class="n">myNode</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">QNode</span><span class="o">&gt;()</span> <span class="o">{</span>  
+            <span class="kd">protected</span> <span class="n">QNode</span> <span class="nf">initialValue</span><span class="o">()</span> <span class="o">{</span>  
+                <span class="k">return</span> <span class="k">new</span> <span class="n">QNode</span><span class="o">();</span>  
+            <span class="o">}</span>  
+        <span class="o">};</span>  
+        <span class="n">myPred</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">QNode</span><span class="o">&gt;()</span> <span class="o">{</span>  
+            <span class="kd">protected</span> <span class="n">QNode</span> <span class="nf">initialValue</span><span class="o">()</span> <span class="o">{</span>  
+                <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>  
+            <span class="o">}</span>  
+        <span class="o">};</span>  
+    <span class="o">}</span>  
+  
+    <span class="nd">@Override</span>  
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">lock</span><span class="o">()</span> <span class="o">{</span>  
+        <span class="n">QNode</span> <span class="n">qnode</span> <span class="o">=</span> <span class="n">myNode</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>  
+        <span class="n">qnode</span><span class="o">.</span><span class="na">locked</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>  
+        <span class="n">QNode</span> <span class="n">pred</span> <span class="o">=</span> <span class="n">tail</span><span class="o">.</span><span class="na">getAndSet</span><span class="o">(</span><span class="n">qnode</span><span class="o">);</span>  
+        <span class="n">myPred</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">pred</span><span class="o">);</span>  
+        <span class="c1">//自旋判断前趋结点的locked
+</span><span class="c1"></span>        <span class="k">while</span> <span class="o">(</span><span class="n">pred</span><span class="o">.</span><span class="na">locked</span><span class="o">)</span> <span class="o">{</span>  
+        <span class="o">}</span>  
+    <span class="o">}</span>  
+  
+    <span class="nd">@Override</span>  
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">unlock</span><span class="o">()</span> <span class="o">{</span>  
+        <span class="n">QNode</span> <span class="n">qnode</span> <span class="o">=</span> <span class="n">myNode</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>  
+        <span class="n">qnode</span><span class="o">.</span><span class="na">locked</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>  
+        <span class="n">myNode</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">myPred</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>  
+    <span class="o">}</span>  
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="三clh分析">三、CLH分析</h2>
+<p>　　CLH队列锁的优点是空间复杂度低（如果有n个线程，L个锁，每个线程每次只获取一个锁，那么需要的存储空间是O（L+n），n个线程有n个
+myNode，L个锁有L个tail），CLH的一种变体被应用在了JAVA并发框架中(AbstractQueuedSynchronizer.Node)。CLH在SMP系统结构下该法是非
+常有效的。但在NUMA系统结构下，每个线程有自己的内存，如果前趋结点的内存位置比较远，自旋判断前趋结点的locked域，性能将大打折扣，
+一种解决NUMA系统结构的思路是MCS队列锁。</p>
+<h2 id="四mcs">四、MCS</h2>
+<p>　　MCS Spinlock (John Mellor-Crummey和Michael Scott)是一种基于链表的可扩展、高性能、公平的自旋锁，申请线程只在本地变量上自旋，
+直接前驱负责通知其结束自旋，从而极大地减少了不必要的处理器缓存同步的次数，降低了总线和内存的开销。</p>
+<p>　　MSC与CLH最大的不同并不是链表是显示还是隐式，而是线程自旋的规则不同:CLH是在前趋结点的locked域上自旋等待，而MCS是在自己的
+结点的locked域上自旋等待。正因为如此，它解决了CLH在NUMA系统架构中获取locked域状态内存过远的问题。</p>
+<p>　　MCS队列锁的具体实现如下：</p>
+<ul>
+<li>a. 队列初始化时没有结点，tail=null</li>
+<li>b. 线程A想要获取锁，于是将自己置于队尾，由于它是第一个结点，它的locked域为false</li>
+<li>c. 线程B和C相继加入队列，a-&gt;next=b,b-&gt;next=c。且B和C现在没有获取锁，处于等待状态，所以它们的locked域为true，尾指针指向线程C对应的结点</li>
+<li>d. 线程A释放锁后，顺着它的next指针找到了线程B，并把B的locked域设置为false。这一动作会触发线程B获取锁</li>
+</ul>
+<p><img src="/concurrent//CHL02.jpg" alt=""></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MCSLock</span> <span class="kd">implements</span> <span class="n">Lock</span> <span class="o">{</span>
+    <span class="n">AtomicReference</span><span class="o">&lt;</span><span class="n">QNode</span><span class="o">&gt;</span> <span class="n">tail</span><span class="o">;</span>
+    <span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">QNode</span><span class="o">&gt;</span> <span class="n">myNode</span><span class="o">;</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">lock</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">tail</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AtomicReference</span><span class="o">&lt;</span><span class="n">QNode</span><span class="o">&gt;(</span><span class="k">new</span> <span class="n">QNode</span><span class="o">());</span>  
+        <span class="n">QNode</span> <span class="n">qnode</span> <span class="o">=</span> <span class="n">myNode</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+        <span class="n">QNode</span> <span class="n">pred</span> <span class="o">=</span> <span class="n">tail</span><span class="o">.</span><span class="na">getAndSet</span><span class="o">(</span><span class="n">qnode</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">pred</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">qnode</span><span class="o">.</span><span class="na">locked</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="n">pred</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">qnode</span><span class="o">;</span>
+
+            <span class="c1">// wait until predecessor gives up the lock
+</span><span class="c1"></span>            <span class="k">while</span> <span class="o">(</span><span class="n">qnode</span><span class="o">.</span><span class="na">locked</span><span class="o">)</span> <span class="o">{</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">unlock</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">QNode</span> <span class="n">qnode</span> <span class="o">=</span> <span class="n">myNode</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">qnode</span><span class="o">.</span><span class="na">next</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">tail</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="n">qnode</span><span class="o">,</span> <span class="kc">null</span><span class="o">))</span>
+                <span class="k">return</span><span class="o">;</span>
+            
+            <span class="c1">// wait until predecessor fills in its next field
+</span><span class="c1"></span>            <span class="k">while</span> <span class="o">(</span><span class="n">qnode</span><span class="o">.</span><span class="na">next</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="n">qnode</span><span class="o">.</span><span class="na">next</span><span class="o">.</span><span class="na">locked</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="n">qnode</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">class</span> <span class="nc">QNode</span> <span class="o">{</span>
+        <span class="kt">boolean</span> <span class="n">locked</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="n">QNode</span> <span class="n">next</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="五clh-vs-mcs差异">五、CLH VS MCS差异：</h2>
+<ul>
+<li>
+<ol>
+<li>从代码实现来看，CLH比MCS要简单得多。</li>
+</ol>
+</li>
+<li>
+<ol start="2">
+<li>从自旋的条件来看，CLH是在前驱节点的属性上自旋，而MCS是在本地属性变量上自旋。</li>
+</ol>
+</li>
+<li>
+<ol start="3">
+<li>从链表队列来看，CLH的队列是隐式的，CLHNode并不实际持有下一个节点；MCS的队列是物理存在的。</li>
+</ol>
+</li>
+<li>
+<ol start="4">
+<li>CLH锁释放时只需要改变自己的属性，MCS锁释放则需要改变后继节点的属性。</li>
+</ol>
+</li>
+</ul>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-05-15 18:11
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/CLH%E9%94%81-MCS%E9%94%81/">CLH锁 、MCS锁</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/JMH-JVM%E5%9F%BA%E5%87%86%E6%B5%8B%E8%AF%95%E5%B7%A5%E5%85%B7/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">JMH:JVM基准测试工具</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/Fork_Join_Framework/">
+        <span class="next-text nav-default">Fork_Join_Framework</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

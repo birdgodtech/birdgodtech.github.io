@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>HashMap on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/HashMap/</link>
+    <description>Recent content in HashMap on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Thu, 16 Feb 2017 20:30:11 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/HashMap/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>HashMap_1.7</title>
+      <link>https://birdgodtech.github.io/post/collection/08.HashMap_1.7/</link>
+      <pubDate>Thu, 16 Feb 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/08.HashMap_1.7/</guid>
+      <description>一、 HashMap概述: HashMap是基于哈希表实现的，每一个元素是一个key-value对，其内部通过单链表解决冲突问题，容量不足（超过</description>
+    </item>
+    
+  </channel>
+</rss>

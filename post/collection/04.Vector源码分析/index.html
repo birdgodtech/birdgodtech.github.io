@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Vector - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="Vector源码分析 简介 Vector也是基于数组实现的，是一个动态数组，其容量能自动增长。 Vector是JDK1.0引入了，它的很多实现方法" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/collection/04.Vector%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<link href="/post/collection/04.Vector%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/collection/04.Vector%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="Vector" />
+<meta property="og:description" content="Vector源码分析 简介 Vector也是基于数组实现的，是一个动态数组，其容量能自动增长。 Vector是JDK1.0引入了，它的很多实现方法" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/collection/04.Vector%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2017-02-13T18:30:11+00:00" />
+<meta property="article:modified_time" content="2017-02-13T18:30:11+00:00" />
+<meta itemprop="name" content="Vector">
+<meta itemprop="description" content="Vector源码分析 简介 Vector也是基于数组实现的，是一个动态数组，其容量能自动增长。 Vector是JDK1.0引入了，它的很多实现方法">
+<meta itemprop="datePublished" content="2017-02-13T18:30:11&#43;00:00" />
+<meta itemprop="dateModified" content="2017-02-13T18:30:11&#43;00:00" />
+<meta itemprop="wordCount" content="3018">
+
+
+
+<meta itemprop="keywords" content="Vector," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Vector"/>
+<meta name="twitter:description" content="Vector源码分析 简介 Vector也是基于数组实现的，是一个动态数组，其容量能自动增长。 Vector是JDK1.0引入了，它的很多实现方法"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">Vector</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-02-13 18:30 </span>
+      <div class="post-category">
+        <a href="/categories/java%E9%9B%86%E5%90%88/"> java集合 </a>
+        </div>
+      <span class="more-meta"> 约 3018 字 </span>
+      <span class="more-meta"> 预计阅读 7 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a>
+      <ul>
+        <li><a href="#一vector内部结构">一、Vector内部结构</a></li>
+        <li><a href="#二add-添加元素">二、add 添加元素</a></li>
+        <li><a href="#扩容">扩容</a></li>
+        <li><a href="#三get-获取元素">三、get 获取元素</a></li>
+        <li><a href="#四remove-删除元素">四、remove 删除元素</a></li>
+        <li><a href="#五iterator-迭代器实现">五、Iterator 迭代器实现</a></li>
+        <li><a href="#六总结">六、总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-02-13T18:30:11" title="February 13, 2017">February 13, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="vector源码分析">Vector源码分析</h1>
+<h2 id="简介">简介</h2>
+<p>Vector也是基于数组实现的，是一个动态数组，其容量能自动增长。</p>
+<p>Vector是JDK1.0引入了，它的很多实现方法都加入了同步语句，因此是线程安全的（其实也只是相对安全，有些时候还是要加入
+同步语句来保证线程的安全），可以用于多线程环境。</p>
+<p>Vector继承Serializable接口，因此它支持序列化，实现了Cloneable接口，能被克隆，实现了RandomAccess接口，支持快速随机访问。</p>
+<h3 id="一vector内部结构">一、Vector内部结构</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span><span class="lnt">93
+</span><span class="lnt">94
+</span><span class="lnt">95
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Vector</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span>
+    <span class="kd">extends</span> <span class="n">AbstractList</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span>
+    <span class="kd">implements</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;,</span> <span class="n">RandomAccess</span><span class="o">,</span> <span class="n">Cloneable</span><span class="o">,</span> <span class="n">java</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">Serializable</span>
+<span class="o">{</span>
+    <span class="cm">/**
+</span><span class="cm">     * The array buffer into which the components of the vector are
+</span><span class="cm">     * stored. The capacity of the vector is the length of this array buffer,
+</span><span class="cm">     * and is at least large enough to contain all the vector&#39;s elements.
+</span><span class="cm">     *
+</span><span class="cm">     * &lt;p&gt;Any array elements following the last element in the Vector are null.
+</span><span class="cm">     *  Object数组 保存元素
+</span><span class="cm">     * @serial
+</span><span class="cm">     */</span>
+    <span class="kd">protected</span> <span class="n">Object</span><span class="o">[]</span> <span class="n">elementData</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * The number of valid components in this {@code Vector} object.
+</span><span class="cm">     * Components {@code elementData[0]} through
+</span><span class="cm">     * {@code elementData[elementCount-1]} are the actual items.
+</span><span class="cm">     * 元素大小
+</span><span class="cm">     * @serial
+</span><span class="cm">     */</span>
+    <span class="kd">protected</span> <span class="kt">int</span> <span class="n">elementCount</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * The amount by which the capacity of the vector is automatically
+</span><span class="cm">     * incremented when its size becomes greater than its capacity.  If
+</span><span class="cm">     * the capacity increment is less than or equal to zero, the capacity
+</span><span class="cm">     * of the vector is doubled each time it needs to grow.
+</span><span class="cm">     *  容量增加数量
+</span><span class="cm">     * @serial
+</span><span class="cm">     */</span>
+    <span class="kd">protected</span> <span class="kt">int</span> <span class="n">capacityIncrement</span><span class="o">;</span>
+
+    <span class="cm">/** use serialVersionUID from JDK 1.0.2 for interoperability */</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="o">-</span><span class="n">2767605614048989439L</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Constructs an empty vector with the specified initial capacity and
+</span><span class="cm">     * capacity increment.
+</span><span class="cm">     *
+</span><span class="cm">     * @param   initialCapacity     the initial capacity of the vector
+</span><span class="cm">     * @param   capacityIncrement   the amount by which the capacity is
+</span><span class="cm">     *                              increased when the vector overflows
+</span><span class="cm">     * @throws IllegalArgumentException if the specified initial capacity
+</span><span class="cm">     *         is negative
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">Vector</span><span class="o">(</span><span class="kt">int</span> <span class="n">initialCapacity</span><span class="o">,</span> <span class="kt">int</span> <span class="n">capacityIncrement</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">initialCapacity</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span><span class="s">&#34;Illegal Capacity: &#34;</span><span class="o">+</span>
+                                               <span class="n">initialCapacity</span><span class="o">);</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">elementData</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Object</span><span class="o">[</span><span class="n">initialCapacity</span><span class="o">];</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">capacityIncrement</span> <span class="o">=</span> <span class="n">capacityIncrement</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Constructs an empty vector with the specified initial capacity and
+</span><span class="cm">     * with its capacity increment equal to zero.
+</span><span class="cm">     *
+</span><span class="cm">     * @param   initialCapacity   the initial capacity of the vector
+</span><span class="cm">     * @throws IllegalArgumentException if the specified initial capacity
+</span><span class="cm">     *         is negative
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">Vector</span><span class="o">(</span><span class="kt">int</span> <span class="n">initialCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span><span class="n">initialCapacity</span><span class="o">,</span> <span class="n">0</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Constructs an empty vector so that its internal data array
+</span><span class="cm">     * has size {@code 10} and its standard capacity increment is
+</span><span class="cm">     * zero.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">Vector</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span><span class="n">10</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Constructs a vector containing the elements of the specified
+</span><span class="cm">     * collection, in the order they are returned by the collection&#39;s
+</span><span class="cm">     * iterator.
+</span><span class="cm">     *
+</span><span class="cm">     * @param c the collection whose elements are to be placed into this
+</span><span class="cm">     *       vector
+</span><span class="cm">     * @throws NullPointerException if the specified collection is null
+</span><span class="cm">     * @since   1.2
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">Vector</span><span class="o">(</span><span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">E</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">elementData</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="na">toArray</span><span class="o">();</span>
+        <span class="n">elementCount</span> <span class="o">=</span> <span class="n">elementData</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+        <span class="c1">// c.toArray might (incorrectly) not return Object[] (see 6260652)
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">elementData</span><span class="o">.</span><span class="na">getClass</span><span class="o">()</span> <span class="o">!=</span> <span class="n">Object</span><span class="o">[].</span><span class="na">class</span><span class="o">)</span>
+            <span class="n">elementData</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">copyOf</span><span class="o">(</span><span class="n">elementData</span><span class="o">,</span> <span class="n">elementCount</span><span class="o">,</span> <span class="n">Object</span><span class="o">[].</span><span class="na">class</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="二add-添加元素">二、add 添加元素</h3>
+<p>方法添加同步块</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Appends the specified element to the end of this Vector.
+</span><span class="cm">     *
+</span><span class="cm">     * @param e element to be appended to this Vector
+</span><span class="cm">     * @return {@code true} (as specified by {@link Collection#add})
+</span><span class="cm">     * @since 1.2
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kd">synchronized</span> <span class="kt">boolean</span> <span class="nf">add</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">modCount</span><span class="o">++;</span>
+        <span class="n">ensureCapacityHelper</span><span class="o">(</span><span class="n">elementCount</span> <span class="o">+</span> <span class="n">1</span><span class="o">);</span> <span class="c1">//扩容
+</span><span class="c1"></span>        <span class="n">elementData</span><span class="o">[</span><span class="n">elementCount</span><span class="o">++]</span> <span class="o">=</span> <span class="n">e</span><span class="o">;</span>
+        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">}</span>
+  <span class="cm">/**
+</span><span class="cm">     * Inserts the specified element at the specified position in this Vector.
+</span><span class="cm">     * Shifts the element currently at that position (if any) and any
+</span><span class="cm">     * subsequent elements to the right (adds one to their indices).
+</span><span class="cm">     *
+</span><span class="cm">     * @param index index at which the specified element is to be inserted
+</span><span class="cm">     * @param element element to be inserted
+</span><span class="cm">     * @throws ArrayIndexOutOfBoundsException if the index is out of range
+</span><span class="cm">     *         ({@code index &lt; 0 || index &gt; size()})
+</span><span class="cm">     * @since 1.2
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">add</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="n">E</span> <span class="n">element</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">insertElementAt</span><span class="o">(</span><span class="n">element</span><span class="o">,</span> <span class="n">index</span><span class="o">);</span>
+    <span class="o">}</span>
+ <span class="cm">/**
+</span><span class="cm">     * Inserts the specified object as a component in this vector at the
+</span><span class="cm">     * specified {@code index}. Each component in this vector with
+</span><span class="cm">     * an index greater or equal to the specified {@code index} is
+</span><span class="cm">     * shifted upward to have an index one greater than the value it had
+</span><span class="cm">     * previously.
+</span><span class="cm">     *
+</span><span class="cm">     * &lt;p&gt;The index must be a value greater than or equal to {@code 0}
+</span><span class="cm">     * and less than or equal to the current size of the vector. (If the
+</span><span class="cm">     * index is equal to the current size of the vector, the new element
+</span><span class="cm">     * is appended to the Vector.)
+</span><span class="cm">     *
+</span><span class="cm">     * &lt;p&gt;This method is identical in functionality to the
+</span><span class="cm">     * {@link #add(int, Object) add(int, E)}
+</span><span class="cm">     * method (which is part of the {@link List} interface).  Note that the
+</span><span class="cm">     * {@code add} method reverses the order of the parameters, to more closely
+</span><span class="cm">     * match array usage.
+</span><span class="cm">     *
+</span><span class="cm">     * @param      obj     the component to insert
+</span><span class="cm">     * @param      index   where to insert the new component
+</span><span class="cm">     * @throws ArrayIndexOutOfBoundsException if the index is out of range
+</span><span class="cm">     *         ({@code index &lt; 0 || index &gt; size()})
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kd">synchronized</span> <span class="kt">void</span> <span class="nf">insertElementAt</span><span class="o">(</span><span class="n">E</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">modCount</span><span class="o">++;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">index</span> <span class="o">&gt;</span> <span class="n">elementCount</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">ArrayIndexOutOfBoundsException</span><span class="o">(</span><span class="n">index</span>
+                                                     <span class="o">+</span> <span class="s">&#34; &gt; &#34;</span> <span class="o">+</span> <span class="n">elementCount</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="n">ensureCapacityHelper</span><span class="o">(</span><span class="n">elementCount</span> <span class="o">+</span> <span class="n">1</span><span class="o">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">elementData</span><span class="o">,</span> <span class="n">index</span><span class="o">,</span> <span class="n">elementData</span><span class="o">,</span> <span class="n">index</span> <span class="o">+</span> <span class="n">1</span><span class="o">,</span> <span class="n">elementCount</span> <span class="o">-</span> <span class="n">index</span><span class="o">);</span> <span class="c1">//往后移动元素
+</span><span class="c1"></span>        <span class="n">elementData</span><span class="o">[</span><span class="n">index</span><span class="o">]</span> <span class="o">=</span> <span class="n">obj</span><span class="o">;</span>
+        <span class="n">elementCount</span><span class="o">++;</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="扩容">扩容</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * This implements the unsynchronized semantics of ensureCapacity.
+</span><span class="cm">     * Synchronized methods in this class can internally call this
+</span><span class="cm">     * method for ensuring capacity without incurring the cost of an
+</span><span class="cm">     * extra synchronization.
+</span><span class="cm">     *
+</span><span class="cm">     * @see #ensureCapacity(int)
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">ensureCapacityHelper</span><span class="o">(</span><span class="kt">int</span> <span class="n">minCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// overflow-conscious code
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">minCapacity</span> <span class="o">-</span> <span class="n">elementData</span><span class="o">.</span><span class="na">length</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span>
+            <span class="n">grow</span><span class="o">(</span><span class="n">minCapacity</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * The maximum size of array to allocate.
+</span><span class="cm">     * Some VMs reserve some header words in an array.
+</span><span class="cm">     * Attempts to allocate larger arrays may result in
+</span><span class="cm">     * OutOfMemoryError: Requested array size exceeds VM limit
+</span><span class="cm">     * 要分配的数组的最大大小。一些V Ms在数组中保留一些header words。尝试分配更大的数组可能会导致内存错误:请求的数组大小超过VM限制
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">MAX_ARRAY_SIZE</span> <span class="o">=</span> <span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span> <span class="o">-</span> <span class="n">8</span><span class="o">;</span>
+
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">grow</span><span class="o">(</span><span class="kt">int</span> <span class="n">minCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// overflow-conscious code
+</span><span class="c1"></span>        <span class="kt">int</span> <span class="n">oldCapacity</span> <span class="o">=</span> <span class="n">elementData</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>   
+        <span class="kt">int</span> <span class="n">newCapacity</span> <span class="o">=</span> <span class="n">oldCapacity</span> <span class="o">+</span> <span class="o">((</span><span class="n">capacityIncrement</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">?</span>
+                                         <span class="n">capacityIncrement</span> <span class="o">:</span> <span class="n">oldCapacity</span><span class="o">);</span>  <span class="c1">// 扩容规则，capacityIncrement&gt;0 原容量大小加上capacityIncrement
+</span><span class="c1"></span>                                                                                         <span class="c1">//capacityIncrement&lt;0 2倍扩容
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">newCapacity</span> <span class="o">-</span> <span class="n">minCapacity</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span>
+            <span class="n">newCapacity</span> <span class="o">=</span> <span class="n">minCapacity</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">newCapacity</span> <span class="o">-</span> <span class="n">MAX_ARRAY_SIZE</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span>
+            <span class="n">newCapacity</span> <span class="o">=</span> <span class="n">hugeCapacity</span><span class="o">(</span><span class="n">minCapacity</span><span class="o">);</span>
+        <span class="n">elementData</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">copyOf</span><span class="o">(</span><span class="n">elementData</span><span class="o">,</span> <span class="n">newCapacity</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kt">int</span> <span class="nf">hugeCapacity</span><span class="o">(</span><span class="kt">int</span> <span class="n">minCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">minCapacity</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span> <span class="c1">// overflow
+</span><span class="c1"></span>            <span class="k">throw</span> <span class="k">new</span> <span class="n">OutOfMemoryError</span><span class="o">();</span>
+        <span class="k">return</span> <span class="o">(</span><span class="n">minCapacity</span> <span class="o">&gt;</span> <span class="n">MAX_ARRAY_SIZE</span><span class="o">)</span> <span class="o">?</span>
+            <span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span> <span class="o">:</span>
+            <span class="n">MAX_ARRAY_SIZE</span><span class="o">;</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="三get-获取元素">三、get 获取元素</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Returns the element at the specified position in this Vector.
+</span><span class="cm">     *
+</span><span class="cm">     * @param index index of the element to return
+</span><span class="cm">     * @return object at the specified index
+</span><span class="cm">     * @throws ArrayIndexOutOfBoundsException if the index is out of range
+</span><span class="cm">     *            ({@code index &lt; 0 || index &gt;= size()})
+</span><span class="cm">     * @since 1.2
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kd">synchronized</span> <span class="n">E</span> <span class="nf">get</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">elementCount</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">ArrayIndexOutOfBoundsException</span><span class="o">(</span><span class="n">index</span><span class="o">);</span>
+
+        <span class="k">return</span> <span class="n">elementData</span><span class="o">(</span><span class="n">index</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="n">E</span> <span class="nf">elementData</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="o">(</span><span class="n">E</span><span class="o">)</span> <span class="n">elementData</span><span class="o">[</span><span class="n">index</span><span class="o">];</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="四remove-删除元素">四、remove 删除元素</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Removes the first occurrence of the specified element in this Vector
+</span><span class="cm">     * If the Vector does not contain the element, it is unchanged.  More
+</span><span class="cm">     * formally, removes the element with the lowest index i such that
+</span><span class="cm">     * {@code (o==null ? get(i)==null : o.equals(get(i)))} (if such
+</span><span class="cm">     * an element exists).
+</span><span class="cm">     *
+</span><span class="cm">     * @param o element to be removed from this Vector, if present
+</span><span class="cm">     * @return true if the Vector contained the specified element
+</span><span class="cm">     * @since 1.2
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">remove</span><span class="o">(</span><span class="n">Object</span> <span class="n">o</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">removeElement</span><span class="o">(</span><span class="n">o</span><span class="o">);</span>
+    <span class="o">}</span>
+ <span class="cm">/**
+</span><span class="cm">     * Removes the first (lowest-indexed) occurrence of the argument
+</span><span class="cm">     * from this vector. If the object is found in this vector, each
+</span><span class="cm">     * component in the vector with an index greater or equal to the
+</span><span class="cm">     * object&#39;s index is shifted downward to have an index one smaller
+</span><span class="cm">     * than the value it had previously.
+</span><span class="cm">     *
+</span><span class="cm">     * &lt;p&gt;This method is identical in functionality to the
+</span><span class="cm">     * {@link #remove(Object)} method (which is part of the
+</span><span class="cm">     * {@link List} interface).
+</span><span class="cm">     *
+</span><span class="cm">     * @param   obj   the component to be removed
+</span><span class="cm">     * @return  {@code true} if the argument was a component of this
+</span><span class="cm">     *          vector; {@code false} otherwise.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kd">synchronized</span> <span class="kt">boolean</span> <span class="nf">removeElement</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">modCount</span><span class="o">++;</span>
+        <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">indexOf</span><span class="o">(</span><span class="n">obj</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">i</span> <span class="o">&gt;=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">removeElementAt</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="o">}</span>
+  <span class="cm">/**
+</span><span class="cm">     * Returns the index of the first occurrence of the specified element
+</span><span class="cm">     * in this vector, or -1 if this vector does not contain the element.
+</span><span class="cm">     * More formally, returns the lowest index {@code i} such that
+</span><span class="cm">     * &lt;tt&gt;(o==null&amp;nbsp;?&amp;nbsp;get(i)==null&amp;nbsp;:&amp;nbsp;o.equals(get(i)))&lt;/tt&gt;,
+</span><span class="cm">     * or -1 if there is no such index.
+</span><span class="cm">     *
+</span><span class="cm">     * @param o element to search for
+</span><span class="cm">     * @return the index of the first occurrence of the specified element in
+</span><span class="cm">     *         this vector, or -1 if this vector does not contain the element
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">indexOf</span><span class="o">(</span><span class="n">Object</span> <span class="n">o</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">indexOf</span><span class="o">(</span><span class="n">o</span><span class="o">,</span> <span class="n">0</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Returns the index of the first occurrence of the specified element in
+</span><span class="cm">     * this vector, searching forwards from {@code index}, or returns -1 if
+</span><span class="cm">     * the element is not found.
+</span><span class="cm">     * More formally, returns the lowest index {@code i} such that
+</span><span class="cm">     * &lt;tt&gt;(i&amp;nbsp;&amp;gt;=&amp;nbsp;index&amp;nbsp;&amp;amp;&amp;amp;&amp;nbsp;(o==null&amp;nbsp;?&amp;nbsp;get(i)==null&amp;nbsp;:&amp;nbsp;o.equals(get(i))))&lt;/tt&gt;,
+</span><span class="cm">     * or -1 if there is no such index.
+</span><span class="cm">     *
+</span><span class="cm">     * @param o element to search for
+</span><span class="cm">     * @param index index to start searching from
+</span><span class="cm">     * @return the index of the first occurrence of the element in
+</span><span class="cm">     *         this vector at position {@code index} or later in the vector;
+</span><span class="cm">     *         {@code -1} if the element is not found.
+</span><span class="cm">     * @throws IndexOutOfBoundsException if the specified index is negative
+</span><span class="cm">     * @see     Object#equals(Object)
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kd">synchronized</span> <span class="kt">int</span> <span class="nf">indexOf</span><span class="o">(</span><span class="n">Object</span> <span class="n">o</span><span class="o">,</span> <span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">o</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">index</span> <span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">elementCount</span> <span class="o">;</span> <span class="n">i</span><span class="o">++)</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">elementData</span><span class="o">[</span><span class="n">i</span><span class="o">]==</span><span class="kc">null</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="n">i</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">index</span> <span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">elementCount</span> <span class="o">;</span> <span class="n">i</span><span class="o">++)</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">o</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">elementData</span><span class="o">[</span><span class="n">i</span><span class="o">]))</span>
+                    <span class="k">return</span> <span class="n">i</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * Deletes the component at the specified index. Each component in
+</span><span class="cm">     * this vector with an index greater or equal to the specified
+</span><span class="cm">     * {@code index} is shifted downward to have an index one
+</span><span class="cm">     * smaller than the value it had previously. The size of this vector
+</span><span class="cm">     * is decreased by {@code 1}.
+</span><span class="cm">     *
+</span><span class="cm">     * &lt;p&gt;The index must be a value greater than or equal to {@code 0}
+</span><span class="cm">     * and less than the current size of the vector.
+</span><span class="cm">     *
+</span><span class="cm">     * &lt;p&gt;This method is identical in functionality to the {@link #remove(int)}
+</span><span class="cm">     * method (which is part of the {@link List} interface).  Note that the
+</span><span class="cm">     * {@code remove} method returns the old value that was stored at the
+</span><span class="cm">     * specified position.
+</span><span class="cm">     *
+</span><span class="cm">     * @param      index   the index of the object to remove
+</span><span class="cm">     * @throws ArrayIndexOutOfBoundsException if the index is out of range
+</span><span class="cm">     *         ({@code index &lt; 0 || index &gt;= size()})
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kd">synchronized</span> <span class="kt">void</span> <span class="nf">removeElementAt</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">modCount</span><span class="o">++;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">elementCount</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">ArrayIndexOutOfBoundsException</span><span class="o">(</span><span class="n">index</span> <span class="o">+</span> <span class="s">&#34; &gt;= &#34;</span> <span class="o">+</span>
+                                                     <span class="n">elementCount</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">index</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">ArrayIndexOutOfBoundsException</span><span class="o">(</span><span class="n">index</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="n">elementCount</span> <span class="o">-</span> <span class="n">index</span> <span class="o">-</span> <span class="n">1</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">j</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">elementData</span><span class="o">,</span> <span class="n">index</span> <span class="o">+</span> <span class="n">1</span><span class="o">,</span> <span class="n">elementData</span><span class="o">,</span> <span class="n">index</span><span class="o">,</span> <span class="n">j</span><span class="o">);</span> <span class="c1">//移动元素
+</span><span class="c1"></span>        <span class="o">}</span>
+        <span class="n">elementCount</span><span class="o">--;</span>
+        <span class="n">elementData</span><span class="o">[</span><span class="n">elementCount</span><span class="o">]</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span> <span class="cm">/* to let gc do its work */</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="五iterator-迭代器实现">五、Iterator 迭代器实现</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span><span class="lnt">93
+</span><span class="lnt">94
+</span><span class="lnt">95
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * An optimized version of AbstractList.Itr
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kd">class</span> <span class="nc">Itr</span> <span class="kd">implements</span> <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">cursor</span><span class="o">;</span>       <span class="c1">// index of next element to return 下一个元素的索引
+</span><span class="c1"></span>        <span class="kt">int</span> <span class="n">lastRet</span> <span class="o">=</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span> <span class="c1">// index of last element returned; -1 if no such
+</span><span class="c1"></span>        <span class="kt">int</span> <span class="n">expectedModCount</span> <span class="o">=</span> <span class="n">modCount</span><span class="o">;</span>
+
+        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">hasNext</span><span class="o">()</span> <span class="o">{</span>
+            <span class="c1">// Racy but within spec, since modifications are checked
+</span><span class="c1"></span>            <span class="c1">// within or after synchronization in next/previous
+</span><span class="c1"></span>            <span class="k">return</span> <span class="n">cursor</span> <span class="o">!=</span> <span class="n">elementCount</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="n">E</span> <span class="nf">next</span><span class="o">()</span> <span class="o">{</span>
+            <span class="kd">synchronized</span> <span class="o">(</span><span class="n">Vector</span><span class="o">.</span><span class="na">this</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">checkForComodification</span><span class="o">();</span>
+                <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">i</span> <span class="o">&gt;=</span> <span class="n">elementCount</span><span class="o">)</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="n">NoSuchElementException</span><span class="o">();</span>
+                <span class="n">cursor</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">1</span><span class="o">;</span>
+                <span class="k">return</span> <span class="n">elementData</span><span class="o">(</span><span class="n">lastRet</span> <span class="o">=</span> <span class="n">i</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">remove</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">lastRet</span> <span class="o">==</span> <span class="o">-</span><span class="n">1</span><span class="o">)</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">();</span>
+            <span class="kd">synchronized</span> <span class="o">(</span><span class="n">Vector</span><span class="o">.</span><span class="na">this</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">checkForComodification</span><span class="o">();</span>
+                <span class="n">Vector</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">lastRet</span><span class="o">);</span>
+                <span class="n">expectedModCount</span> <span class="o">=</span> <span class="n">modCount</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="n">lastRet</span><span class="o">;</span>
+            <span class="n">lastRet</span> <span class="o">=</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">final</span> <span class="kt">void</span> <span class="nf">checkForComodification</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">modCount</span> <span class="o">!=</span> <span class="n">expectedModCount</span><span class="o">)</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">ConcurrentModificationException</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * An optimized version of AbstractList.ListItr
+</span><span class="cm">     */</span>
+    <span class="kd">final</span> <span class="kd">class</span> <span class="nc">ListItr</span> <span class="kd">extends</span> <span class="n">Itr</span> <span class="kd">implements</span> <span class="n">ListIterator</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="o">{</span>
+        <span class="n">ListItr</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kd">super</span><span class="o">();</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="n">index</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">hasPrevious</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">cursor</span> <span class="o">!=</span> <span class="n">0</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">int</span> <span class="nf">nextIndex</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">cursor</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">int</span> <span class="nf">previousIndex</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">cursor</span> <span class="o">-</span> <span class="n">1</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="n">E</span> <span class="nf">previous</span><span class="o">()</span> <span class="o">{</span>
+            <span class="kd">synchronized</span> <span class="o">(</span><span class="n">Vector</span><span class="o">.</span><span class="na">this</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">checkForComodification</span><span class="o">();</span>
+                <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">cursor</span> <span class="o">-</span> <span class="n">1</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="n">NoSuchElementException</span><span class="o">();</span>
+                <span class="n">cursor</span> <span class="o">=</span> <span class="n">i</span><span class="o">;</span>
+                <span class="k">return</span> <span class="n">elementData</span><span class="o">(</span><span class="n">lastRet</span> <span class="o">=</span> <span class="n">i</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">set</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">lastRet</span> <span class="o">==</span> <span class="o">-</span><span class="n">1</span><span class="o">)</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">();</span>
+            <span class="kd">synchronized</span> <span class="o">(</span><span class="n">Vector</span><span class="o">.</span><span class="na">this</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">checkForComodification</span><span class="o">();</span>
+                <span class="n">Vector</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">lastRet</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">add</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">;</span>
+            <span class="kd">synchronized</span> <span class="o">(</span><span class="n">Vector</span><span class="o">.</span><span class="na">this</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">checkForComodification</span><span class="o">();</span>
+                <span class="n">Vector</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+                <span class="n">expectedModCount</span> <span class="o">=</span> <span class="n">modCount</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">1</span><span class="o">;</span>
+            <span class="n">lastRet</span> <span class="o">=</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="六总结">六、总结</h3>
+<ul>
+<li>Vector默认构造创建10个Object数组元素。</li>
+<li>扩容时，构造时为未指定capacityIncrement元素，2倍扩容。capacityIncrement&gt;0原容量大小加上capacityIncrement。</li>
+<li>Vector中方法都添加synchronized同步关键字。保证在多线程下安全。</li>
+</ul>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-02-13 18:30
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/Vector/">Vector</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/collection/05.Stack%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Stack</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/collection/03.LinkedList/">
+        <span class="next-text nav-default">LinkedList</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

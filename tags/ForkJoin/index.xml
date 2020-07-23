@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ForkJoin on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/ForkJoin/</link>
+    <description>Recent content in ForkJoin on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Tue, 23 May 2017 21:11:08 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/ForkJoin/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>JMH:JVM基准测试工具</title>
+      <link>https://birdgodtech.github.io/post/concurrent/JMH-JVM%E5%9F%BA%E5%87%86%E6%B5%8B%E8%AF%95%E5%B7%A5%E5%85%B7/</link>
+      <pubDate>Tue, 23 May 2017 21:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/JMH-JVM%E5%9F%BA%E5%87%86%E6%B5%8B%E8%AF%95%E5%B7%A5%E5%85%B7/</guid>
+      <description>JMH:JVM基准测试工具 概述 JMH 是一个由 OpenJDK/Oracle 里面那群开发了 Java 编译器的大牛们所开发的 Micro Benchmark Framework 。何谓 Micro Benchmark 呢？ 简单地说就是在 method 层面上的 benchmar</description>
+    </item>
+    
+    <item>
+      <title>Fork_Join_Framework</title>
+      <link>https://birdgodtech.github.io/post/concurrent/Fork_Join_Framework/</link>
+      <pubDate>Sun, 14 May 2017 20:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/Fork_Join_Framework/</guid>
+      <description>A Java Fork/Join Framework 中文翻译版 原文地址 翻译地址 论文摘要 本论文介绍一种支持并行编程方式的Java框架，主要包括设计、实现和性能分析三个部分。基于它，一个任</description>
+    </item>
+    
+    <item>
+      <title>ForkJoin</title>
+      <link>https://birdgodtech.github.io/post/concurrent/15.ForkJoin%E6%A8%A1%E5%BC%8F%E5%88%86%E6%9E%90/</link>
+      <pubDate>Wed, 03 May 2017 19:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/15.ForkJoin%E6%A8%A1%E5%BC%8F%E5%88%86%E6%9E%90/</guid>
+      <description>ForkJoin模式分析 简介 Fork/Join框架介绍不错博客，阿里方腾飞写 Fork/Join使用两个类来完成以上两件事情： ForkJoin</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ThreadLocal - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="ThreadLocal源码分析 简介 ThreadLocal类顾名思义可以理解为线程本地变量。也就是说如果定义了一个ThreadLocal，每个" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/11.ThreadLocal%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/11.ThreadLocal%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/11.ThreadLocal%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="ThreadLocal" />
+<meta property="og:description" content="ThreadLocal源码分析 简介 ThreadLocal类顾名思义可以理解为线程本地变量。也就是说如果定义了一个ThreadLocal，每个" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/11.ThreadLocal%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2017-04-11T21:11:08+00:00" />
+<meta property="article:modified_time" content="2017-04-11T21:11:08+00:00" />
+<meta itemprop="name" content="ThreadLocal">
+<meta itemprop="description" content="ThreadLocal源码分析 简介 ThreadLocal类顾名思义可以理解为线程本地变量。也就是说如果定义了一个ThreadLocal，每个">
+<meta itemprop="datePublished" content="2017-04-11T21:11:08&#43;00:00" />
+<meta itemprop="dateModified" content="2017-04-11T21:11:08&#43;00:00" />
+<meta itemprop="wordCount" content="6981">
+
+
+
+<meta itemprop="keywords" content="ThreadLocal," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="ThreadLocal"/>
+<meta name="twitter:description" content="ThreadLocal源码分析 简介 ThreadLocal类顾名思义可以理解为线程本地变量。也就是说如果定义了一个ThreadLocal，每个"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">ThreadLocal</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-04-11 21:11 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 6981 字 </span>
+      <span class="more-meta"> 预计阅读 14 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#一threadlocal内部结构实现">一、ThreadLocal内部结构实现</a>
+      <ul>
+        <li><a href="#1threadlocalmap-内部结构实现">1.ThreadLocalMap 内部结构实现</a></li>
+        <li><a href="#2-threadlocal-构造">2. ThreadLocal 构造</a></li>
+        <li><a href="#二set-设置值">二、set 设置值</a></li>
+        <li><a href="#三setinitialvalue-设置initialvalue值">三、setInitialValue 设置initialValue值</a></li>
+        <li><a href="#四get-获取值">四、get 获取值</a></li>
+        <li><a href="#五remove-删除">五、remove 删除</a></li>
+        <li><a href="#六threadlocal与内存泄漏">六、ThreadLocal与内存泄漏</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-04-11T21:11:08" title="April 11, 2017">April 11, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="threadlocal源码分析">ThreadLocal源码分析</h1>
+<h2 id="简介">简介</h2>
+<p>ThreadLocal类顾名思义可以理解为线程本地变量。也就是说如果定义了一个ThreadLocal，每个线程往这个ThreadLocal中读写是线程隔离，
+互相之间不会影响的。它提供了一种将可变数据通过每个线程有自己的独立副本从而实现线程封闭的机制。</p>
+<h2 id="一threadlocal内部结构实现">一、ThreadLocal内部结构实现</h2>
+<p>Thread类有一个类型为ThreadLocal.ThreadLocalMap的实例变量threadLocals，也就是说每个线程有一个自己的ThreadLocalMap。
+ThreadLocalMap有自己的独立实现，可以简单地将它的key视作ThreadLocal，value为代码中放入的值（实际上key并不是ThreadLocal本身，而是它的一个弱引用）。
+每个线程在往某个ThreadLocal里塞值的时候，都会往自己的ThreadLocalMap里存，读也是以某个ThreadLocal作为引用，在自己的map里找对应的key，
+从而实现了线程隔离。</p>
+<h3 id="1threadlocalmap-内部结构实现">1.ThreadLocalMap 内部结构实现</h3>
+<p>ThreadLocalMap是一个自定义哈希Map，仅适用于维护线程本地值.</p>
+<h4 id="1entry-实现">(1).Entry 实现</h4>
+<p>Entry继承WeakReference(弱引用)，具有弱引用特性。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">       <span class="cm">/**
+</span><span class="cm">         * The entries in this hash map extend WeakReference, using
+</span><span class="cm">         * its main ref field as the key (which is always a
+</span><span class="cm">         * ThreadLocal object).  Note that null keys (i.e. entry.get()
+</span><span class="cm">         * == null) mean that the key is no longer referenced, so the
+</span><span class="cm">         * entry can be expunged from table.  Such entries are referred to
+</span><span class="cm">         * as &#34;stale entries&#34; in the code that follows.
+</span><span class="cm">         * 这个哈希映射中的条目扩展弱引用，使用它的主引用字段作为键（它总是一个ThreadLocal对象）。注意，空键（即entry.get（）== null）
+</span><span class="cm">         * 意味着该键不再被引用，所以该条目可以从表中删除。这些条目在下面的代码中被称为&#34;陈旧条目&#34;。
+</span><span class="cm">         */</span>
+        <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Entry</span> <span class="kd">extends</span> <span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">ThreadLocal</span><span class="o">&gt;</span> <span class="o">{</span>
+            <span class="cm">/** The value associated with this ThreadLocal 与ThreadLocal关联的值. */</span>
+            <span class="n">Object</span> <span class="n">value</span><span class="o">;</span>
+
+            <span class="n">Entry</span><span class="o">(</span><span class="n">ThreadLocal</span> <span class="n">k</span><span class="o">,</span> <span class="n">Object</span> <span class="n">v</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kd">super</span><span class="o">(</span><span class="n">k</span><span class="o">);</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">v</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2threadlocalmap-构造">(2).ThreadLocalMap 构造</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * ThreadLocalMap is a customized hash map suitable only for
+</span><span class="cm">     * maintaining thread local values. No operations are exported
+</span><span class="cm">     * outside of the ThreadLocal class. The class is package private to
+</span><span class="cm">     * allow declaration of fields in class Thread.  To help deal with
+</span><span class="cm">     * very large and long-lived usages, the hash table entries use
+</span><span class="cm">     * WeakReferences for keys. However, since reference queues are not
+</span><span class="cm">     * used, stale entries are guaranteed to be removed only when
+</span><span class="cm">     * the table starts running out of space.
+</span><span class="cm">     * ThreadLocalMap是一个自定义哈希映射，仅适用于维护线程本地值。
+</span><span class="cm">     * 没有任何操作被导出到ThreadLocal类之外。该类是封装私有的，允许在Thread类中声明字段。为了帮助处理非常大和长寿的用法，
+</span><span class="cm">     * 哈希表项使用弱引用来表示键。但是，由于不使用引用队列，所以只有当表开始空间不足时才能删除旧条目。
+</span><span class="cm">     */</span>
+    <span class="kd">static</span> <span class="kd">class</span> <span class="nc">ThreadLocalMap</span> <span class="o">{</span>
+       <span class="cm">/**
+</span><span class="cm">         * The initial capacity -- MUST be a power of two.
+</span><span class="cm">         * 初始容量——必须是2的幂。
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">INITIAL_CAPACITY</span> <span class="o">=</span> <span class="n">16</span><span class="o">;</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * The table, resized as necessary.
+</span><span class="cm">         * table.length MUST always be a power of two.
+</span><span class="cm">         * 数组保存数据
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="n">Entry</span><span class="o">[]</span> <span class="n">table</span><span class="o">;</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * The number of entries in the table.
+</span><span class="cm">         * 大小
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">int</span> <span class="n">size</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * The next size value at which to resize.
+</span><span class="cm">         * 调整大小的下一个大小值。
+</span><span class="cm">         * 阈值
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">int</span> <span class="n">threshold</span><span class="o">;</span> <span class="c1">// Default to 0
+</span><span class="c1"></span>
+        <span class="cm">/**
+</span><span class="cm">         * Set the resize threshold to maintain at worst a 2/3 load factor.
+</span><span class="cm">         * 设置调整大小阈值以保持最坏的2 / 3负载因素。
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">setThreshold</span><span class="o">(</span><span class="kt">int</span> <span class="n">len</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">threshold</span> <span class="o">=</span> <span class="n">len</span> <span class="o">*</span> <span class="n">2</span> <span class="o">/</span> <span class="n">3</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Increment i modulo len.
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kt">int</span> <span class="nf">nextIndex</span><span class="o">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">,</span> <span class="kt">int</span> <span class="n">len</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="o">((</span><span class="n">i</span> <span class="o">+</span> <span class="n">1</span> <span class="o">&lt;</span> <span class="n">len</span><span class="o">)</span> <span class="o">?</span> <span class="n">i</span> <span class="o">+</span> <span class="n">1</span> <span class="o">:</span> <span class="n">0</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Decrement i modulo len.
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kt">int</span> <span class="nf">prevIndex</span><span class="o">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">,</span> <span class="kt">int</span> <span class="n">len</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="o">((</span><span class="n">i</span> <span class="o">-</span> <span class="n">1</span> <span class="o">&gt;=</span> <span class="n">0</span><span class="o">)</span> <span class="o">?</span> <span class="n">i</span> <span class="o">-</span> <span class="n">1</span> <span class="o">:</span> <span class="n">len</span> <span class="o">-</span> <span class="n">1</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Construct a new map initially containing (firstKey, firstValue).
+</span><span class="cm">         * ThreadLocalMaps are constructed lazily, so we only create
+</span><span class="cm">         * one when we have at least one entry to put in it.
+</span><span class="cm">         * 构建一个最初包含（firstKey，firstValue）的新Map。 ThreadLocalMaps是懒惰​​地构造的，所以我们只创建一个，至少有一个条目放在里面。
+</span><span class="cm">         */</span>
+        <span class="n">ThreadLocalMap</span><span class="o">(</span><span class="n">ThreadLocal</span> <span class="n">firstKey</span><span class="o">,</span> <span class="n">Object</span> <span class="n">firstValue</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">table</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Entry</span><span class="o">[</span><span class="n">INITIAL_CAPACITY</span><span class="o">];</span>
+            <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">firstKey</span><span class="o">.</span><span class="na">threadLocalHashCode</span> <span class="o">&amp;</span> <span class="o">(</span><span class="n">INITIAL_CAPACITY</span> <span class="o">-</span> <span class="n">1</span><span class="o">);</span>
+            <span class="n">table</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Entry</span><span class="o">(</span><span class="n">firstKey</span><span class="o">,</span> <span class="n">firstValue</span><span class="o">);</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="n">1</span><span class="o">;</span>
+            <span class="n">setThreshold</span><span class="o">(</span><span class="n">INITIAL_CAPACITY</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Construct a new map including all Inheritable ThreadLocals
+</span><span class="cm">         * from given parent map. Called only by createInheritedMap.
+</span><span class="cm">         * 构造一个包含给定父映射的所有可继承ThreadLocals的新映射。仅由createInheritedMap调用。
+</span><span class="cm">         *
+</span><span class="cm">         * @param parentMap the map associated with parent thread.
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="nf">ThreadLocalMap</span><span class="o">(</span><span class="n">ThreadLocalMap</span> <span class="n">parentMap</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">Entry</span><span class="o">[]</span> <span class="n">parentTable</span> <span class="o">=</span> <span class="n">parentMap</span><span class="o">.</span><span class="na">table</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">parentTable</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="n">setThreshold</span><span class="o">(</span><span class="n">len</span><span class="o">);</span>
+            <span class="n">table</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Entry</span><span class="o">[</span><span class="n">len</span><span class="o">];</span>
+
+            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">len</span><span class="o">;</span> <span class="n">j</span><span class="o">++)</span> <span class="o">{</span>
+                <span class="n">Entry</span> <span class="n">e</span> <span class="o">=</span> <span class="n">parentTable</span><span class="o">[</span><span class="n">j</span><span class="o">];</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">ThreadLocal</span> <span class="n">key</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">key</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">Object</span> <span class="n">value</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="na">childValue</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">value</span><span class="o">);</span>
+                        <span class="n">Entry</span> <span class="n">c</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Entry</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+                        <span class="kt">int</span> <span class="n">h</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="na">threadLocalHashCode</span> <span class="o">&amp;</span> <span class="o">(</span><span class="n">len</span> <span class="o">-</span> <span class="n">1</span><span class="o">);</span>
+                        <span class="k">while</span> <span class="o">(</span><span class="n">table</span><span class="o">[</span><span class="n">h</span><span class="o">]</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                            <span class="n">h</span> <span class="o">=</span> <span class="n">nextIndex</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="n">len</span><span class="o">);</span>
+                        <span class="n">table</span><span class="o">[</span><span class="n">h</span><span class="o">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">;</span>
+                        <span class="n">size</span><span class="o">++;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+     
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="3set">(3).set</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span><span class="lnt">157
+</span><span class="lnt">158
+</span><span class="lnt">159
+</span><span class="lnt">160
+</span><span class="lnt">161
+</span><span class="lnt">162
+</span><span class="lnt">163
+</span><span class="lnt">164
+</span><span class="lnt">165
+</span><span class="lnt">166
+</span><span class="lnt">167
+</span><span class="lnt">168
+</span><span class="lnt">169
+</span><span class="lnt">170
+</span><span class="lnt">171
+</span><span class="lnt">172
+</span><span class="lnt">173
+</span><span class="lnt">174
+</span><span class="lnt">175
+</span><span class="lnt">176
+</span><span class="lnt">177
+</span><span class="lnt">178
+</span><span class="lnt">179
+</span><span class="lnt">180
+</span><span class="lnt">181
+</span><span class="lnt">182
+</span><span class="lnt">183
+</span><span class="lnt">184
+</span><span class="lnt">185
+</span><span class="lnt">186
+</span><span class="lnt">187
+</span><span class="lnt">188
+</span><span class="lnt">189
+</span><span class="lnt">190
+</span><span class="lnt">191
+</span><span class="lnt">192
+</span><span class="lnt">193
+</span><span class="lnt">194
+</span><span class="lnt">195
+</span><span class="lnt">196
+</span><span class="lnt">197
+</span><span class="lnt">198
+</span><span class="lnt">199
+</span><span class="lnt">200
+</span><span class="lnt">201
+</span><span class="lnt">202
+</span><span class="lnt">203
+</span><span class="lnt">204
+</span><span class="lnt">205
+</span><span class="lnt">206
+</span><span class="lnt">207
+</span><span class="lnt">208
+</span><span class="lnt">209
+</span><span class="lnt">210
+</span><span class="lnt">211
+</span><span class="lnt">212
+</span><span class="lnt">213
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">        <span class="cm">/**
+</span><span class="cm">         * Set the value associated with key.
+</span><span class="cm">         *
+</span><span class="cm">         * @param key the thread local object
+</span><span class="cm">         * @param value the value to be set
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">set</span><span class="o">(</span><span class="n">ThreadLocal</span> <span class="n">key</span><span class="o">,</span> <span class="n">Object</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+
+            <span class="c1">// We don&#39;t use a fast path as with get() because it is at
+</span><span class="c1"></span>            <span class="c1">// least as common to use set() to create new entries as
+</span><span class="c1"></span>            <span class="c1">// it is to replace existing ones, in which case, a fast
+</span><span class="c1"></span>            <span class="c1">// path would fail more often than not.
+</span><span class="c1"></span>             <span class="c1">//我们不像get（）那样使用快速路径，因为它至少和使用set（）来创建新条目一样常见，
+</span><span class="c1"></span>             <span class="c1">// 因为它将替换现有的条目，在这种情况下，快速路径失败的频率往往比不。
+</span><span class="c1"></span>            <span class="n">Entry</span><span class="o">[]</span> <span class="n">tab</span> <span class="o">=</span> <span class="n">table</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">tab</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="na">threadLocalHashCode</span> <span class="o">&amp;</span> <span class="o">(</span><span class="n">len</span><span class="o">-</span><span class="n">1</span><span class="o">);</span> <span class="c1">//定位index
+</span><span class="c1"></span>
+            <span class="k">for</span> <span class="o">(</span><span class="n">Entry</span> <span class="n">e</span> <span class="o">=</span> <span class="n">tab</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+                 <span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span>
+                 <span class="n">e</span> <span class="o">=</span> <span class="n">tab</span><span class="o">[</span><span class="n">i</span> <span class="o">=</span> <span class="n">nextIndex</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="n">len</span><span class="o">)])</span> <span class="o">{</span>
+                <span class="n">ThreadLocal</span> <span class="n">k</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+
+                <span class="k">if</span> <span class="o">(</span><span class="n">k</span> <span class="o">==</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>   <span class="c1">//已存在 就替换
+</span><span class="c1"></span>                    <span class="n">e</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
+                    <span class="k">return</span><span class="o">;</span>
+                <span class="o">}</span>
+
+                <span class="k">if</span> <span class="o">(</span><span class="n">k</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">replaceStaleEntry</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">i</span><span class="o">);</span>
+                    <span class="k">return</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+
+            <span class="n">tab</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Entry</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+            <span class="kt">int</span> <span class="n">sz</span> <span class="o">=</span> <span class="o">++</span><span class="n">size</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">cleanSomeSlots</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="n">sz</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="n">sz</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="o">)</span>  <span class="c1">//扩容
+</span><span class="c1"></span>                <span class="n">rehash</span><span class="o">();</span>
+        <span class="o">}</span>
+       <span class="cm">/**
+</span><span class="cm">         * Replace a stale entry encountered during a set operation
+</span><span class="cm">         * with an entry for the specified key.  The value passed in
+</span><span class="cm">         * the value parameter is stored in the entry, whether or not
+</span><span class="cm">         * an entry already exists for the specified key.
+</span><span class="cm">         *  
+</span><span class="cm">         * 替换在设置操作期间遇到的过期条目，并使用指定键的条目。在值参数中传递的值存储在条目中，无论指定的键是否已经存在一个条目。 
+</span><span class="cm">         *  
+</span><span class="cm">         * As a side effect, this method expunges all stale entries in the
+</span><span class="cm">         * &#34;run&#34; containing the stale entry.  (A run is a sequence of entries
+</span><span class="cm">         * between two null slots.)
+</span><span class="cm">         * 
+</span><span class="cm">         * 作为副作用，该方法在包含过期条目的“运行”中删除所有陈旧的条目。(运行是两个空槽之间的一个序列。)
+</span><span class="cm">         *
+</span><span class="cm">         * @param  key the key
+</span><span class="cm">         * @param  value the value to be associated with key
+</span><span class="cm">         * @param  staleSlot index of the first stale entry encountered while
+</span><span class="cm">         *         searching for key.
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">replaceStaleEntry</span><span class="o">(</span><span class="n">ThreadLocal</span> <span class="n">key</span><span class="o">,</span> <span class="n">Object</span> <span class="n">value</span><span class="o">,</span>
+                                       <span class="kt">int</span> <span class="n">staleSlot</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">Entry</span><span class="o">[]</span> <span class="n">tab</span> <span class="o">=</span> <span class="n">table</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">tab</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="n">Entry</span> <span class="n">e</span><span class="o">;</span>
+
+            <span class="c1">// Back up to check for prior stale entry in current run.
+</span><span class="c1"></span>            <span class="c1">// We clean out whole runs at a time to avoid continual
+</span><span class="c1"></span>            <span class="c1">// incremental rehashing due to garbage collector freeing
+</span><span class="c1"></span>            <span class="c1">// up refs in bunches (i.e., whenever the collector runs).
+</span><span class="c1"></span>            <span class="c1">//备份以检查当前运行中的以前陈旧的条目。
+</span><span class="c1"></span>            <span class="c1">// 我们一次清理整个运行，以避免由于垃圾收集器以一束（即每当收集器运行时）释放垃圾收集器而持续增加垃圾回收。
+</span><span class="c1"></span>            <span class="kt">int</span> <span class="n">slotToExpunge</span> <span class="o">=</span> <span class="n">staleSlot</span><span class="o">;</span>
+            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">prevIndex</span><span class="o">(</span><span class="n">staleSlot</span><span class="o">,</span> <span class="n">len</span><span class="o">);</span>
+                 <span class="o">(</span><span class="n">e</span> <span class="o">=</span> <span class="n">tab</span><span class="o">[</span><span class="n">i</span><span class="o">])</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span>
+                 <span class="n">i</span> <span class="o">=</span> <span class="n">prevIndex</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="n">len</span><span class="o">))</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">get</span><span class="o">()</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                    <span class="n">slotToExpunge</span> <span class="o">=</span> <span class="n">i</span><span class="o">;</span>
+
+            <span class="c1">// Find either the key or trailing null slot of run, whichever
+</span><span class="c1"></span>            <span class="c1">// occurs first
+</span><span class="c1"></span>            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">nextIndex</span><span class="o">(</span><span class="n">staleSlot</span><span class="o">,</span> <span class="n">len</span><span class="o">);</span>
+                 <span class="o">(</span><span class="n">e</span> <span class="o">=</span> <span class="n">tab</span><span class="o">[</span><span class="n">i</span><span class="o">])</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span>
+                 <span class="n">i</span> <span class="o">=</span> <span class="n">nextIndex</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="n">len</span><span class="o">))</span> <span class="o">{</span>
+                <span class="n">ThreadLocal</span> <span class="n">k</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+
+                <span class="c1">// If we find key, then we need to swap it
+</span><span class="c1"></span>                <span class="c1">// with the stale entry to maintain hash table order.
+</span><span class="c1"></span>                <span class="c1">// The newly stale slot, or any other stale slot
+</span><span class="c1"></span>                <span class="c1">// encountered above it, can then be sent to expungeStaleEntry
+</span><span class="c1"></span>                <span class="c1">// to remove or rehash all of the other entries in run.
+</span><span class="c1"></span>                <span class="c1">//如果我们找到Key，那么我们需要将它与旧的条目交换来维护哈希表的顺序。
+</span><span class="c1"></span>                <span class="c1">// 然后可以将新陈旧的槽或者其上面遇到的任何其他陈旧的槽发送到expungeStaleEntry以移除或重新运行运行中的所有其他条目。
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">k</span> <span class="o">==</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">e</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
+
+                    <span class="n">tab</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="n">tab</span><span class="o">[</span><span class="n">staleSlot</span><span class="o">];</span>
+                    <span class="n">tab</span><span class="o">[</span><span class="n">staleSlot</span><span class="o">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">;</span>
+
+                    <span class="c1">// Start expunge at preceding stale entry if it exists 如果存在之前的陈旧条目，就开始删除
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">slotToExpunge</span> <span class="o">==</span> <span class="n">staleSlot</span><span class="o">)</span>
+                        <span class="n">slotToExpunge</span> <span class="o">=</span> <span class="n">i</span><span class="o">;</span>
+                    <span class="n">cleanSomeSlots</span><span class="o">(</span><span class="n">expungeStaleEntry</span><span class="o">(</span><span class="n">slotToExpunge</span><span class="o">),</span> <span class="n">len</span><span class="o">);</span>
+                    <span class="k">return</span><span class="o">;</span>
+                <span class="o">}</span>
+
+                <span class="c1">// If we didn&#39;t find stale entry on backward scan, the
+</span><span class="c1"></span>                <span class="c1">// first stale entry seen while scanning for key is the
+</span><span class="c1"></span>                <span class="c1">// first still present in the run.
+</span><span class="c1"></span>                <span class="c1">//如果我们没有在反向扫描中找到陈旧的条目，那么在扫描键时看到的第一个陈旧条目是第一个在运行中仍然存在的条目。
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">k</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">slotToExpunge</span> <span class="o">==</span> <span class="n">staleSlot</span><span class="o">)</span>
+                    <span class="n">slotToExpunge</span> <span class="o">=</span> <span class="n">i</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="c1">// If key not found, put new entry in stale slot
+</span><span class="c1"></span>            <span class="n">tab</span><span class="o">[</span><span class="n">staleSlot</span><span class="o">].</span><span class="na">value</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="n">tab</span><span class="o">[</span><span class="n">staleSlot</span><span class="o">]</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Entry</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+
+            <span class="c1">// If there are any other stale entries in run, expunge them
+</span><span class="c1"></span>            <span class="c1">//如果运行中有其他的条目，则删除它们
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(</span><span class="n">slotToExpunge</span> <span class="o">!=</span> <span class="n">staleSlot</span><span class="o">)</span>
+                <span class="n">cleanSomeSlots</span><span class="o">(</span><span class="n">expungeStaleEntry</span><span class="o">(</span><span class="n">slotToExpunge</span><span class="o">),</span> <span class="n">len</span><span class="o">);</span>
+        <span class="o">}</span>
+        
+       <span class="cm">/**
+</span><span class="cm">         * Expunge a stale entry by rehashing any possibly colliding entries
+</span><span class="cm">         * lying between staleSlot and the next null slot.  This also expunges
+</span><span class="cm">         * any other stale entries encountered before the trailing null.  See
+</span><span class="cm">         * Knuth, Section 6.4
+</span><span class="cm">         *  通过重新处理可能发生在陈旧槽和下一个空槽之间的任何可能发生的冲突来删除陈旧的条目。
+</span><span class="cm">         *  这也将删除在尾随null之前遇到的其他的条目。见Knuth，第6.4节
+</span><span class="cm">         * @param staleSlot index of slot known to have null key
+</span><span class="cm">         * @return the index of the next null slot after staleSlot
+</span><span class="cm">         * (all between staleSlot and this slot will have been checked
+</span><span class="cm">         * for expunging).
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">int</span> <span class="nf">expungeStaleEntry</span><span class="o">(</span><span class="kt">int</span> <span class="n">staleSlot</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">Entry</span><span class="o">[]</span> <span class="n">tab</span> <span class="o">=</span> <span class="n">table</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">tab</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+
+            <span class="c1">// expunge entry at staleSlot
+</span><span class="c1"></span>            <span class="n">tab</span><span class="o">[</span><span class="n">staleSlot</span><span class="o">].</span><span class="na">value</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="n">tab</span><span class="o">[</span><span class="n">staleSlot</span><span class="o">]</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="n">size</span><span class="o">--;</span>
+
+            <span class="c1">// Rehash until we encounter null
+</span><span class="c1"></span>            <span class="n">Entry</span> <span class="n">e</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">i</span><span class="o">;</span>
+            <span class="k">for</span> <span class="o">(</span><span class="n">i</span> <span class="o">=</span> <span class="n">nextIndex</span><span class="o">(</span><span class="n">staleSlot</span><span class="o">,</span> <span class="n">len</span><span class="o">);</span>
+                 <span class="o">(</span><span class="n">e</span> <span class="o">=</span> <span class="n">tab</span><span class="o">[</span><span class="n">i</span><span class="o">])</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span>
+                 <span class="n">i</span> <span class="o">=</span> <span class="n">nextIndex</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="n">len</span><span class="o">))</span> <span class="o">{</span>
+                <span class="n">ThreadLocal</span> <span class="n">k</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">k</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">e</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                    <span class="n">tab</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                    <span class="n">size</span><span class="o">--;</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                    <span class="kt">int</span> <span class="n">h</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="na">threadLocalHashCode</span> <span class="o">&amp;</span> <span class="o">(</span><span class="n">len</span> <span class="o">-</span> <span class="n">1</span><span class="o">);</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">h</span> <span class="o">!=</span> <span class="n">i</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">tab</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+
+                        <span class="c1">// Unlike Knuth 6.4 Algorithm R, we must scan until
+</span><span class="c1"></span>                        <span class="c1">// null because multiple entries could have been stale.
+</span><span class="c1"></span>                        <span class="c1">//与Knuth 6.4算法不同，我们必须扫描到 null，因为多个条目可能已经过时。
+</span><span class="c1"></span>                        <span class="k">while</span> <span class="o">(</span><span class="n">tab</span><span class="o">[</span><span class="n">h</span><span class="o">]</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                            <span class="n">h</span> <span class="o">=</span> <span class="n">nextIndex</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="n">len</span><span class="o">);</span>
+                        <span class="n">tab</span><span class="o">[</span><span class="n">h</span><span class="o">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="n">i</span><span class="o">;</span>
+        <span class="o">}</span>
+       <span class="cm">/**
+</span><span class="cm">         * Heuristically scan some cells looking for stale entries.
+</span><span class="cm">         * This is invoked when either a new element is added, or
+</span><span class="cm">         * another stale one has been expunged. It performs a
+</span><span class="cm">         * logarithmic number of scans, as a balance between no
+</span><span class="cm">         * scanning (fast but retains garbage) and a number of scans
+</span><span class="cm">         * proportional to number of elements, that would find all
+</span><span class="cm">         * garbage but would cause some insertions to take O(n) time.
+</span><span class="cm">         *
+</span><span class="cm">         * 启发式地清理slot,  i对应entry是非无效（指向的ThreadLocal没被回收，或者entry本身为空） 
+</span><span class="cm">         * n是用于控制控制扫描次数的 * 正常情况下如果log n次扫描没有发现无效slot，函数就结束了 
+</span><span class="cm">          * 但是如果发现了无效的slot，将n置为table的长度len，做一次连续段的清理 * 再从下一个空的slot开始继续扫描
+</span><span class="cm">         * 
+</span><span class="cm">         * @param i a position known NOT to hold a stale entry. The
+</span><span class="cm">         * scan starts at the element after i.
+</span><span class="cm">         *
+</span><span class="cm">         * @param n scan control: &lt;tt&gt;log2(n)&lt;/tt&gt; cells are scanned,
+</span><span class="cm">         * unless a stale entry is found, in which case
+</span><span class="cm">         * &lt;tt&gt;log2(table.length)-1&lt;/tt&gt; additional cells are scanned.
+</span><span class="cm">         * When called from insertions, this parameter is the number
+</span><span class="cm">         * of elements, but when from replaceStaleEntry, it is the
+</span><span class="cm">         * table length. (Note: all this could be changed to be either
+</span><span class="cm">         * more or less aggressive by weighting n instead of just
+</span><span class="cm">         * using straight log n. But this version is simple, fast, and
+</span><span class="cm">         * seems to work well.)
+</span><span class="cm">         *
+</span><span class="cm">         * @return true if any stale entries have been removed.
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">cleanSomeSlots</span><span class="o">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">,</span> <span class="kt">int</span> <span class="n">n</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kt">boolean</span> <span class="n">removed</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+            <span class="n">Entry</span><span class="o">[]</span> <span class="n">tab</span> <span class="o">=</span> <span class="n">table</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">tab</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="k">do</span> <span class="o">{</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="n">nextIndex</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="n">len</span><span class="o">);</span>
+                <span class="n">Entry</span> <span class="n">e</span> <span class="o">=</span> <span class="n">tab</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">e</span><span class="o">.</span><span class="na">get</span><span class="o">()</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">n</span> <span class="o">=</span> <span class="n">len</span><span class="o">;</span>
+                    <span class="n">removed</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="n">expungeStaleEntry</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+                <span class="o">}</span>
+            <span class="o">}</span> <span class="k">while</span> <span class="o">(</span> <span class="o">(</span><span class="n">n</span> <span class="o">&gt;&gt;&gt;=</span> <span class="n">1</span><span class="o">)</span> <span class="o">!=</span> <span class="n">0</span><span class="o">);</span>
+            <span class="k">return</span> <span class="n">removed</span><span class="o">;</span>
+        <span class="o">}</span>        
+</code></pre></td></tr></table>
+</div>
+</div><p>扩容</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">         * Re-pack and/or re-size the table. First scan the entire
+</span><span class="cm">         * table removing stale entries. If this doesn&#39;t sufficiently
+</span><span class="cm">         * shrink the size of the table, double the table size.
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">rehash</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">expungeStaleEntries</span><span class="o">();</span>
+
+            <span class="c1">// Use lower threshold for doubling to avoid hysteresis
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="n">threshold</span> <span class="o">-</span> <span class="n">threshold</span> <span class="o">/</span> <span class="n">4</span><span class="o">)</span>
+                <span class="n">resize</span><span class="o">();</span>
+        <span class="o">}</span>
+        <span class="cm">/**
+</span><span class="cm">          * Expunge all stale entries in the table.
+</span><span class="cm">          */</span>
+         <span class="kd">private</span> <span class="kt">void</span> <span class="nf">expungeStaleEntries</span><span class="o">()</span> <span class="o">{</span>
+             <span class="n">Entry</span><span class="o">[]</span> <span class="n">tab</span> <span class="o">=</span> <span class="n">table</span><span class="o">;</span>
+             <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">tab</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+             <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">len</span><span class="o">;</span> <span class="n">j</span><span class="o">++)</span> <span class="o">{</span>
+                 <span class="n">Entry</span> <span class="n">e</span> <span class="o">=</span> <span class="n">tab</span><span class="o">[</span><span class="n">j</span><span class="o">];</span>
+                 <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">e</span><span class="o">.</span><span class="na">get</span><span class="o">()</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                     <span class="n">expungeStaleEntry</span><span class="o">(</span><span class="n">j</span><span class="o">);</span>  <span class="c1">//清空为空数据
+</span><span class="c1"></span>             <span class="o">}</span>
+         <span class="o">}</span>       
+
+        <span class="cm">/**
+</span><span class="cm">         * Double the capacity of the table.
+</span><span class="cm">         * 把table的容量翻倍
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">resize</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">Entry</span><span class="o">[]</span> <span class="n">oldTab</span> <span class="o">=</span> <span class="n">table</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">oldLen</span> <span class="o">=</span> <span class="n">oldTab</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">newLen</span> <span class="o">=</span> <span class="n">oldLen</span> <span class="o">*</span> <span class="n">2</span><span class="o">;</span>
+            <span class="n">Entry</span><span class="o">[]</span> <span class="n">newTab</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Entry</span><span class="o">[</span><span class="n">newLen</span><span class="o">];</span>
+            <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+
+            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">oldLen</span><span class="o">;</span> <span class="o">++</span><span class="n">j</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">Entry</span> <span class="n">e</span> <span class="o">=</span> <span class="n">oldTab</span><span class="o">[</span><span class="n">j</span><span class="o">];</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">ThreadLocal</span> <span class="n">k</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">k</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">e</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span> <span class="c1">// Help the GC
+</span><span class="c1"></span>                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                        <span class="kt">int</span> <span class="n">h</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="na">threadLocalHashCode</span> <span class="o">&amp;</span> <span class="o">(</span><span class="n">newLen</span> <span class="o">-</span> <span class="n">1</span><span class="o">);</span>
+                        <span class="k">while</span> <span class="o">(</span><span class="n">newTab</span><span class="o">[</span><span class="n">h</span><span class="o">]</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                            <span class="n">h</span> <span class="o">=</span> <span class="n">nextIndex</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="n">newLen</span><span class="o">);</span>
+                        <span class="n">newTab</span><span class="o">[</span><span class="n">h</span><span class="o">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">;</span>
+                        <span class="n">count</span><span class="o">++;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+
+            <span class="n">setThreshold</span><span class="o">(</span><span class="n">newLen</span><span class="o">);</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="n">count</span><span class="o">;</span>
+            <span class="n">table</span> <span class="o">=</span> <span class="n">newTab</span><span class="o">;</span>
+        <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="4getentry-获取值">(4).getEntry 获取值</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">      <span class="cm">/**
+</span><span class="cm">         * Get the entry associated with key.  This method
+</span><span class="cm">         * itself handles only the fast path: a direct hit of existing
+</span><span class="cm">         * key. It otherwise relays to getEntryAfterMiss.  This is
+</span><span class="cm">         * designed to maximize performance for direct hits, in part
+</span><span class="cm">         * by making this method readily inlinable.
+</span><span class="cm">         * 
+</span><span class="cm">         * 获取Entry值。这种方法本身只处理快速路径：直接击中现有的Key。否则，继续getEntryAfterMiss。
+</span><span class="cm">         * 这是为了最大限度地提高直接命中的性能，部分是通过使这个方法易于理解。
+</span><span class="cm">         *
+</span><span class="cm">         * @param  key the thread local object
+</span><span class="cm">         * @return the entry associated with key, or null if no such
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="n">Entry</span> <span class="nf">getEntry</span><span class="o">(</span><span class="n">ThreadLocal</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="na">threadLocalHashCode</span> <span class="o">&amp;</span> <span class="o">(</span><span class="n">table</span><span class="o">.</span><span class="na">length</span> <span class="o">-</span> <span class="n">1</span><span class="o">);</span>
+            <span class="n">Entry</span> <span class="n">e</span> <span class="o">=</span> <span class="n">table</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">e</span><span class="o">.</span><span class="na">get</span><span class="o">()</span> <span class="o">==</span> <span class="n">key</span><span class="o">)</span>
+                <span class="k">return</span> <span class="n">e</span><span class="o">;</span>
+            <span class="k">else</span>
+                <span class="k">return</span> <span class="n">getEntryAfterMiss</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">i</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+        <span class="o">}</span>
+       <span class="cm">/**
+</span><span class="cm">         * Version of getEntry method for use when key is not found in
+</span><span class="cm">         * its direct hash slot.
+</span><span class="cm">         * getEntryEntry方法的版本，以便在直接散列槽中找不到key。
+</span><span class="cm">         * @param  key the thread local object
+</span><span class="cm">         * @param  i the table index for key&#39;s hash code
+</span><span class="cm">         * @param  e the entry at table[i]
+</span><span class="cm">         * @return the entry associated with key, or null if no such
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="n">Entry</span> <span class="nf">getEntryAfterMiss</span><span class="o">(</span><span class="n">ThreadLocal</span> <span class="n">key</span><span class="o">,</span> <span class="kt">int</span> <span class="n">i</span><span class="o">,</span> <span class="n">Entry</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">Entry</span><span class="o">[]</span> <span class="n">tab</span> <span class="o">=</span> <span class="n">table</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">tab</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+
+            <span class="k">while</span> <span class="o">(</span><span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">ThreadLocal</span> <span class="n">k</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">k</span> <span class="o">==</span> <span class="n">key</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="n">e</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">k</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                    <span class="n">expungeStaleEntry</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+                <span class="k">else</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="n">nextIndex</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="n">len</span><span class="o">);</span>
+                <span class="n">e</span> <span class="o">=</span> <span class="n">tab</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="o">}</span>        
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="5remove-删除">(5).remove 删除</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">     <span class="cm">/**
+</span><span class="cm">         * Remove the entry for key.
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">remove</span><span class="o">(</span><span class="n">ThreadLocal</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">Entry</span><span class="o">[]</span> <span class="n">tab</span> <span class="o">=</span> <span class="n">table</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">tab</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="na">threadLocalHashCode</span> <span class="o">&amp;</span> <span class="o">(</span><span class="n">len</span><span class="o">-</span><span class="n">1</span><span class="o">);</span>
+            <span class="k">for</span> <span class="o">(</span><span class="n">Entry</span> <span class="n">e</span> <span class="o">=</span> <span class="n">tab</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+                 <span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span>
+                 <span class="n">e</span> <span class="o">=</span> <span class="n">tab</span><span class="o">[</span><span class="n">i</span> <span class="o">=</span> <span class="n">nextIndex</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="n">len</span><span class="o">)])</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">get</span><span class="o">()</span> <span class="o">==</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">e</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+                    <span class="n">expungeStaleEntry</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+                    <span class="k">return</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2-threadlocal-构造">2. ThreadLocal 构造</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ThreadLocal</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="cm">/**
+</span><span class="cm">     * ThreadLocals rely on per-thread linear-probe hash maps attached
+</span><span class="cm">     * to each thread (Thread.threadLocals and
+</span><span class="cm">     * inheritableThreadLocals).  The ThreadLocal objects act as keys,
+</span><span class="cm">     * searched via threadLocalHashCode.  This is a custom hash code
+</span><span class="cm">     * (useful only within ThreadLocalMaps) that eliminates collisions
+</span><span class="cm">     * in the common case where consecutively constructed ThreadLocals
+</span><span class="cm">     * are used by the same threads, while remaining well-behaved in
+</span><span class="cm">     * less common cases.
+</span><span class="cm">     * ThreadLocals依赖于附加到每个线程（Thread.threadLocals和inheritableThreadLocals）的每线程线性探测哈希映射。
+</span><span class="cm">      * ThreadLocal对象充key，通过threadLocalHashCode搜索。这是一个自定义的哈希代码（只在ThreadLocalMaps中有用），
+</span><span class="cm">      * 在相同线程使用连续构造的ThreadLocals的常见情况下消除冲突，而在不常见的情况下保持良好行为。
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">threadLocalHashCode</span> <span class="o">=</span> <span class="n">nextHashCode</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * The next hash code to be given out. Updated atomically. Starts at
+</span><span class="cm">     * zero.
+</span><span class="cm">     * 下一个哈希码将被给出来。原子更新。从零开始。
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="n">AtomicInteger</span> <span class="n">nextHashCode</span> <span class="o">=</span>
+        <span class="k">new</span> <span class="n">AtomicInteger</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * The difference between successively generated hash codes - turns
+</span><span class="cm">     * implicit sequential thread-local IDs into near-optimally spread
+</span><span class="cm">     * multiplicative hash values for power-of-two-sized tables.
+</span><span class="cm">     * 连续生成哈希码的区别 - 将隐式顺序thread-local IDS 转换为近似最佳扩展的2幂大小的表乘散列值。
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">HASH_INCREMENT</span> <span class="o">=</span> <span class="n">0x61c88647</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Returns the next hash code.
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kt">int</span> <span class="nf">nextHashCode</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">nextHashCode</span><span class="o">.</span><span class="na">getAndAdd</span><span class="o">(</span><span class="n">HASH_INCREMENT</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Returns the current thread&#39;s &#34;initial value&#34; for this
+</span><span class="cm">     * thread-local variable.  This method will be invoked the first
+</span><span class="cm">     * time a thread accesses the variable with the {@link #get}
+</span><span class="cm">     * method, unless the thread previously invoked the {@link #set}
+</span><span class="cm">     * method, in which case the &lt;tt&gt;initialValue&lt;/tt&gt; method will not
+</span><span class="cm">     * be invoked for the thread.  Normally, this method is invoked at
+</span><span class="cm">     * most once per thread, but it may be invoked again in case of
+</span><span class="cm">     * subsequent invocations of {@link #remove} followed by {@link #get}
+</span><span class="cm">     * .
+</span><span class="cm">     * 返回此线程局部变量的当前线程的&#34;初始值&#34;。除非线程先前调用{@link #set}方法，在这种情况下，&lt;tt&gt; initialValue &lt;/ tt&gt;方法将在第一次线程访问变量时使用此方法将不会被调用的线程。
+</span><span class="cm">     * 通常，每个线程最多调用一次此方法，但在后续调用{@link #remove}后跟{@link #get}的情况下，可能会再次调用此方法。
+</span><span class="cm">     *
+</span><span class="cm">     * &lt;p&gt;This implementation simply returns &lt;tt&gt;null&lt;/tt&gt;; if the
+</span><span class="cm">     * programmer desires thread-local variables to have an initial
+</span><span class="cm">     * value other than &lt;tt&gt;null&lt;/tt&gt;, &lt;tt&gt;ThreadLocal&lt;/tt&gt; must be
+</span><span class="cm">     * subclassed, and this method overridden.  Typically, an
+</span><span class="cm">     * anonymous inner class will be used.
+</span><span class="cm">     *
+</span><span class="cm">     * @return the initial value for this thread-local
+</span><span class="cm">     */</span>
+    <span class="kd">protected</span> <span class="n">T</span> <span class="nf">initialValue</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a thread local variable.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">ThreadLocal</span><span class="o">()</span> <span class="o">{</span>
+    <span class="o">}</span>
+    
+     <span class="cm">/**
+</span><span class="cm">      * Get the map associated with a ThreadLocal. Overridden in
+</span><span class="cm">      * InheritableThreadLocal.
+</span><span class="cm">      * 获取与ThreadLocal相关的映射。在可继承线程本地覆盖。
+</span><span class="cm">      *
+</span><span class="cm">      * @param  t the current thread
+</span><span class="cm">      * @return the map
+</span><span class="cm">      */</span>
+     <span class="n">ThreadLocalMap</span> <span class="nf">getMap</span><span class="o">(</span><span class="n">Thread</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+         <span class="k">return</span> <span class="n">t</span><span class="o">.</span><span class="na">threadLocals</span><span class="o">;</span>
+     <span class="o">}</span>
+     
+  <span class="cm">/**
+</span><span class="cm">     * Create the map associated with a ThreadLocal. Overridden in
+</span><span class="cm">     * InheritableThreadLocal.
+</span><span class="cm">     *  创建与hreadLocal关联的映射
+</span><span class="cm">     * @param t the current thread
+</span><span class="cm">     * @param firstValue value for the initial entry of the map
+</span><span class="cm">     * @param map the map to store.
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">createMap</span><span class="o">(</span><span class="n">Thread</span> <span class="n">t</span><span class="o">,</span> <span class="n">T</span> <span class="n">firstValue</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">t</span><span class="o">.</span><span class="na">threadLocals</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ThreadLocalMap</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">firstValue</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Factory method to create map of inherited thread locals.
+</span><span class="cm">     * Designed to be called only from Thread constructor.
+</span><span class="cm">     * 工厂方法创建继承的线程本地Map。设计为仅从线程构造函数调用。
+</span><span class="cm">     * @param  parentMap the map associated with parent thread
+</span><span class="cm">     * @return a map containing the parent&#39;s inheritable bindings
+</span><span class="cm">     */</span>
+    <span class="kd">static</span> <span class="n">ThreadLocalMap</span> <span class="nf">createInheritedMap</span><span class="o">(</span><span class="n">ThreadLocalMap</span> <span class="n">parentMap</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">ThreadLocalMap</span><span class="o">(</span><span class="n">parentMap</span><span class="o">);</span>
+    <span class="o">}</span>     
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>为什么取HASH_INCREMENT = 0x61c88647?</p>
+<p>可以阅读<a href="http://www.javaspecialists.eu/archive/Issue164.html">Why 0x61c88647</a></p>
+<p>由来：</p>
+<p>This number represents the golden ratio (sqrt(5)-1) times two to the power of 31. The result is then a golden number, either 2654435769 or -1640531527. You can see the calculation here:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  long l1 = (long) ((1L &lt;&lt; 31) * (Math.sqrt(5) - 1));  //Math.sqrt(5) - 1 = 1.2360679774997898
+  System.out.println(&#34;as 32 bit unsigned: &#34; + l1);  //2654435769
+
+  int i1 = (int) l1;
+  System.out.println(&#34;as 32 bit signed:   &#34; + i1);  //-1640531527 = -0x61c88647
+</code></pre></td></tr></table>
+</div>
+</div><p>与fibonacci hashing(斐波那契散列法)以及黄金分割有关，特殊的哈希码0x61c88647大大降低碰撞的几率，能让哈希码能均匀的分布在2的N次方的数组里。
+(Math.sqrt(5) - 1) / 2 是黄金分割数</p>
+<h3 id="二set-设置值">二、set 设置值</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="cm">/**
+</span><span class="cm">     * Sets the current thread&#39;s copy of this thread-local variable
+</span><span class="cm">     * to the specified value.  Most subclasses will have no need to
+</span><span class="cm">     * override this method, relying solely on the {@link #initialValue}
+</span><span class="cm">     * method to set the values of thread-locals.
+</span><span class="cm">     *
+</span><span class="cm">     * @param value the value to be stored in the current thread&#39;s copy of
+</span><span class="cm">     *        this thread-local.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">set</span><span class="o">(</span><span class="n">T</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">Thread</span> <span class="n">t</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+        <span class="n">ThreadLocalMap</span> <span class="n">map</span> <span class="o">=</span> <span class="n">getMap</span><span class="o">(</span><span class="n">t</span><span class="o">);</span>  
+        <span class="k">if</span> <span class="o">(</span><span class="n">map</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="n">map</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+        <span class="k">else</span>
+            <span class="n">createMap</span><span class="o">(</span><span class="n">t</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="三setinitialvalue-设置initialvalue值">三、setInitialValue 设置initialValue值</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Variant of set() to establish initialValue. Used instead
+</span><span class="cm">     * of set() in case user has overridden the set() method.
+</span><span class="cm">     *
+</span><span class="cm">     * @return the initial value
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="n">T</span> <span class="nf">setInitialValue</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">T</span> <span class="n">value</span> <span class="o">=</span> <span class="n">initialValue</span><span class="o">();</span>
+        <span class="n">Thread</span> <span class="n">t</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+        <span class="n">ThreadLocalMap</span> <span class="n">map</span> <span class="o">=</span> <span class="n">getMap</span><span class="o">(</span><span class="n">t</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">map</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="n">map</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+        <span class="k">else</span>
+            <span class="n">createMap</span><span class="o">(</span><span class="n">t</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="四get-获取值">四、get 获取值</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="cm">/**
+</span><span class="cm">     * Returns the value in the current thread&#39;s copy of this
+</span><span class="cm">     * thread-local variable.  If the variable has no value for the
+</span><span class="cm">     * current thread, it is first initialized to the value returned
+</span><span class="cm">     * by an invocation of the {@link #initialValue} method.
+</span><span class="cm">     * 返回当前线程的该线程副本中的值 - 局部变量。如果变量对当前线程没有值，则首先将其初始化为调用{@link＃initialValue}方法返回的值。
+</span><span class="cm">     * @return the current thread&#39;s value of this thread-local
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">T</span> <span class="nf">get</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">Thread</span> <span class="n">t</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+        <span class="n">ThreadLocalMap</span> <span class="n">map</span> <span class="o">=</span> <span class="n">getMap</span><span class="o">(</span><span class="n">t</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">map</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">ThreadLocalMap</span><span class="o">.</span><span class="na">Entry</span> <span class="n">e</span> <span class="o">=</span> <span class="n">map</span><span class="o">.</span><span class="na">getEntry</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                <span class="k">return</span> <span class="o">(</span><span class="n">T</span><span class="o">)</span><span class="n">e</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">setInitialValue</span><span class="o">();</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="五remove-删除">五、remove 删除</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Removes the current thread&#39;s value for this thread-local
+</span><span class="cm">     * variable.  If this thread-local variable is subsequently
+</span><span class="cm">     * {@linkplain #get read} by the current thread, its value will be
+</span><span class="cm">     * reinitialized by invoking its {@link #initialValue} method,
+</span><span class="cm">     * unless its value is {@linkplain #set set} by the current thread
+</span><span class="cm">     * in the interim.  This may result in multiple invocations of the
+</span><span class="cm">     * &lt;tt&gt;initialValue&lt;/tt&gt; method in the current thread.
+</span><span class="cm">     *
+</span><span class="cm">     * @since 1.5
+</span><span class="cm">     */</span>
+     <span class="kd">public</span> <span class="kt">void</span> <span class="nf">remove</span><span class="o">()</span> <span class="o">{</span>
+         <span class="n">ThreadLocalMap</span> <span class="n">m</span> <span class="o">=</span> <span class="n">getMap</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">());</span>
+         <span class="k">if</span> <span class="o">(</span><span class="n">m</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+             <span class="n">m</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+     <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="六threadlocal与内存泄漏">六、ThreadLocal与内存泄漏</h3>
+<p>关于ThreadLocal是否会引起内存泄漏也是一个比较有争议性的问题，其实就是要看对内存泄漏的准确定义是什么。<br>
+认为ThreadLocal会引起内存泄漏的说法是因为如果一个ThreadLocal对象被回收了，我们往里面放的value对于 <strong>【当前线程-&gt;当前线程的threadLocals(ThreadLocal.ThreadLocalMap对象）-&gt;Entry数组-&gt;某个entry.value】</strong> 这样一条强引用链是可达的，因此value不会被回收。<br>
+认为ThreadLocal不会引起内存泄漏的说法是因为ThreadLocal.ThreadLocalMap源码实现中自带一套自我清理的机制。</p>
+<p>之所以有关于内存泄露的讨论是因为在有线程复用如线程池的场景中，一个线程的寿命很长，大对象长期不被回收影响系统运行效率与安全。如果线程不会复用，用完即销毁了也不会有ThreadLocal引发内存泄露的问题。《Effective Java》一书中的第6条对这种内存泄露称为<code>unintentional object retention</code>(无意识的对象保留）。</p>
+<p>当我们仔细读过ThreadLocalMap的源码，我们可以推断，如果在使用的ThreadLocal的过程中，显式地进行remove是个很好的编码习惯，这样是不会引起内存泄漏。<br>
+那么如果没有显式地进行remove呢？只能说如果对应线程之后调用ThreadLocal的get和set方法都有 <strong>很高的概率</strong> 会顺便清理掉无效对象，断开value强引用，从而大对象被收集器回收。</p>
+<p>但无论如何，我们应该考虑到何时调用ThreadLocal的remove方法。一个比较熟悉的场景就是对于一个请求一个线程的server如tomcat，在代码中对web api作一个切面，存放一些如用户名等用户信息，在连接点方法结束后，再显式调用remove。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-04-11 21:11
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/ThreadLocal/">ThreadLocal</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/12.FutureTask%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">FutureTask</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/09.CyclicBarrier%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">CyclicBarrier</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

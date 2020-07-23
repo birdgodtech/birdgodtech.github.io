@@ -1,0 +1,528 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tags on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/</link>
+    <description>Recent content in Tags on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Sat, 02 May 2020 20:08:08 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>rocketmq</title>
+      <link>https://birdgodtech.github.io/tags/rocketmq/</link>
+      <pubDate>Sat, 02 May 2020 20:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/rocketmq/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>netty</title>
+      <link>https://birdgodtech.github.io/tags/netty/</link>
+      <pubDate>Wed, 01 May 2019 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/netty/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>dubbo</title>
+      <link>https://birdgodtech.github.io/tags/dubbo/</link>
+      <pubDate>Thu, 20 Dec 2018 20:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/dubbo/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>spring ApplicationContext</title>
+      <link>https://birdgodtech.github.io/tags/spring-ApplicationContext/</link>
+      <pubDate>Thu, 01 Nov 2018 23:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/spring-ApplicationContext/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>spring boot</title>
+      <link>https://birdgodtech.github.io/tags/spring-boot/</link>
+      <pubDate>Thu, 01 Nov 2018 23:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/spring-boot/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>spring Transaction</title>
+      <link>https://birdgodtech.github.io/tags/spring-Transaction/</link>
+      <pubDate>Mon, 15 Oct 2018 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/spring-Transaction/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>spring AOP</title>
+      <link>https://birdgodtech.github.io/tags/spring-AOP/</link>
+      <pubDate>Fri, 05 Oct 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/spring-AOP/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>spring ioc</title>
+      <link>https://birdgodtech.github.io/tags/spring-ioc/</link>
+      <pubDate>Mon, 01 Oct 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/spring-ioc/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>striped64</title>
+      <link>https://birdgodtech.github.io/tags/striped64/</link>
+      <pubDate>Sat, 22 Sep 2018 20:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/striped64/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>disruptor</title>
+      <link>https://birdgodtech.github.io/tags/disruptor/</link>
+      <pubDate>Mon, 20 Aug 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/disruptor/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ConcurrentHashMap</title>
+      <link>https://birdgodtech.github.io/tags/ConcurrentHashMap/</link>
+      <pubDate>Tue, 01 May 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/ConcurrentHashMap/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ConcurrentHashMap1.8</title>
+      <link>https://birdgodtech.github.io/tags/ConcurrentHashMap1.8/</link>
+      <pubDate>Fri, 18 Aug 2017 21:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/ConcurrentHashMap1.8/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ConcurrentSkipListSet</title>
+      <link>https://birdgodtech.github.io/tags/ConcurrentSkipListSet/</link>
+      <pubDate>Fri, 18 Aug 2017 21:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/ConcurrentSkipListSet/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ConcurrentSkipListMap</title>
+      <link>https://birdgodtech.github.io/tags/ConcurrentSkipListMap/</link>
+      <pubDate>Thu, 10 Aug 2017 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/ConcurrentSkipListMap/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ConcurrentLinkedQueue</title>
+      <link>https://birdgodtech.github.io/tags/ConcurrentLinkedQueue/</link>
+      <pubDate>Sat, 22 Jul 2017 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/ConcurrentLinkedQueue/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>CopyOnWriteArraySet</title>
+      <link>https://birdgodtech.github.io/tags/CopyOnWriteArraySet/</link>
+      <pubDate>Tue, 18 Jul 2017 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/CopyOnWriteArraySet/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>CopyOnWriteArrayList</title>
+      <link>https://birdgodtech.github.io/tags/CopyOnWriteArrayList/</link>
+      <pubDate>Sat, 08 Jul 2017 21:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/CopyOnWriteArrayList/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>LinkedTransferQueue</title>
+      <link>https://birdgodtech.github.io/tags/LinkedTransferQueue/</link>
+      <pubDate>Sun, 02 Jul 2017 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/LinkedTransferQueue/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>SynchronousQueue</title>
+      <link>https://birdgodtech.github.io/tags/SynchronousQueue/</link>
+      <pubDate>Tue, 20 Jun 2017 22:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/SynchronousQueue/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>DelayQueue</title>
+      <link>https://birdgodtech.github.io/tags/DelayQueue/</link>
+      <pubDate>Thu, 15 Jun 2017 18:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/DelayQueue/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>PriorityBlockingQueue</title>
+      <link>https://birdgodtech.github.io/tags/PriorityBlockingQueue/</link>
+      <pubDate>Sat, 10 Jun 2017 18:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/PriorityBlockingQueue/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>LinkBlockingQueue</title>
+      <link>https://birdgodtech.github.io/tags/LinkBlockingQueue/</link>
+      <pubDate>Sun, 04 Jun 2017 18:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/LinkBlockingQueue/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ArrayBlockingQueue</title>
+      <link>https://birdgodtech.github.io/tags/ArrayBlockingQueue/</link>
+      <pubDate>Thu, 01 Jun 2017 21:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/ArrayBlockingQueue/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ForkJoin</title>
+      <link>https://birdgodtech.github.io/tags/ForkJoin/</link>
+      <pubDate>Tue, 23 May 2017 21:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/ForkJoin/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>CLH锁 、MCS锁</title>
+      <link>https://birdgodtech.github.io/tags/CLH%E9%94%81-MCS%E9%94%81/</link>
+      <pubDate>Mon, 15 May 2017 18:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/CLH%E9%94%81-MCS%E9%94%81/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>StamppedLock</title>
+      <link>https://birdgodtech.github.io/tags/StamppedLock/</link>
+      <pubDate>Thu, 11 May 2017 19:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/StamppedLock/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ScheduledThreadPoolExecutor</title>
+      <link>https://birdgodtech.github.io/tags/ScheduledThreadPoolExecutor/</link>
+      <pubDate>Tue, 25 Apr 2017 19:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/ScheduledThreadPoolExecutor/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ThreadPoolExecutor</title>
+      <link>https://birdgodtech.github.io/tags/ThreadPoolExecutor/</link>
+      <pubDate>Thu, 20 Apr 2017 20:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/ThreadPoolExecutor/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>FutureTask</title>
+      <link>https://birdgodtech.github.io/tags/FutureTask/</link>
+      <pubDate>Sat, 15 Apr 2017 20:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/FutureTask/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ThreadLocal</title>
+      <link>https://birdgodtech.github.io/tags/ThreadLocal/</link>
+      <pubDate>Tue, 11 Apr 2017 21:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/ThreadLocal/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>CyclicBarrier</title>
+      <link>https://birdgodtech.github.io/tags/CyclicBarrier/</link>
+      <pubDate>Thu, 06 Apr 2017 22:10:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/CyclicBarrier/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Semaphore</title>
+      <link>https://birdgodtech.github.io/tags/Semaphore/</link>
+      <pubDate>Mon, 03 Apr 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/Semaphore/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>CountDownLatch</title>
+      <link>https://birdgodtech.github.io/tags/CountDownLatch/</link>
+      <pubDate>Sun, 02 Apr 2017 22:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/CountDownLatch/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ReentrantReadWriteLock</title>
+      <link>https://birdgodtech.github.io/tags/ReentrantReadWriteLock/</link>
+      <pubDate>Sat, 25 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/ReentrantReadWriteLock/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ReentrantLock</title>
+      <link>https://birdgodtech.github.io/tags/ReentrantLock/</link>
+      <pubDate>Mon, 20 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/ReentrantLock/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>AQS</title>
+      <link>https://birdgodtech.github.io/tags/AQS/</link>
+      <pubDate>Wed, 15 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/AQS/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Thread</title>
+      <link>https://birdgodtech.github.io/tags/Thread/</link>
+      <pubDate>Wed, 15 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/Thread/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Atomic</title>
+      <link>https://birdgodtech.github.io/tags/Atomic/</link>
+      <pubDate>Tue, 14 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/Atomic/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Unsafe</title>
+      <link>https://birdgodtech.github.io/tags/Unsafe/</link>
+      <pubDate>Mon, 13 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/Unsafe/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>TreeSet</title>
+      <link>https://birdgodtech.github.io/tags/TreeSet/</link>
+      <pubDate>Fri, 10 Mar 2017 21:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/TreeSet/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>LinkedHashSet</title>
+      <link>https://birdgodtech.github.io/tags/LinkedHashSet/</link>
+      <pubDate>Fri, 03 Mar 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/LinkedHashSet/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>HashSet</title>
+      <link>https://birdgodtech.github.io/tags/HashSet/</link>
+      <pubDate>Wed, 01 Mar 2017 21:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/HashSet/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Hashtable</title>
+      <link>https://birdgodtech.github.io/tags/Hashtable/</link>
+      <pubDate>Tue, 21 Feb 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/Hashtable/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>TreeMap</title>
+      <link>https://birdgodtech.github.io/tags/TreeMap/</link>
+      <pubDate>Mon, 20 Feb 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/TreeMap/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>WeakHashMap</title>
+      <link>https://birdgodtech.github.io/tags/WeakHashMap/</link>
+      <pubDate>Sun, 19 Feb 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/WeakHashMap/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>IdentityHashMap</title>
+      <link>https://birdgodtech.github.io/tags/IdentityHashMap/</link>
+      <pubDate>Sat, 18 Feb 2017 19:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/IdentityHashMap/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>LinkedHashMap</title>
+      <link>https://birdgodtech.github.io/tags/LinkedHashMap/</link>
+      <pubDate>Fri, 17 Feb 2017 23:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/LinkedHashMap/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>HashMap</title>
+      <link>https://birdgodtech.github.io/tags/HashMap/</link>
+      <pubDate>Thu, 16 Feb 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/HashMap/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ArrayDeque</title>
+      <link>https://birdgodtech.github.io/tags/ArrayDeque/</link>
+      <pubDate>Wed, 15 Feb 2017 22:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/ArrayDeque/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>PriorityQueue</title>
+      <link>https://birdgodtech.github.io/tags/PriorityQueue/</link>
+      <pubDate>Tue, 14 Feb 2017 21:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/PriorityQueue/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Stack</title>
+      <link>https://birdgodtech.github.io/tags/Stack/</link>
+      <pubDate>Mon, 13 Feb 2017 20:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/Stack/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Vector</title>
+      <link>https://birdgodtech.github.io/tags/Vector/</link>
+      <pubDate>Mon, 13 Feb 2017 18:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/Vector/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>LinkedList</title>
+      <link>https://birdgodtech.github.io/tags/LinkedList/</link>
+      <pubDate>Sun, 12 Feb 2017 19:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/LinkedList/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>List</title>
+      <link>https://birdgodtech.github.io/tags/List/</link>
+      <pubDate>Fri, 10 Feb 2017 20:12:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/List/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Map</title>
+      <link>https://birdgodtech.github.io/tags/Map/</link>
+      <pubDate>Fri, 10 Feb 2017 20:12:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/Map/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Queue</title>
+      <link>https://birdgodtech.github.io/tags/Queue/</link>
+      <pubDate>Fri, 10 Feb 2017 20:12:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/Queue/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Set</title>
+      <link>https://birdgodtech.github.io/tags/Set/</link>
+      <pubDate>Fri, 10 Feb 2017 20:12:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/tags/Set/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

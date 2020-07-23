@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Sequence源码分析 - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="Sequence源码分析 简介 Disruptor使用序列作为一种手段来确定特定组件的位置。每个消费者（EventProcessor）都像Dis" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/disruptor/2.Sequence%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/disruptor/2.Sequence%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/disruptor/2.Sequence%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="Sequence源码分析" />
+<meta property="og:description" content="Sequence源码分析 简介 Disruptor使用序列作为一种手段来确定特定组件的位置。每个消费者（EventProcessor）都像Dis" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/disruptor/2.Sequence%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2018-05-08T18:18:08+00:00" />
+<meta property="article:modified_time" content="2018-05-08T18:18:08+00:00" />
+<meta itemprop="name" content="Sequence源码分析">
+<meta itemprop="description" content="Sequence源码分析 简介 Disruptor使用序列作为一种手段来确定特定组件的位置。每个消费者（EventProcessor）都像Dis">
+<meta itemprop="datePublished" content="2018-05-08T18:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2018-05-08T18:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="1573">
+
+
+
+<meta itemprop="keywords" content="disruptor," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Sequence源码分析"/>
+<meta name="twitter:description" content="Sequence源码分析 简介 Disruptor使用序列作为一种手段来确定特定组件的位置。每个消费者（EventProcessor）都像Dis"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">Sequence源码分析</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2018-05-08 18:18 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 1573 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#源码">源码</a></li>
+    <li><a href="#实现缓存行填充">实现缓存行填充</a></li>
+    <li><a href="#sequence的无限增长超过longmax_value263-1怎么办">Sequence的无限增长超过Long.MAX_VALUE=(2&laquo;63)-1怎么办？</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2018-05-08T18:18:08" title="May 8, 2018">May 8, 2018</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="sequence源码分析">Sequence源码分析</h1>
+<h2 id="简介">简介</h2>
+<p>Disruptor使用序列作为一种手段来确定特定组件的位置。每个消费者（EventProcessor）都像Disruptor本身一样维护一个Sequence。大部分并发代码依赖于这些Sequence值
+的移动，因此Sequence支持AtomicLong的许多当前特性。事实上，2之间唯一真正的区别是序列包含额外的功能，以防止序列和其他值之间的错误共享(CPU缓存伪共享(Flase Sharing)问题)。</p>
+<h2 id="源码">源码</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span><span class="lnt">157
+</span><span class="lnt">158
+</span><span class="lnt">159
+</span><span class="lnt">160
+</span><span class="lnt">161
+</span><span class="lnt">162
+</span><span class="lnt">163
+</span><span class="lnt">164
+</span><span class="lnt">165
+</span><span class="lnt">166
+</span><span class="lnt">167
+</span><span class="lnt">168
+</span><span class="lnt">169
+</span><span class="lnt">170
+</span><span class="lnt">171
+</span><span class="lnt">172
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="cm">/*
+</span><span class="cm"> * Copyright 2012 LMAX Ltd.
+</span><span class="cm"> *
+</span><span class="cm"> * Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+</span><span class="cm"> * you may not use this file except in compliance with the License.
+</span><span class="cm"> * You may obtain a copy of the License at
+</span><span class="cm"> *
+</span><span class="cm"> * http://www.apache.org/licenses/LICENSE-2.0
+</span><span class="cm"> *
+</span><span class="cm"> * Unless required by applicable law or agreed to in writing, software
+</span><span class="cm"> * distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+</span><span class="cm"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+</span><span class="cm"> * See the License for the specific language governing permissions and
+</span><span class="cm"> * limitations under the License.
+</span><span class="cm"> */</span>
+<span class="kn">package</span> <span class="nn">com.lmax.disruptor</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">sun.misc.Unsafe</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">com.lmax.disruptor.util.Util</span><span class="o">;</span>
+
+<span class="c1">// 左边缓存行填充
+</span><span class="c1"></span><span class="kd">class</span> <span class="nc">LhsPadding</span>
+<span class="o">{</span>
+    <span class="kd">protected</span> <span class="kt">long</span> <span class="n">p1</span><span class="o">,</span> <span class="n">p2</span><span class="o">,</span> <span class="n">p3</span><span class="o">,</span> <span class="n">p4</span><span class="o">,</span> <span class="n">p5</span><span class="o">,</span> <span class="n">p6</span><span class="o">,</span> <span class="n">p7</span><span class="o">;</span>
+<span class="o">}</span>
+ <span class="c1">// 序列
+</span><span class="c1"></span><span class="kd">class</span> <span class="nc">Value</span> <span class="kd">extends</span> <span class="n">LhsPadding</span>
+<span class="o">{</span>
+    <span class="kd">protected</span> <span class="kd">volatile</span> <span class="kt">long</span> <span class="n">value</span><span class="o">;</span>
+<span class="o">}</span>
+
+<span class="c1">// 右边缓存行填充
+</span><span class="c1"></span><span class="kd">class</span> <span class="nc">RhsPadding</span> <span class="kd">extends</span> <span class="n">Value</span>
+<span class="o">{</span>
+    <span class="kd">protected</span> <span class="kt">long</span> <span class="n">p9</span><span class="o">,</span> <span class="n">p10</span><span class="o">,</span> <span class="n">p11</span><span class="o">,</span> <span class="n">p12</span><span class="o">,</span> <span class="n">p13</span><span class="o">,</span> <span class="n">p14</span><span class="o">,</span> <span class="n">p15</span><span class="o">;</span>
+<span class="o">}</span>
+
+<span class="cm">/**
+</span><span class="cm"> * &lt;p&gt;Concurrent sequence class used for tracking the progress of
+</span><span class="cm"> * the ring buffer and event processors.  Support a number
+</span><span class="cm"> * of concurrent operations including CAS and order writes.
+</span><span class="cm"> * 同步序列类用于跟踪环形缓冲区和事件处理器的进度。 支持一些并发操作，包括CAS和顺序写入。
+</span><span class="cm"> * &lt;p&gt;Also attempts to be more efficient with regards to false
+</span><span class="cm"> * sharing by adding padding around the volatile field.
+</span><span class="cm"> */</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">Sequence</span> <span class="kd">extends</span> <span class="n">RhsPadding</span>
+<span class="o">{</span>
+    <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">INITIAL_VALUE</span> <span class="o">=</span> <span class="o">-</span><span class="n">1L</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Unsafe</span> <span class="n">UNSAFE</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">VALUE_OFFSET</span><span class="o">;</span>
+
+    <span class="kd">static</span>
+    <span class="o">{</span>
+        <span class="n">UNSAFE</span> <span class="o">=</span> <span class="n">Util</span><span class="o">.</span><span class="na">getUnsafe</span><span class="o">();</span>
+        <span class="k">try</span>
+        <span class="o">{</span>
+            <span class="n">VALUE_OFFSET</span> <span class="o">=</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">objectFieldOffset</span><span class="o">(</span><span class="n">Value</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&#34;value&#34;</span><span class="o">));</span>
+        <span class="o">}</span>
+        <span class="k">catch</span> <span class="o">(</span><span class="kd">final</span> <span class="n">Exception</span> <span class="n">e</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">RuntimeException</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Create a sequence initialised to -1.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">Sequence</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span><span class="n">INITIAL_VALUE</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Create a sequence with a specified initial value.
+</span><span class="cm">     * 创建具有指定初始值的序列。
+</span><span class="cm">     *
+</span><span class="cm">     * @param initialValue The initial value for this sequence.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">Sequence</span><span class="o">(</span><span class="kd">final</span> <span class="kt">long</span> <span class="n">initialValue</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">UNSAFE</span><span class="o">.</span><span class="na">putOrderedLong</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">VALUE_OFFSET</span><span class="o">,</span> <span class="n">initialValue</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Perform a volatile read of this sequence&#39;s value.
+</span><span class="cm">     * 对这个序列的值执行一个不稳定的读取。
+</span><span class="cm">     * @return The current value of the sequence.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">get</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Perform an ordered write of this sequence.  The intent is
+</span><span class="cm">     * a Store/Store barrier between this write and any previous
+</span><span class="cm">     * store.
+</span><span class="cm">     * 执行这个序列的有序写。意图是在此写入和任何之前的存储之间的Store/Store屏障。
+</span><span class="cm">     * @param value The new value for the sequence.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">set</span><span class="o">(</span><span class="kd">final</span> <span class="kt">long</span> <span class="n">value</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">UNSAFE</span><span class="o">.</span><span class="na">putOrderedLong</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">VALUE_OFFSET</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Performs a volatile write of this sequence.  The intent is
+</span><span class="cm">     * a Store/Store barrier between this write and any previous
+</span><span class="cm">     * write and a Store/Load barrier between this write and any
+</span><span class="cm">     * subsequent volatile read.
+</span><span class="cm">     * 
+</span><span class="cm">     * 执行这个序列的volatile的写。意图是在此写入和之前的任何写入之间的Store/Store屏障，以及在此写入和随后的volatile读取之间的Store/Load屏障。
+</span><span class="cm">     *
+</span><span class="cm">     * @param value The new value for the sequence.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setVolatile</span><span class="o">(</span><span class="kd">final</span> <span class="kt">long</span> <span class="n">value</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">UNSAFE</span><span class="o">.</span><span class="na">putLongVolatile</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">VALUE_OFFSET</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Perform a compare and set operation on the sequence.
+</span><span class="cm">     * CAS修改序列
+</span><span class="cm">     * @param expectedValue The expected current value.
+</span><span class="cm">     * @param newValue The value to update to.
+</span><span class="cm">     * @return true if the operation succeeds, false otherwise.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">compareAndSet</span><span class="o">(</span><span class="kd">final</span> <span class="kt">long</span> <span class="n">expectedValue</span><span class="o">,</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">newValue</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapLong</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">VALUE_OFFSET</span><span class="o">,</span> <span class="n">expectedValue</span><span class="o">,</span> <span class="n">newValue</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Atomically increment the sequence by one.
+</span><span class="cm">     * 递增
+</span><span class="cm">     * @return The value after the increment
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">incrementAndGet</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">addAndGet</span><span class="o">(</span><span class="n">1L</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Atomically add the supplied value.
+</span><span class="cm">     * 原子地添加所提供的值。
+</span><span class="cm">     * @param increment The value to add to the sequence.
+</span><span class="cm">     * @return The value after the increment.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">addAndGet</span><span class="o">(</span><span class="kd">final</span> <span class="kt">long</span> <span class="n">increment</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="kt">long</span> <span class="n">currentValue</span><span class="o">;</span>
+        <span class="kt">long</span> <span class="n">newValue</span><span class="o">;</span>
+
+        <span class="k">do</span>
+        <span class="o">{</span>
+            <span class="n">currentValue</span> <span class="o">=</span> <span class="n">get</span><span class="o">();</span>
+            <span class="n">newValue</span> <span class="o">=</span> <span class="n">currentValue</span> <span class="o">+</span> <span class="n">increment</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">while</span> <span class="o">(!</span><span class="n">compareAndSet</span><span class="o">(</span><span class="n">currentValue</span><span class="o">,</span> <span class="n">newValue</span><span class="o">));</span>
+
+        <span class="k">return</span> <span class="n">newValue</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">String</span> <span class="nf">toString</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">Long</span><span class="o">.</span><span class="na">toString</span><span class="o">(</span><span class="n">get</span><span class="o">());</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="实现缓存行填充">实现缓存行填充</h2>
+<p>LhsPadding[56字节]+RhsPadding[56字节]+Value[8字节]=120字节，在加上对象Sequence[8字节]=128字节。现在处理器的缓存行最大128字节。因此没有伪共享，
+就没有和其它任何变量的意外冲突，没有不必要的缓存未命中。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="c1">// 左边缓存行填充
+</span><span class="c1"></span>  <span class="kd">class</span> <span class="nc">LhsPadding</span>
+  <span class="o">{</span>
+      <span class="kd">protected</span> <span class="kt">long</span> <span class="n">p1</span><span class="o">,</span> <span class="n">p2</span><span class="o">,</span> <span class="n">p3</span><span class="o">,</span> <span class="n">p4</span><span class="o">,</span> <span class="n">p5</span><span class="o">,</span> <span class="n">p6</span><span class="o">,</span> <span class="n">p7</span><span class="o">;</span>
+  <span class="o">}</span>
+   <span class="c1">// 序列
+</span><span class="c1"></span>  <span class="kd">class</span> <span class="nc">Value</span> <span class="kd">extends</span> <span class="n">LhsPadding</span>
+  <span class="o">{</span>
+      <span class="kd">protected</span> <span class="kd">volatile</span> <span class="kt">long</span> <span class="n">value</span><span class="o">;</span>
+  <span class="o">}</span>
+  
+  <span class="c1">// 右边缓存行填充
+</span><span class="c1"></span>  <span class="kd">class</span> <span class="nc">RhsPadding</span> <span class="kd">extends</span> <span class="n">Value</span>
+  <span class="o">{</span>
+      <span class="kd">protected</span> <span class="kt">long</span> <span class="n">p9</span><span class="o">,</span> <span class="n">p10</span><span class="o">,</span> <span class="n">p11</span><span class="o">,</span> <span class="n">p12</span><span class="o">,</span> <span class="n">p13</span><span class="o">,</span> <span class="n">p14</span><span class="o">,</span> <span class="n">p15</span><span class="o">;</span>
+  <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="sequence的无限增长超过longmax_value263-1怎么办">Sequence的无限增长超过Long.MAX_VALUE=(2&laquo;63)-1怎么办？</h2>
+<p>从代码看，为了简化seqence的比较(头尾的判断逻辑)，一直递增，总会超过Long.MAX_VALUE,后续会出现负数，进而出现死循环代码。可以靠定期重启系统来解决。</p>
+<p>Martin Flower的解释：This does mean that if they process a billion transactionsper second the counter will wrap in 292 years, causing some hell to breakloose. They have decided that fixing this is not a high priority.</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2018-05-08 18:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/disruptor/">disruptor</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/disruptor/3.Sequencer%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Sequencer分析</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/disruptor/1.disruptor%E4%BB%8B%E7%BB%8D/">
+        <span class="next-text nav-default">disruptor介绍</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

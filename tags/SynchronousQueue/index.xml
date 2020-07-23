@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>SynchronousQueue on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/SynchronousQueue/</link>
+    <description>Recent content in SynchronousQueue on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Tue, 20 Jun 2017 22:11:08 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/SynchronousQueue/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>SynchronousQueue</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/05.SynchronousQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 20 Jun 2017 22:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/05.SynchronousQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>SynchronousQueue源码分析 简介 SynchronousQueue是一种特殊的阻塞队列，它本身没有容量，只有当一个线程从队列取数据</description>
+    </item>
+    
+  </channel>
+</rss>

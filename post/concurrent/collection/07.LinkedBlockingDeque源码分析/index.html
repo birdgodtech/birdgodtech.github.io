@@ -1,0 +1,2256 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>LinkedBlockingDeque - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="LinkedBlockingDeque源码分析 简介 LinkedBlockingDeque是一种基于双向链表实现的有界的(可选的，不指定默认i" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/collection/07.LinkedBlockingDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/collection/07.LinkedBlockingDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/collection/07.LinkedBlockingDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="LinkedBlockingDeque" />
+<meta property="og:description" content="LinkedBlockingDeque源码分析 简介 LinkedBlockingDeque是一种基于双向链表实现的有界的(可选的，不指定默认i" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/collection/07.LinkedBlockingDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2017-07-02T22:18:08+00:00" />
+<meta property="article:modified_time" content="2017-07-02T22:18:08+00:00" />
+<meta itemprop="name" content="LinkedBlockingDeque">
+<meta itemprop="description" content="LinkedBlockingDeque源码分析 简介 LinkedBlockingDeque是一种基于双向链表实现的有界的(可选的，不指定默认i">
+<meta itemprop="datePublished" content="2017-07-02T22:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2017-07-02T22:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="5660">
+
+
+
+<meta itemprop="keywords" content="LinkedTransferQueue," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="LinkedBlockingDeque"/>
+<meta name="twitter:description" content="LinkedBlockingDeque源码分析 简介 LinkedBlockingDeque是一种基于双向链表实现的有界的(可选的，不指定默认i"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">LinkedBlockingDeque</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-07-02 22:18 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 5660 字 </span>
+      <span class="more-meta"> 预计阅读 12 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#一blockingdeque接口">一、BlockingDeque接口</a></li>
+    <li><a href="#二linkedblockingdeque-数据结构">二、LinkedBlockingDeque 数据结构</a>
+      <ul>
+        <li><a href="#1双链表节点">1.双链表节点</a></li>
+        <li><a href="#2内部结构实现">2.内部结构实现</a></li>
+      </ul>
+    </li>
+    <li><a href="#二入队">二、入队</a>
+      <ul>
+        <li><a href="#1插入头部">1.插入头部</a></li>
+        <li><a href="#2插入尾部">2.插入尾部</a></li>
+        <li><a href="#3putlast">(3).putLast</a></li>
+        <li><a href="#4blockingqueue接口入队方法">(4).BlockingQueue接口入队方法</a></li>
+      </ul>
+    </li>
+    <li><a href="#二出队">二、出队</a>
+      <ul>
+        <li><a href="#1头部出队">1.头部出队</a></li>
+        <li><a href="#4blockingqueue接口出队方法">(4).BlockingQueue接口出队方法</a></li>
+        <li><a href="#5stack-pop">(5).Stack pop</a></li>
+        <li><a href="#1尾部出队">1.尾部出队</a></li>
+      </ul>
+    </li>
+    <li><a href="#三移除队列">三、移除队列</a>
+      <ul>
+        <li><a href="#1removefirst和removelast">1.removeFirst和removeLast</a></li>
+        <li><a href="#2removefirstoccurrence和removelastoccurrence">2.removeFirstOccurrence和removeLastOccurrence</a></li>
+        <li><a href="#3remove">3.remove</a></li>
+        <li><a href="#4clear方法">4.clear方法</a></li>
+        <li><a href="#4drainto方法">4.drainTo方法</a></li>
+      </ul>
+    </li>
+    <li><a href="#五iterator-迭代器实现">五、Iterator 迭代器实现</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-07-02T22:18:08" title="July 2, 2017">July 2, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="linkedblockingdeque源码分析">LinkedBlockingDeque源码分析</h1>
+<h2 id="简介">简介</h2>
+<ul>
+<li>LinkedBlockingDeque是一种基于双向链表实现的有界的(可选的，不指定默认int最大值)阻塞双端队列。</li>
+<li>LinkedBlockingDeque支持FIFO、FILO两种操作方式。</li>
+</ul>
+<h2 id="一blockingdeque接口">一、BlockingDeque接口</h2>
+<p>LinkedBlockingDeque继承BlockingDeque接口
+BlockingDeque接口继承关系图</p>
+<p><img src="/concurrent//BlockingDequeMethodImpl.png" alt=""></p>
+<p>BlockingDeque接口继承BlockingQueue接口.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">BlockingDeque</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">BlockingQueue</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;,</span> <span class="n">Deque</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="cm">/**
+</span><span class="cm">     * 将元素插入队头，如果队列满了，抛出IllegalStateException。
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">addFirst</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">);</span>
+    <span class="cm">/**
+</span><span class="cm">     * 将元素插入队尾，如果队列满了，抛出IllegalStateException。
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">addLast</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">);</span>
+    <span class="cm">/**
+</span><span class="cm">     * 将元素插入队头，如果成功，返回true；如果队列满了，返回false。
+</span><span class="cm">     */</span>
+    <span class="kt">boolean</span> <span class="nf">offerFirst</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">);</span>
+    <span class="cm">/**
+</span><span class="cm">     * 将元素插入队尾，如果成功，返回true；如果队列满了，返回false。
+</span><span class="cm">     */</span>
+    <span class="kt">boolean</span> <span class="nf">offerLast</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">);</span>
+    <span class="cm">/**
+</span><span class="cm">     * 将元素插入队头。如果队列满了，阻塞等待，直到队列有可用空间。
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">putFirst</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * 将元素插入队尾。如果队列满了，阻塞等待，直到队列有可用空间。
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">putLast</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * 将元素插入队头。如果队列满了，阻塞等待。
+</span><span class="cm">     * 如果插入成功，返回true；如果等待超时，返回false。
+</span><span class="cm">     */</span>
+    <span class="kt">boolean</span> <span class="nf">offerFirst</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">,</span> <span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+        <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * 将元素插入队尾。如果队列满了，阻塞等待。
+</span><span class="cm">     * 如果插入成功，返回true；如果等待超时，返回false。
+</span><span class="cm">     */</span>
+    <span class="kt">boolean</span> <span class="nf">offerLast</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">,</span> <span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+        <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * 获取并移除队头元素，如果队头没有元素，阻塞等待，直到有元素可以获取。
+</span><span class="cm">     */</span>
+    <span class="n">E</span> <span class="nf">takeFirst</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * 获取并移除队尾元素，如果队头没有元素，阻塞等待，直到有元素可以获取。
+</span><span class="cm">     */</span>
+    <span class="n">E</span> <span class="nf">takeLast</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * 获取并移除队头元素，如果队头没有元素，阻塞等待。
+</span><span class="cm">     * 如果过了给定的时间还不能获取元素，返回null。
+</span><span class="cm">     */</span>
+    <span class="n">E</span> <span class="nf">pollFirst</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+        <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * 获取并移除队尾元素，如果队头没有元素，阻塞等待。
+</span><span class="cm">     * 如果过了给定的时间还不能获取元素，返回null。
+</span><span class="cm">     */</span>
+    <span class="n">E</span> <span class="nf">pollLast</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+        <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * 从队列中删除第一个出现的指定元素。
+</span><span class="cm">     * 如果有这个元素并删除，返回true；如果没有指定元素，返回false。
+</span><span class="cm">     */</span>
+    <span class="kt">boolean</span> <span class="nf">removeFirstOccurrence</span><span class="o">(</span><span class="n">Object</span> <span class="n">o</span><span class="o">);</span>
+    <span class="cm">/**
+</span><span class="cm">     * 从队列中删除最后一个出现的指定元素。
+</span><span class="cm">     * 如果有这个元素并删除，返回true；如果没有指定元素，返回false。
+</span><span class="cm">     */</span>
+    <span class="kt">boolean</span> <span class="nf">removeLastOccurrence</span><span class="o">(</span><span class="n">Object</span> <span class="n">o</span><span class="o">);</span>
+    <span class="c1">// *** BlockingQueue methods ***
+</span><span class="c1"></span>    <span class="cm">/**
+</span><span class="cm">     * 添加一个元素到队尾，如果成功，返回true。如果队列满了，抛出IllegalStateException。
+</span><span class="cm">     */</span>
+    <span class="kt">boolean</span> <span class="nf">add</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">);</span>
+    <span class="cm">/**
+</span><span class="cm">     * 添加一个元素到队尾。添加成功，返回treue；如果队列满了，返回false。
+</span><span class="cm">     */</span>
+    <span class="kt">boolean</span> <span class="nf">offer</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">);</span>
+    <span class="cm">/**
+</span><span class="cm">     * 将元素插入队尾。如果队列满了，阻塞等待。
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">put</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * 将元素插入队尾。如果队列满了，阻塞等待。
+</span><span class="cm">     * 如果插入成功，返回true；如果等待超时，返回false。
+</span><span class="cm">     */</span>
+    <span class="kt">boolean</span> <span class="nf">offer</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">,</span> <span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+        <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * 获取并移除队头元素，如果队头没有元素，抛出NoSuchElementException异常。
+</span><span class="cm">     */</span>
+    <span class="n">E</span> <span class="nf">remove</span><span class="o">();</span>
+    <span class="cm">/**
+</span><span class="cm">     * 获取并移除队头元素，如果队头没有元素，返回null。
+</span><span class="cm">     */</span>
+    <span class="n">E</span> <span class="nf">poll</span><span class="o">();</span>
+    <span class="cm">/**
+</span><span class="cm">     * 获取并移除队头元素，如果队头没有元素，阻塞等待，直到有元素可以获取。
+</span><span class="cm">     */</span>
+    <span class="n">E</span> <span class="nf">take</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * 获取并移除队头元素，如果队头没有元素，阻塞等待。
+</span><span class="cm">     * 如果过了给定的时间还不能获取元素，返回null。
+</span><span class="cm">     */</span>
+    <span class="n">E</span> <span class="nf">poll</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+        <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * 查看队头元素，如果队头没有元素，抛出NoSuchElementException。
+</span><span class="cm">     */</span>
+    <span class="n">E</span> <span class="nf">element</span><span class="o">();</span>
+    <span class="cm">/**
+</span><span class="cm">     * 查看队头元素，如果队头没有元素，返回null。
+</span><span class="cm">     */</span>
+    <span class="n">E</span> <span class="nf">peek</span><span class="o">();</span>
+    <span class="cm">/**
+</span><span class="cm">     * 从队列中删除第一个出现的指定元素。
+</span><span class="cm">     * 如果有这个元素并删除，返回true；如果没有指定元素，返回false。
+</span><span class="cm">     */</span>
+    <span class="kt">boolean</span> <span class="nf">remove</span><span class="o">(</span><span class="n">Object</span> <span class="n">o</span><span class="o">);</span>
+    <span class="cm">/**
+</span><span class="cm">     * 查看队列是否包含给定的元素，包含返回true；不包含返回false。
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">contains</span><span class="o">(</span><span class="n">Object</span> <span class="n">o</span><span class="o">);</span>
+    <span class="cm">/**
+</span><span class="cm">     * 返回队列中元素数量。
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">size</span><span class="o">();</span>
+    <span class="cm">/**
+</span><span class="cm">     * 返回一个从头到尾排序的迭代器。
+</span><span class="cm">     */</span>
+    <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">iterator</span><span class="o">();</span>
+    <span class="c1">// *** Stack methods ***
+</span><span class="c1"></span>    <span class="cm">/**
+</span><span class="cm">     * 相当于addFirst(Object)
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">push</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二linkedblockingdeque-数据结构">二、LinkedBlockingDeque 数据结构</h2>
+<h3 id="1双链表节点">1.双链表节点</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/** Doubly-linked list node class */</span>
+    <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="o">{</span>
+        <span class="cm">/**
+</span><span class="cm">         * The item, or null if this node has been removed.
+</span><span class="cm">         */</span>
+        <span class="n">E</span> <span class="n">item</span><span class="o">;</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * One of:
+</span><span class="cm">         * - the real predecessor Node
+</span><span class="cm">         * - this Node, meaning the predecessor is tail
+</span><span class="cm">         * - null, meaning there is no predecessor
+</span><span class="cm">         * prev节点
+</span><span class="cm">         */</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">prev</span><span class="o">;</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * One of:
+</span><span class="cm">         * - the real successor Node
+</span><span class="cm">         * - this Node, meaning the successor is head
+</span><span class="cm">         * - null, meaning there is no successor
+</span><span class="cm">         *  next节点
+</span><span class="cm">         */</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">next</span><span class="o">;</span>
+
+        <span class="n">Node</span><span class="o">(</span><span class="n">E</span> <span class="n">x</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="n">x</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2内部结构实现">2.内部结构实现</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">LinkedBlockingDeque</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span>
+    <span class="kd">extends</span> <span class="n">AbstractQueue</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span>
+    <span class="kd">implements</span> <span class="n">BlockingDeque</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;,</span>  <span class="n">java</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">Serializable</span> <span class="o">{</span>
+   <span class="cm">/**
+</span><span class="cm">     * Pointer to first node.
+</span><span class="cm">     * Invariant: (first == null &amp;&amp; last == null) ||
+</span><span class="cm">     *            (first.prev == null &amp;&amp; first.item != null)
+</span><span class="cm">     * 指向第一个节点的指针。
+</span><span class="cm">     */</span>
+    <span class="kd">transient</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">first</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Pointer to last node.
+</span><span class="cm">     * Invariant: (first == null &amp;&amp; last == null) ||
+</span><span class="cm">     *            (last.next == null &amp;&amp; last.item != null)
+</span><span class="cm">     * 指向最后一个节点的指针。           
+</span><span class="cm">     */</span>
+    <span class="kd">transient</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">last</span><span class="o">;</span>
+
+    <span class="cm">/** Number of items in the deque */</span>
+    <span class="c1">//大小
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">transient</span> <span class="kt">int</span> <span class="n">count</span><span class="o">;</span>
+
+    <span class="cm">/** Maximum number of items in the deque */</span>
+    <span class="c1">// 容量
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">capacity</span><span class="o">;</span>
+
+    <span class="cm">/** Main lock guarding all access */</span>
+    <span class="c1">//重入锁
+</span><span class="c1"></span>    <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ReentrantLock</span><span class="o">();</span>
+
+    <span class="cm">/** Condition for waiting takes */</span>
+    <span class="c1">// 为空等待条件
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Condition</span> <span class="n">notEmpty</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">newCondition</span><span class="o">();</span>
+
+    <span class="cm">/** Condition for waiting puts */</span>
+    <span class="c1">// 队列满等待条件
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Condition</span> <span class="n">notFull</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">newCondition</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a {@code LinkedBlockingDeque} with a capacity of
+</span><span class="cm">     * {@link Integer#MAX_VALUE}.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">LinkedBlockingDeque</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span><span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a {@code LinkedBlockingDeque} with the given (fixed) capacity.
+</span><span class="cm">     *
+</span><span class="cm">     * @param capacity the capacity of this deque
+</span><span class="cm">     * @throws IllegalArgumentException if {@code capacity} is less than 1
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">LinkedBlockingDeque</span><span class="o">(</span><span class="kt">int</span> <span class="n">capacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">capacity</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">();</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">capacity</span> <span class="o">=</span> <span class="n">capacity</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a {@code LinkedBlockingDeque} with a capacity of
+</span><span class="cm">     * {@link Integer#MAX_VALUE}, initially containing the elements of
+</span><span class="cm">     * the given collection, added in traversal order of the
+</span><span class="cm">     * collection&#39;s iterator.
+</span><span class="cm">     *
+</span><span class="cm">     * @param c the collection of elements to initially contain
+</span><span class="cm">     * @throws NullPointerException if the specified collection or any
+</span><span class="cm">     *         of its elements are null
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">LinkedBlockingDeque</span><span class="o">(</span><span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">E</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span><span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">);</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span> <span class="c1">// Never contended, but necessary for visibility
+</span><span class="c1"></span>        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">for</span> <span class="o">(</span><span class="n">E</span> <span class="n">e</span> <span class="o">:</span> <span class="n">c</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+                <span class="k">if</span> <span class="o">(!</span><span class="n">linkLast</span><span class="o">(</span><span class="k">new</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;(</span><span class="n">e</span><span class="o">)))</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">&#34;Deque full&#34;</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>   
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二入队">二、入队</h2>
+<h3 id="1插入头部">1.插入头部</h3>
+<h4 id="1offerfirst">(1).offerFirst</h4>
+<ul>
+<li>offerFirst(E e) 将指定元素插入双端队列的头部，如果队列已满，立即返回false</li>
+<li>offerFirst(E e, long timeout, TimeUnit unit) 将指定元素插入双端队列的头部，如果队列已满，则等待空间的指定等待时间</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * @throws NullPointerException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">offerFirst</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">node</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;(</span><span class="n">e</span><span class="o">);</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">linkFirst</span><span class="o">(</span><span class="n">node</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * Links node as first element, or returns false if full.
+</span><span class="cm">     * 连接第一个节点
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">linkFirst</span><span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">node</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// assert lock.isHeldByCurrentThread();
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">count</span> <span class="o">&gt;=</span> <span class="n">capacity</span><span class="o">)</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">first</span><span class="o">;</span>
+        <span class="n">node</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">f</span><span class="o">;</span>
+        <span class="n">first</span> <span class="o">=</span> <span class="n">node</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">last</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="n">last</span> <span class="o">=</span> <span class="n">node</span><span class="o">;</span>
+        <span class="k">else</span>
+            <span class="n">f</span><span class="o">.</span><span class="na">prev</span> <span class="o">=</span> <span class="n">node</span><span class="o">;</span>
+        <span class="o">++</span><span class="n">count</span><span class="o">;</span>
+        <span class="n">notEmpty</span><span class="o">.</span><span class="na">signal</span><span class="o">();</span> <span class="c1">//不为空线程唤醒
+</span><span class="c1"></span>        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">}</span> 
+    <span class="cm">/**
+</span><span class="cm">     * @throws NullPointerException {@inheritDoc}
+</span><span class="cm">     * @throws InterruptedException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">offerFirst</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">,</span> <span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+        <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">node</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;(</span><span class="n">e</span><span class="o">);</span>
+        <span class="kt">long</span> <span class="n">nanos</span> <span class="o">=</span> <span class="n">unit</span><span class="o">.</span><span class="na">toNanos</span><span class="o">(</span><span class="n">timeout</span><span class="o">);</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lockInterruptibly</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">while</span> <span class="o">(!</span><span class="n">linkFirst</span><span class="o">(</span><span class="n">node</span><span class="o">))</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+                <span class="n">nanos</span> <span class="o">=</span> <span class="n">notFull</span><span class="o">.</span><span class="na">awaitNanos</span><span class="o">(</span><span class="n">nanos</span><span class="o">);</span> <span class="c1">//线程等待
+</span><span class="c1"></span>            <span class="o">}</span>
+            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2addfirst">(2).addFirst</h4>
+<p>调用offerFirst，判断双端队列满，throw IllegalStateException</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * @throws IllegalStateException {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException  {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">addFirst</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">offerFirst</span><span class="o">(</span><span class="n">e</span><span class="o">))</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">&#34;Deque full&#34;</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="3putfirst">(3).putFirst</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * @throws NullPointerException {@inheritDoc}
+</span><span class="cm">     * @throws InterruptedException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">putFirst</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">node</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;(</span><span class="n">e</span><span class="o">);</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">while</span> <span class="o">(!</span><span class="n">linkFirst</span><span class="o">(</span><span class="n">node</span><span class="o">))</span>
+                <span class="n">notFull</span><span class="o">.</span><span class="na">await</span><span class="o">();</span>    <span class="c1">//队列满，一直等待，等待队列有容量时，唤醒该线程
+</span><span class="c1"></span>        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="4stack--push">(4).Stack  push</h4>
+<p>调用addFirst方法</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * @throws IllegalStateException {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException  {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">push</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">addFirst</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2插入尾部">2.插入尾部</h3>
+<h4 id="1offerlast">(1).offerLast</h4>
+<ul>
+<li>offerLast(E e) 将指定元素插入双端队列的尾部，如果队列已满，立即返回false</li>
+<li>offerLast(E e, long timeout, TimeUnit unit) 将指定元素插入双端队列的尾部，如果队列已满，则等待空间的指定等待时间</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * @throws NullPointerException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">offerLast</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">node</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;(</span><span class="n">e</span><span class="o">);</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">linkLast</span><span class="o">(</span><span class="n">node</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * Links node as last element, or returns false if full.
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">linkLast</span><span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">node</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// assert lock.isHeldByCurrentThread();
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">count</span> <span class="o">&gt;=</span> <span class="n">capacity</span><span class="o">)</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">l</span> <span class="o">=</span> <span class="n">last</span><span class="o">;</span>
+        <span class="n">node</span><span class="o">.</span><span class="na">prev</span> <span class="o">=</span> <span class="n">l</span><span class="o">;</span>
+        <span class="n">last</span> <span class="o">=</span> <span class="n">node</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">first</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="n">first</span> <span class="o">=</span> <span class="n">node</span><span class="o">;</span>
+        <span class="k">else</span>
+            <span class="n">l</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">node</span><span class="o">;</span>
+        <span class="o">++</span><span class="n">count</span><span class="o">;</span>
+        <span class="n">notEmpty</span><span class="o">.</span><span class="na">signal</span><span class="o">();</span>
+        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * @throws NullPointerException {@inheritDoc}
+</span><span class="cm">     * @throws InterruptedException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">offerLast</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">,</span> <span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+        <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">node</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;(</span><span class="n">e</span><span class="o">);</span>
+        <span class="kt">long</span> <span class="n">nanos</span> <span class="o">=</span> <span class="n">unit</span><span class="o">.</span><span class="na">toNanos</span><span class="o">(</span><span class="n">timeout</span><span class="o">);</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lockInterruptibly</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">while</span> <span class="o">(!</span><span class="n">linkLast</span><span class="o">(</span><span class="n">node</span><span class="o">))</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+                <span class="n">nanos</span> <span class="o">=</span> <span class="n">notFull</span><span class="o">.</span><span class="na">awaitNanos</span><span class="o">(</span><span class="n">nanos</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2addlast">(2).addLast</h4>
+<p>调用offerLast，判断双端队列满，throw IllegalStateException</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * @throws IllegalStateException {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException  {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">addLast</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">offerLast</span><span class="o">(</span><span class="n">e</span><span class="o">))</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">&#34;Deque full&#34;</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3putlast">(3).putLast</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">  * @throws NullPointerException {@inheritDoc}
+</span><span class="cm">  * @throws InterruptedException {@inheritDoc}
+</span><span class="cm">  */</span>
+ <span class="kd">public</span> <span class="kt">void</span> <span class="nf">putLast</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+     <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+     <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">node</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;(</span><span class="n">e</span><span class="o">);</span>
+     <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+     <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+     <span class="k">try</span> <span class="o">{</span>
+         <span class="k">while</span> <span class="o">(!</span><span class="n">linkLast</span><span class="o">(</span><span class="n">node</span><span class="o">))</span>
+             <span class="n">notFull</span><span class="o">.</span><span class="na">await</span><span class="o">();</span>
+     <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+         <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+     <span class="o">}</span>
+ <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4blockingqueue接口入队方法">(4).BlockingQueue接口入队方法</h3>
+<ul>
+<li>offer(E e)方法调用offerLast(e)方法</li>
+<li>offer(E e, long timeout, TimeUnit unit)方法调用offerLast(e, timeout, unit)</li>
+<li>add(E e)方法调用addLast(e)方法</li>
+<li>put(E e)方法调用putLast(e)方法</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+  <span class="cm">/**
+</span><span class="cm">   * Inserts the specified element at the end of this deque unless it would
+</span><span class="cm">   * violate capacity restrictions.  When using a capacity-restricted deque,
+</span><span class="cm">   * it is generally preferable to use method {@link #offer(Object) offer}.
+</span><span class="cm">   *
+</span><span class="cm">   * &lt;p&gt;This method is equivalent to {@link #addLast}.
+</span><span class="cm">   *
+</span><span class="cm">   * @throws IllegalStateException if the element cannot be added at this
+</span><span class="cm">   *         time due to capacity restrictions
+</span><span class="cm">   * @throws NullPointerException if the specified element is null
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">add</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">addLast</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+      <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+  <span class="o">}</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * @throws NullPointerException if the specified element is null
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">offer</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">return</span> <span class="n">offerLast</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+  <span class="o">}</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * @throws NullPointerException {@inheritDoc}
+</span><span class="cm">   * @throws InterruptedException {@inheritDoc}
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">put</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+      <span class="n">putLast</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+  <span class="o">}</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * @throws NullPointerException {@inheritDoc}
+</span><span class="cm">   * @throws InterruptedException {@inheritDoc}
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">offer</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">,</span> <span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+      <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+      <span class="k">return</span> <span class="n">offerLast</span><span class="o">(</span><span class="n">e</span><span class="o">,</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">unit</span><span class="o">);</span>
+  <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二出队">二、出队</h2>
+<h3 id="1头部出队">1.头部出队</h3>
+<h4 id="1-pollfirst">(1). pollFirst</h4>
+<ul>
+<li>pollFirst() 获取并移除此队列的头，如果此队列为空，则返回 null</li>
+<li>E pollFirst(long timeout, TimeUnit unit) 获取并移除此队列的头部，队列为空时，在指定的等待时间前等待可用的元素。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="n">E</span> <span class="nf">pollFirst</span><span class="o">()</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">unlinkFirst</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * Removes and returns first element, or null if empty.
+</span><span class="cm">     * 删除并返回第一个元素，如果是空的，则返回null。
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="n">E</span> <span class="nf">unlinkFirst</span><span class="o">()</span> <span class="o">{</span>
+        <span class="c1">// assert lock.isHeldByCurrentThread();
+</span><span class="c1"></span>        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">first</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">f</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+        <span class="n">E</span> <span class="n">item</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="na">item</span><span class="o">;</span>
+        <span class="n">f</span><span class="o">.</span><span class="na">item</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="n">f</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">f</span><span class="o">;</span> <span class="c1">// help GC
+</span><span class="c1"></span>        <span class="n">first</span> <span class="o">=</span> <span class="n">n</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="n">last</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="k">else</span>
+            <span class="n">n</span><span class="o">.</span><span class="na">prev</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="o">--</span><span class="n">count</span><span class="o">;</span>
+        <span class="n">notFull</span><span class="o">.</span><span class="na">signal</span><span class="o">();</span> <span class="c1">//呼唤队列已满线程
+</span><span class="c1"></span>        <span class="k">return</span> <span class="n">item</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">pollFirst</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+        <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="kt">long</span> <span class="n">nanos</span> <span class="o">=</span> <span class="n">unit</span><span class="o">.</span><span class="na">toNanos</span><span class="o">(</span><span class="n">timeout</span><span class="o">);</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lockInterruptibly</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">E</span> <span class="n">x</span><span class="o">;</span>
+            <span class="k">while</span> <span class="o">(</span> <span class="o">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">unlinkFirst</span><span class="o">())</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="n">nanos</span> <span class="o">=</span> <span class="n">notEmpty</span><span class="o">.</span><span class="na">awaitNanos</span><span class="o">(</span><span class="n">nanos</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="n">x</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>    
+  
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2-takefirst">(2). takeFirst</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="kd">public</span> <span class="n">E</span> <span class="nf">takeFirst</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">E</span> <span class="n">x</span><span class="o">;</span>
+            <span class="k">while</span> <span class="o">(</span> <span class="o">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">unlinkFirst</span><span class="o">())</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                <span class="n">notEmpty</span><span class="o">.</span><span class="na">await</span><span class="o">();</span>
+            <span class="k">return</span> <span class="n">x</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="3peekfirst">(3).peekFirst</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">public</span> <span class="n">E</span> <span class="nf">peekFirst</span><span class="o">()</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="o">(</span><span class="n">first</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span> <span class="kc">null</span> <span class="o">:</span> <span class="n">first</span><span class="o">.</span><span class="na">item</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4blockingqueue接口出队方法">(4).BlockingQueue接口出队方法</h3>
+<ul>
+<li>poll()方法调用pollFirst()</li>
+<li>poll(long timeout, TimeUnit unit)调用ollFirst(timeout, unit)</li>
+<li>take()方法调用takeFirst()</li>
+<li>peek()方法调用peekFirst()</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="kd">public</span> <span class="n">E</span> <span class="nf">poll</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">pollFirst</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">take</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">takeFirst</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">poll</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">pollFirst</span><span class="o">(</span><span class="n">timeout</span><span class="o">,</span> <span class="n">unit</span><span class="o">);</span>
+    <span class="o">}</span>
+ <span class="kd">public</span> <span class="n">E</span> <span class="nf">peek</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">peekFirst</span><span class="o">();</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="5stack-pop">(5).Stack pop</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * @throws NoSuchElementException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">pop</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">removeFirst</span><span class="o">();</span>
+    <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * @throws NoSuchElementException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">removeFirst</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">E</span> <span class="n">x</span> <span class="o">=</span> <span class="n">pollFirst</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">x</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NoSuchElementException</span><span class="o">();</span>
+        <span class="k">return</span> <span class="n">x</span><span class="o">;</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1尾部出队">1.尾部出队</h3>
+<h4 id="1-polllast">(1). pollLast</h4>
+<ul>
+<li>pollLast() 获取并移除此队列的尾部，如果此队列为空，则返回 null</li>
+<li>E pollLast(long timeout, TimeUnit unit) 获取并移除此队列的尾部，队列为空时，在指定的等待时间前等待可用的元素。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">     <span class="kd">public</span> <span class="n">E</span> <span class="nf">pollLast</span><span class="o">()</span> <span class="o">{</span>
+         <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+         <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+         <span class="k">try</span> <span class="o">{</span>
+             <span class="k">return</span> <span class="n">unlinkLast</span><span class="o">();</span>
+         <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+             <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+         <span class="o">}</span>
+     <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * Removes and returns last element, or null if empty.
+</span><span class="cm">     * 删除并返回最后一个元素，如果是空的，则返回null。
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="n">E</span> <span class="nf">unlinkLast</span><span class="o">()</span> <span class="o">{</span>
+        <span class="c1">// assert lock.isHeldByCurrentThread();
+</span><span class="c1"></span>        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">l</span> <span class="o">=</span> <span class="n">last</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">l</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="na">prev</span><span class="o">;</span>
+        <span class="n">E</span> <span class="n">item</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="na">item</span><span class="o">;</span>
+        <span class="n">l</span><span class="o">.</span><span class="na">item</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="n">l</span><span class="o">.</span><span class="na">prev</span> <span class="o">=</span> <span class="n">l</span><span class="o">;</span> <span class="c1">// help GC
+</span><span class="c1"></span>        <span class="n">last</span> <span class="o">=</span> <span class="n">p</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">p</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="n">first</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="k">else</span>
+            <span class="n">p</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="o">--</span><span class="n">count</span><span class="o">;</span>
+        <span class="n">notFull</span><span class="o">.</span><span class="na">signal</span><span class="o">();</span>
+        <span class="k">return</span> <span class="n">item</span><span class="o">;</span>
+    <span class="o">}</span>     
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2-takelast">(2). takeLast</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">public</span> <span class="n">E</span> <span class="nf">takeLast</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">E</span> <span class="n">x</span><span class="o">;</span>
+            <span class="k">while</span> <span class="o">(</span> <span class="o">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">unlinkLast</span><span class="o">())</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                <span class="n">notEmpty</span><span class="o">.</span><span class="na">await</span><span class="o">();</span>
+            <span class="k">return</span> <span class="n">x</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="3peeklast">(3).peekLast</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * @throws NoSuchElementException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">getLast</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">E</span> <span class="n">x</span> <span class="o">=</span> <span class="n">peekLast</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">x</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NoSuchElementException</span><span class="o">();</span>
+        <span class="k">return</span> <span class="n">x</span><span class="o">;</span>
+    <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="三移除队列">三、移除队列</h2>
+<h3 id="1removefirst和removelast">1.removeFirst和removeLast</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * @throws NoSuchElementException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">removeFirst</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">E</span> <span class="n">x</span> <span class="o">=</span> <span class="n">pollFirst</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">x</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NoSuchElementException</span><span class="o">();</span>
+        <span class="k">return</span> <span class="n">x</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @throws NoSuchElementException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">removeLast</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">E</span> <span class="n">x</span> <span class="o">=</span> <span class="n">pollLast</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">x</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NoSuchElementException</span><span class="o">();</span>
+        <span class="k">return</span> <span class="n">x</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2removefirstoccurrence和removelastoccurrence">2.removeFirstOccurrence和removeLastOccurrence</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="c1">//从队列中删除第一个出现的指定元素。
+</span><span class="c1"></span> <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">removeFirstOccurrence</span><span class="o">(</span><span class="n">Object</span> <span class="n">o</span><span class="o">)</span> <span class="o">{</span>
+     <span class="k">if</span> <span class="o">(</span><span class="n">o</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+     <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+     <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+     <span class="k">try</span> <span class="o">{</span>
+         <span class="k">for</span> <span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">first</span><span class="o">;</span> <span class="n">p</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="na">next</span><span class="o">)</span> <span class="o">{</span>
+             <span class="k">if</span> <span class="o">(</span><span class="n">o</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">p</span><span class="o">.</span><span class="na">item</span><span class="o">))</span> <span class="o">{</span>
+                 <span class="n">unlink</span><span class="o">(</span><span class="n">p</span><span class="o">);</span>
+                 <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+             <span class="o">}</span>
+         <span class="o">}</span>
+         <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+     <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+         <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+     <span class="o">}</span>
+ <span class="o">}</span>
+ <span class="c1">//从队列中删除最后第一个出现的指定元素。
+</span><span class="c1"></span> <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">removeLastOccurrence</span><span class="o">(</span><span class="n">Object</span> <span class="n">o</span><span class="o">)</span> <span class="o">{</span>
+     <span class="k">if</span> <span class="o">(</span><span class="n">o</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+     <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+     <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+     <span class="k">try</span> <span class="o">{</span>
+         <span class="k">for</span> <span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">last</span><span class="o">;</span> <span class="n">p</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="na">prev</span><span class="o">)</span> <span class="o">{</span>
+             <span class="k">if</span> <span class="o">(</span><span class="n">o</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">p</span><span class="o">.</span><span class="na">item</span><span class="o">))</span> <span class="o">{</span>
+                 <span class="n">unlink</span><span class="o">(</span><span class="n">p</span><span class="o">);</span>
+                 <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+             <span class="o">}</span>
+         <span class="o">}</span>
+         <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+     <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+         <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+     <span class="o">}</span>
+ <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * Unlinks x.
+</span><span class="cm">     * 删除X
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">unlink</span><span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">x</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// assert lock.isHeldByCurrentThread();
+</span><span class="c1"></span>        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="na">prev</span><span class="o">;</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">p</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">unlinkFirst</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">unlinkLast</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="n">p</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">n</span><span class="o">;</span>
+            <span class="n">n</span><span class="o">.</span><span class="na">prev</span> <span class="o">=</span> <span class="n">p</span><span class="o">;</span>
+            <span class="n">x</span><span class="o">.</span><span class="na">item</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="c1">// Don&#39;t mess with x&#39;s links.  They may still be in use by
+</span><span class="c1"></span>            <span class="c1">// an iterator.
+</span><span class="c1"></span>            <span class="o">--</span><span class="n">count</span><span class="o">;</span>
+            <span class="n">notFull</span><span class="o">.</span><span class="na">signal</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span> 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3remove">3.remove</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">public</span> <span class="n">E</span> <span class="nf">remove</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">removeFirst</span><span class="o">();</span>
+    <span class="o">}</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">remove</span><span class="o">(</span><span class="n">Object</span> <span class="n">o</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">removeFirstOccurrence</span><span class="o">(</span><span class="n">o</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4clear方法">4.clear方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Atomically removes all of the elements from this deque.
+</span><span class="cm">     * The deque will be empty after this call returns.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">clear</span><span class="o">()</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">for</span> <span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">first</span><span class="o">;</span> <span class="n">f</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span> <span class="o">)</span> <span class="o">{</span>
+                <span class="n">f</span><span class="o">.</span><span class="na">item</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+                <span class="n">f</span><span class="o">.</span><span class="na">prev</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="n">f</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">n</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="n">first</span> <span class="o">=</span> <span class="n">last</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+            <span class="n">notFull</span><span class="o">.</span><span class="na">signalAll</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4drainto方法">4.drainTo方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * @throws UnsupportedOperationException {@inheritDoc}
+</span><span class="cm">     * @throws ClassCastException            {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException          {@inheritDoc}
+</span><span class="cm">     * @throws IllegalArgumentException      {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">drainTo</span><span class="o">(</span><span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">E</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">drainTo</span><span class="o">(</span><span class="n">c</span><span class="o">,</span> <span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @throws UnsupportedOperationException {@inheritDoc}
+</span><span class="cm">     * @throws ClassCastException            {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException          {@inheritDoc}
+</span><span class="cm">     * @throws IllegalArgumentException      {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">drainTo</span><span class="o">(</span><span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">E</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">,</span> <span class="kt">int</span> <span class="n">maxElements</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="k">this</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">();</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="n">Math</span><span class="o">.</span><span class="na">min</span><span class="o">(</span><span class="n">maxElements</span><span class="o">,</span> <span class="n">count</span><span class="o">);</span>
+            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+                <span class="n">c</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">first</span><span class="o">.</span><span class="na">item</span><span class="o">);</span>   <span class="c1">// In this order, in case add() throws.
+</span><span class="c1"></span>                <span class="n">unlinkFirst</span><span class="o">();</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="n">n</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="五iterator-迭代器实现">五、Iterator 迭代器实现</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Base class for Iterators for LinkedBlockingDeque
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">AbstractItr</span> <span class="kd">implements</span> <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="o">{</span>
+        <span class="cm">/**
+</span><span class="cm">         * The next node to return in next()
+</span><span class="cm">         */</span>
+         <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">next</span><span class="o">;</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * nextItem holds on to item fields because once we claim that
+</span><span class="cm">         * an element exists in hasNext(), we must return item read
+</span><span class="cm">         * under lock (in advance()) even if it was in the process of
+</span><span class="cm">         * being removed when hasNext() was called.
+</span><span class="cm">         */</span>
+        <span class="n">E</span> <span class="n">nextItem</span><span class="o">;</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Node returned by most recent call to next. Needed by remove.
+</span><span class="cm">         * Reset to null if this element is deleted by a call to remove.
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">lastRet</span><span class="o">;</span>
+
+        <span class="kd">abstract</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">firstNode</span><span class="o">();</span>
+        <span class="kd">abstract</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">nextNode</span><span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">n</span><span class="o">);</span>
+
+        <span class="n">AbstractItr</span><span class="o">()</span> <span class="o">{</span>
+            <span class="c1">// set to initial position
+</span><span class="c1"></span>            <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="n">LinkedBlockingDeque</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">next</span> <span class="o">=</span> <span class="n">firstNode</span><span class="o">();</span>
+                <span class="n">nextItem</span> <span class="o">=</span> <span class="o">(</span><span class="n">next</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span> <span class="kc">null</span> <span class="o">:</span> <span class="n">next</span><span class="o">.</span><span class="na">item</span><span class="o">;</span>
+            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Returns the successor node of the given non-null, but
+</span><span class="cm">         * possibly previously deleted, node.
+</span><span class="cm">         * 返回给定的非空的继承节点，但可能是先前删除的节点。
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">succ</span><span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">n</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// Chains of deleted nodes ending in null or self-links
+</span><span class="c1"></span>            <span class="c1">// are possible if multiple interior nodes are removed.
+</span><span class="c1"></span>            <span class="c1">//如果将多个内部节点删除，则可以将删除节点的链终止为null或自链接
+</span><span class="c1"></span>            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">s</span> <span class="o">=</span> <span class="n">nextNode</span><span class="o">(</span><span class="n">n</span><span class="o">);</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">s</span><span class="o">.</span><span class="na">item</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="n">s</span><span class="o">;</span>
+                <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">==</span> <span class="n">n</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="n">firstNode</span><span class="o">();</span>
+                <span class="k">else</span>
+                    <span class="n">n</span> <span class="o">=</span> <span class="n">s</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Advances next.
+</span><span class="cm">         */</span>
+        <span class="kt">void</span> <span class="nf">advance</span><span class="o">()</span> <span class="o">{</span>
+            <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="n">LinkedBlockingDeque</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="c1">// assert next != null;
+</span><span class="c1"></span>                <span class="n">next</span> <span class="o">=</span> <span class="n">succ</span><span class="o">(</span><span class="n">next</span><span class="o">);</span>
+                <span class="n">nextItem</span> <span class="o">=</span> <span class="o">(</span><span class="n">next</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span> <span class="kc">null</span> <span class="o">:</span> <span class="n">next</span><span class="o">.</span><span class="na">item</span><span class="o">;</span>
+            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">hasNext</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">next</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="n">E</span> <span class="nf">next</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">next</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">NoSuchElementException</span><span class="o">();</span>
+            <span class="n">lastRet</span> <span class="o">=</span> <span class="n">next</span><span class="o">;</span>
+            <span class="n">E</span> <span class="n">x</span> <span class="o">=</span> <span class="n">nextItem</span><span class="o">;</span>
+            <span class="n">advance</span><span class="o">();</span>
+            <span class="k">return</span> <span class="n">x</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">remove</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="n">lastRet</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">();</span>
+            <span class="n">lastRet</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="n">LinkedBlockingDeque</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">n</span><span class="o">.</span><span class="na">item</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                    <span class="n">unlink</span><span class="o">(</span><span class="n">n</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="cm">/** Forward iterator */</span>
+    <span class="c1">//从前迭代
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">class</span> <span class="nc">Itr</span> <span class="kd">extends</span> <span class="n">AbstractItr</span> <span class="o">{</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">firstNode</span><span class="o">()</span> <span class="o">{</span> <span class="k">return</span> <span class="n">first</span><span class="o">;</span> <span class="o">}</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">nextNode</span><span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">n</span><span class="o">)</span> <span class="o">{</span> <span class="k">return</span> <span class="n">n</span><span class="o">.</span><span class="na">next</span><span class="o">;</span> <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="cm">/** Descending iterator */</span>
+    <span class="c1">//从后迭代
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">class</span> <span class="nc">DescendingItr</span> <span class="kd">extends</span> <span class="n">AbstractItr</span> <span class="o">{</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">firstNode</span><span class="o">()</span> <span class="o">{</span> <span class="k">return</span> <span class="n">last</span><span class="o">;</span> <span class="o">}</span>
+        <span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">nextNode</span><span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">n</span><span class="o">)</span> <span class="o">{</span> <span class="k">return</span> <span class="n">n</span><span class="o">.</span><span class="na">prev</span><span class="o">;</span> <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-07-02 22:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/LinkedTransferQueue/">LinkedTransferQueue</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/collection/08.CopyOnWriteArrayList%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">CopyOnWriteArrayList</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/collection/06.LinkedTransferQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">LinkedTransferQueue</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

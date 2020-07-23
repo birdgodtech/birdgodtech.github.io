@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>FastThreadLocal - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="一、介绍 Netty为了提高性能，Java的ThreadLocal不用，自己创建FastThreadLocal，屌爆ThreadLocal； T" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/netty/09.FastThreadLocal/" />
+<link href="/post/netty/09.FastThreadLocal/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/netty/09.FastThreadLocal/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="FastThreadLocal" />
+<meta property="og:description" content="一、介绍 Netty为了提高性能，Java的ThreadLocal不用，自己创建FastThreadLocal，屌爆ThreadLocal； T" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/netty/09.FastThreadLocal/" />
+<meta property="article:published_time" content="2019-04-15T21:08:08+00:00" />
+<meta property="article:modified_time" content="2019-04-15T21:08:08+00:00" />
+<meta itemprop="name" content="FastThreadLocal">
+<meta itemprop="description" content="一、介绍 Netty为了提高性能，Java的ThreadLocal不用，自己创建FastThreadLocal，屌爆ThreadLocal； T">
+<meta itemprop="datePublished" content="2019-04-15T21:08:08&#43;00:00" />
+<meta itemprop="dateModified" content="2019-04-15T21:08:08&#43;00:00" />
+<meta itemprop="wordCount" content="3252">
+
+
+
+<meta itemprop="keywords" content="netty," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="FastThreadLocal"/>
+<meta name="twitter:description" content="一、介绍 Netty为了提高性能，Java的ThreadLocal不用，自己创建FastThreadLocal，屌爆ThreadLocal； T"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">FastThreadLocal</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2019-04-15 21:08 </span>
+      <div class="post-category">
+        <a href="/categories/netty/"> netty </a>
+        </div>
+      <span class="more-meta"> 约 3252 字 </span>
+      <span class="more-meta"> 预计阅读 7 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1数据结构">1.数据结构</a>
+      <ul>
+        <li><a href="#ainternalthreadlocalmapnextvariableindex">a.InternalThreadLocalMap.nextVariableIndex()</a></li>
+      </ul>
+    </li>
+    <li><a href="#2get-返回当前线程的当前值">2.get 返回当前线程的当前值</a>
+      <ul>
+        <li><a href="#ainternalthreadlocalmapget-当线程中获取internalthreadlocalmap">a.InternalThreadLocalMap.get() 当线程中获取InternalThreadLocalMap</a></li>
+        <li><a href="#binternalthreadlocalmapfastget">b.InternalThreadLocalMap.fastGet()</a></li>
+        <li><a href="#binternalthreadlocalmapslowget">b.InternalThreadLocalMap.slowGet()</a></li>
+        <li><a href="#cinternalthreadlocalmapindexedvariable获取当前线程的当前值">c.InternalThreadLocalMap.indexedVariable获取当前线程的当前值；</a></li>
+      </ul>
+    </li>
+    <li><a href="#3initialize-未获取到值进行初始化操作">3.initialize 未获取到值，进行初始化操作</a>
+      <ul>
+        <li><a href="#ainternalthreadlocalmapsetindexedvariable-设置本地线程变量">a.InternalThreadLocalMap.setIndexedVariable 设置本地线程变量</a></li>
+        <li><a href="#binternalthreadlocalmapexpandindexedvariabletableandset-进行扩容">b.InternalThreadLocalMap.expandIndexedVariableTableAndSet 进行扩容</a></li>
+      </ul>
+    </li>
+    <li><a href="#4addtovariablestoremove-为本地线程添加删除索引的变量">4.addToVariablesToRemove 为本地线程添加删除索引的变量</a></li>
+    <li><a href="#5registercleaner-对象清理注册objectcleanerregister">5.registerCleaner 对象清理注册ObjectCleaner.register</a></li>
+    <li><a href="#6remove-gc清理">6.remove GC清理</a></li>
+    <li><a href="#7set-设置变量值">7.set 设置变量值</a></li>
+    <li><a href="#8removeall">8.removeAll</a>
+      <ul>
+        <li><a href="#ainternalthreadlocalmapremove">a.InternalThreadLocalMap#remove</a></li>
+      </ul>
+    </li>
+    <li><a href="#9internalthreadlocalmap">9.InternalThreadLocalMap</a>
+      <ul>
+        <li><a href="#1内容数据结构列出几个重要">1.内容数据结构，列出几个重要</a></li>
+        <li><a href="#2有意思构造方法">2.有意思构造方法</a></li>
+        <li><a href="#3indexedvariables数组很大问题">3.indexedVariables数组很大问题？</a></li>
+        <li><a href="#4本地缓存的字符串缓冲区不用频繁创建stringbuilder提高性能">4.本地缓存的字符串缓冲区，不用频繁创建StringBuilder，提高性能</a></li>
+      </ul>
+    </li>
+    <li><a href="#10objectcleaner-对象回收">10.ObjectCleaner 对象回收</a>
+      <ul>
+        <li><a href="#1automaticcleanerreference是弱引用的类继承automaticcleanerreference">1.AutomaticCleanerReference是弱引用的类，继承AutomaticCleanerReference</a></li>
+        <li><a href="#2类变量">2.类变量</a></li>
+        <li><a href="#3register-注册对象回收机制">3.register 注册对象回收机制</a></li>
+        <li><a href="#4cleaner_task-清除任务">4.CLEANER_TASK 清除任务</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2019-04-15T21:08:08" title="April 15, 2019">April 15, 2019</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="一介绍">一、介绍</h1>
+<p>Netty为了提高性能，Java的ThreadLocal不用，自己创建FastThreadLocal，屌爆ThreadLocal；
+ThreadLocal的内存泄露的风险。</p>
+<p>当从FastThreadLocalThread访问时,具有更高的访问性能。内部结构用数组保存，FastThreadLocal在数组中使用常量索引来查找变量，
+而不是使用哈希码和哈希表。尽管看似非常微妙，但与使用哈希表相比，它在性能上却有一点优势，并且在经常访问时很有用。</p>
+<h1 id="二fastthreadlocal">二、FastThreadLocal</h1>
+<h2 id="1数据结构">1.数据结构</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private final int index;
+
+   public FastThreadLocal() {
+       index = InternalThreadLocalMap.nextVariableIndex();
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>常量index</li>
+<li>InternalThreadLocalMap.nextVariableIndex()赋值给index</li>
+</ul>
+<h3 id="ainternalthreadlocalmapnextvariableindex">a.InternalThreadLocalMap.nextVariableIndex()</h3>
+<ul>
+<li>nextIndex是静态常量AtomicInteger</li>
+<li>获取index是自动增长，原子操作；多线程访问存在竞争问题，CAS控制；</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public static int nextVariableIndex() {
+       int index = nextIndex.getAndIncrement();
+       if (index &lt; 0) {
+           nextIndex.decrementAndGet();
+           throw new IllegalStateException(...);
+       }
+       return index;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2get-返回当前线程的当前值">2.get 返回当前线程的当前值</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public final V get() {
+       InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.get();
+       Object v = threadLocalMap.indexedVariable(index);
+       if (v != InternalThreadLocalMap.UNSET) {
+           return (V) v;
+       }
+
+       V value = initialize(threadLocalMap);
+       registerCleaner(threadLocalMap);
+       return value;
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="ainternalthreadlocalmapget-当线程中获取internalthreadlocalmap">a.InternalThreadLocalMap.get() 当线程中获取InternalThreadLocalMap</h3>
+<ul>
+<li>fastGet比slowGet快，前提条件创建FastThreadLocalThread线程；</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public static InternalThreadLocalMap get() {
+       Thread thread = Thread.currentThread();
+       if (thread instanceof FastThreadLocalThread) {
+           return fastGet((FastThreadLocalThread) thread);
+       } else {
+           return slowGet();
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="binternalthreadlocalmapfastget">b.InternalThreadLocalMap.fastGet()</h3>
+<p>FastThreadLocalThread变量threadLocalMap查找InternalThreadLocalMap，为空创建InternalThreadLocalMap</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  private static InternalThreadLocalMap fastGet(FastThreadLocalThread thread) {
+        InternalThreadLocalMap threadLocalMap = thread.threadLocalMap();
+        if (threadLocalMap == null) {
+            thread.setThreadLocalMap(threadLocalMap = new InternalThreadLocalMap());
+        }
+        return threadLocalMap;
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="binternalthreadlocalmapslowget">b.InternalThreadLocalMap.slowGet()</h3>
+<p>从JAVA的ThreadLocal获取InternalThreadLocalMap，不存在创建InternalThreadLocalMap</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    private static InternalThreadLocalMap slowGet() {
+        ThreadLocal&lt;InternalThreadLocalMap&gt; slowThreadLocalMap = UnpaddedInternalThreadLocalMap.slowThreadLocalMap;
+        InternalThreadLocalMap ret = slowThreadLocalMap.get();
+        if (ret == null) {
+            ret = new InternalThreadLocalMap();
+            slowThreadLocalMap.set(ret);
+        }
+        return ret;
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="cinternalthreadlocalmapindexedvariable获取当前线程的当前值">c.InternalThreadLocalMap.indexedVariable获取当前线程的当前值；</h3>
+<ul>
+<li>数组保存变量值</li>
+<li>数组下标访问，速度很快</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public Object indexedVariable(int index) {
+       Object[] lookup = indexedVariables;
+       return index &lt; lookup.length? lookup[index] : UNSET;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3initialize-未获取到值进行初始化操作">3.initialize 未获取到值，进行初始化操作</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private V initialize(InternalThreadLocalMap threadLocalMap) {
+       V v = null;
+       try {
+           //空方法，具体创建对象时，自行重写方法；
+           v = initialValue();
+       } catch (Exception e) {
+           PlatformDependent.throwException(e);
+       }
+
+       threadLocalMap.setIndexedVariable(index, v);
+       addToVariablesToRemove(threadLocalMap, this);
+       return v;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="ainternalthreadlocalmapsetindexedvariable-设置本地线程变量">a.InternalThreadLocalMap.setIndexedVariable 设置本地线程变量</h3>
+<ul>
+<li>往数组中指定下标赋值本地变量</li>
+<li>下标索引大于数组大小，继续扩容</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public boolean setIndexedVariable(int index, Object value) {
+       Object[] lookup = indexedVariables;
+       if (index &lt; lookup.length) {
+           Object oldValue = lookup[index];
+           lookup[index] = value;
+           return oldValue == UNSET;
+       } else {
+           expandIndexedVariableTableAndSet(index, value);
+           return true;
+       }
+   }
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="binternalthreadlocalmapexpandindexedvariabletableandset-进行扩容">b.InternalThreadLocalMap.expandIndexedVariableTableAndSet 进行扩容</h3>
+<ul>
+<li>进行扩容，2次方值大于下标索引最近值；</li>
+<li>在进行下标赋值</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    private void expandIndexedVariableTableAndSet(int index, Object value) {
+        Object[] oldArray = indexedVariables;
+        final int oldCapacity = oldArray.length;
+        int newCapacity = index;
+        newCapacity |= newCapacity &gt;&gt;&gt;  1;
+        newCapacity |= newCapacity &gt;&gt;&gt;  2;
+        newCapacity |= newCapacity &gt;&gt;&gt;  4;
+        newCapacity |= newCapacity &gt;&gt;&gt;  8;
+        newCapacity |= newCapacity &gt;&gt;&gt; 16;
+        newCapacity ++;
+
+        Object[] newArray = Arrays.copyOf(oldArray, newCapacity);
+        Arrays.fill(newArray, oldCapacity, newArray.length, UNSET);
+        newArray[index] = value;
+        indexedVariables = newArray;
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4addtovariablestoremove-为本地线程添加删除索引的变量">4.addToVariablesToRemove 为本地线程添加删除索引的变量</h2>
+<ul>
+<li>variablesToRemoveIndex默认为零，静态常量变量；类创建第一次就调用InternalThreadLocalMap.nextVariableIndex；</li>
+<li>删除索引的变量的值是Set</li>
+<li>作用后面说</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    private static final int variablesToRemoveIndex = InternalThreadLocalMap.nextVariableIndex();
+    
+    private static void addToVariablesToRemove(InternalThreadLocalMap threadLocalMap, FastThreadLocal&lt;?&gt; variable) {
+        Object v = threadLocalMap.indexedVariable(variablesToRemoveIndex);
+        Set&lt;FastThreadLocal&lt;?&gt;&gt; variablesToRemove;
+        if (v == InternalThreadLocalMap.UNSET || v == null) {
+            variablesToRemove = Collections.newSetFromMap(new IdentityHashMap&lt;FastThreadLocal&lt;?&gt;, Boolean&gt;());
+            threadLocalMap.setIndexedVariable(variablesToRemoveIndex, variablesToRemove);
+        } else {
+            variablesToRemove = (Set&lt;FastThreadLocal&lt;?&gt;&gt;) v;
+        }
+        variablesToRemove.add(variable);
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="5registercleaner-对象清理注册objectcleanerregister">5.registerCleaner 对象清理注册ObjectCleaner.register</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private void registerCleaner(final InternalThreadLocalMap threadLocalMap) {
+       Thread current = Thread.currentThread();
+       if (!FastThreadLocalThread.willCleanupFastThreadLocals(current)) {
+           //我们将需要确保我们将触发remove（InternalThreadLocalMap），
+           // 以便将所有内容释放并调用FastThreadLocal.onRemoval（...）。
+           ObjectCleaner.register(current, new Runnable() {
+               @Override
+               public void run() {
+                   remove(threadLocalMap);
+                   //最好不要在此处调用InternalThreadLocalMap.remove()，
+                   //因为只有在GC收集了线程后才会触发此操作。在这种情况下，ThreadLocal已经消失了。
+               }
+           });
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="6remove-gc清理">6.remove GC清理</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public final void remove(InternalThreadLocalMap threadLocalMap) {
+       if (threadLocalMap == null) {
+           return;
+       }
+       //把当前下标设置成UNSET 
+       Object v = threadLocalMap.removeIndexedVariable(index);
+       //variablesToRemoveIndex下标值中Set移除当前下标索引
+       removeFromVariablesToRemove(threadLocalMap, this);
+
+       if (v != InternalThreadLocalMap.UNSET) {
+           try {
+               //空方法，自行实现处理相应逻辑
+               onRemoval((V) v);
+           } catch (Exception e) {
+               PlatformDependent.throwException(e);
+           }
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="7set-设置变量值">7.set 设置变量值</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public final void set(V value) {
+       if (value != InternalThreadLocalMap.UNSET) {
+           InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.get();
+           if (setKnownNotUnset(threadLocalMap, value)) {
+               registerCleaner(threadLocalMap);
+           }
+       } else {
+           remove();
+       }
+   } 
+
+   private boolean setKnownNotUnset(InternalThreadLocalMap threadLocalMap, V value) {
+       if (threadLocalMap.setIndexedVariable(index, value)) {
+           addToVariablesToRemove(threadLocalMap, this);
+           return true;
+       }
+       return false;
+   }
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>具体方法上面都说</li>
+</ul>
+<h2 id="8removeall">8.removeAll</h2>
+<ul>
+<li>移除本地线程中所有FastThreadLocal变量值</li>
+<li>variablesToRemoveIndex下标保存所有FastThreadLocal，可以快速触发remove</li>
+<li>为什么variablesToRemoveIndex下标保存所有FastThreadLocal索引呢？
+<ul>
+<li>不用遍历数组InternalThreadLocalMap.indexedVariables,数组很大，反而影响性能</li>
+</ul>
+</li>
+<li>FastThreadLocalRunnable执行run的finally执行FastThreadLocal.removeAll();</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public static void removeAll() {
+       InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.getIfSet();
+       if (threadLocalMap == null) {
+           return;
+       }
+
+       try {
+           Object v = threadLocalMap.indexedVariable(variablesToRemoveIndex);
+           if (v != null &amp;&amp; v != InternalThreadLocalMap.UNSET) {
+               @SuppressWarnings(&#34;unchecked&#34;)
+               Set&lt;FastThreadLocal&lt;?&gt;&gt; variablesToRemove = (Set&lt;FastThreadLocal&lt;?&gt;&gt;) v;
+               FastThreadLocal&lt;?&gt;[] variablesToRemoveArray =
+                       variablesToRemove.toArray(new FastThreadLocal[variablesToRemove.size()]);
+               for (FastThreadLocal&lt;?&gt; tlv: variablesToRemoveArray) {
+                   tlv.remove(threadLocalMap);
+               }
+           }
+       } finally {
+           InternalThreadLocalMap.remove();
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="ainternalthreadlocalmapremove">a.InternalThreadLocalMap#remove</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public static void remove() {
+       Thread thread = Thread.currentThread();
+       if (thread instanceof FastThreadLocalThread) {
+           ((FastThreadLocalThread) thread).setThreadLocalMap(null);
+       } else {
+           slowThreadLocalMap.remove();
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="9internalthreadlocalmap">9.InternalThreadLocalMap</h2>
+<h3 id="1内容数据结构列出几个重要">1.内容数据结构，列出几个重要</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">class UnpaddedInternalThreadLocalMap {
+
+   static final ThreadLocal&lt;InternalThreadLocalMap&gt; slowThreadLocalMap = new ThreadLocal&lt;InternalThreadLocalMap&gt;();
+   static final AtomicInteger nextIndex = new AtomicInteger();
+
+   /** Used by {@link FastThreadLocal} */
+   Object[] indexedVariables;
+
+   // String-related thread-locals
+   StringBuilder stringBuilder;
+} 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2有意思构造方法">2.有意思构造方法</h3>
+<ul>
+<li>默认创建32位数组</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   // 缓存行填充（必须是公共的）在启用CompressedOops的情况下，此类的实例至少应占用128个字节。
+   public long rp1, rp2, rp3, rp4, rp5, rp6, rp7, rp8, rp9;
+
+   private InternalThreadLocalMap() {
+       // this.indexedVariables = indexedVariables;
+       super(newIndexedVariableTable());
+   }
+
+   private static Object[] newIndexedVariableTable() {
+       Object[] array = new Object[32];
+       Arrays.fill(array, UNSET);
+       return array;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3indexedvariables数组很大问题">3.indexedVariables数组很大问题？</h3>
+<ul>
+<li>
+<p>nextIndex是静态常量的原子int，不停创建FastThreadLocalThread线程，以及使用FastThreadLocal，
+导致nextIndex，最后创建indexedVariables数组很大？浪费空间？</p>
+</li>
+<li>
+<p>bug <a href="https://github.com/netty/netty/issues/9328">https://github.com/netty/netty/issues/9328</a></p>
+</li>
+<li>
+<p>设计时考虑一下</p>
+</li>
+</ul>
+<h3 id="4本地缓存的字符串缓冲区不用频繁创建stringbuilder提高性能">4.本地缓存的字符串缓冲区，不用频繁创建StringBuilder，提高性能</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  public StringBuilder stringBuilder() {
+       StringBuilder sb = stringBuilder;
+       if (sb == null) {
+           return stringBuilder = new StringBuilder(STRING_BUILDER_INITIAL_SIZE);
+       }
+       if (sb.capacity() &gt; STRING_BUILDER_MAX_SIZE) {
+           sb.setLength(STRING_BUILDER_INITIAL_SIZE);
+           sb.trimToSize();
+       }
+       sb.setLength(0);
+       return sb;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="10objectcleaner-对象回收">10.ObjectCleaner 对象回收</h2>
+<p>原理：注册对象创建弱引用的类，等对象没有其他引用，等GC回收，放入ReferenceQueue队列中，启动一个线程读取ReferenceQueue的数据进行cleanup操作；</p>
+<h3 id="1automaticcleanerreference是弱引用的类继承automaticcleanerreference">1.AutomaticCleanerReference是弱引用的类，继承AutomaticCleanerReference</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private static final class AutomaticCleanerReference extends WeakReference&lt;Object&gt; {
+       private final Runnable cleanupTask;
+
+       AutomaticCleanerReference(Object referent, Runnable cleanupTask) {
+           super(referent, REFERENCE_QUEUE);
+           this.cleanupTask = cleanupTask;
+       }
+       //清理方法
+       void cleanup() {
+           cleanupTask.run();
+       }
+
+       @Override
+       public Thread get() {
+           return null;
+       }
+
+       @Override
+       public void clear() {
+           LIVE_SET.remove(this);
+           super.clear();
+       }
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2类变量">2.类变量</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    private static final Set&lt;AutomaticCleanerReference&gt; LIVE_SET = new ConcurrentSet&lt;AutomaticCleanerReference&gt;();
+    private static final ReferenceQueue&lt;Object&gt; REFERENCE_QUEUE = new ReferenceQueue&lt;Object&gt;();
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3register-注册对象回收机制">3.register 注册对象回收机制</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> public static void register(Object object, Runnable cleanupTask) {
+     //创建弱引用对象
+      AutomaticCleanerReference reference = new AutomaticCleanerReference(object,
+              ObjectUtil.checkNotNull(cleanupTask, &#34;cleanupTask&#34;));
+      //缓存
+      LIVE_SET.add(reference);
+
+      // 检查是否已运行清洁线程。
+      if (CLEANER_RUNNING.compareAndSet(false, true)) {
+          Thread cleanupThread = new FastThreadLocalThread(CLEANER_TASK);
+          cleanupThread.setPriority(Thread.MIN_PRIORITY);
+          // Set to null to ensure we not create classloader leaks by holding a strong reference to the inherited
+          // classloader.
+          // 设置为null可以确保我们不对继承的类加载器进行强引用，从而避免创建类加载器泄漏。
+          // See:
+          // - https://github.com/netty/netty/issues/7290
+          // - https://bugs.openjdk.java.net/browse/JDK-7008595
+          cleanupThread.setContextClassLoader(null);
+          cleanupThread.setName(CLEANER_THREAD_NAME);
+
+          // 该线程不是守护进程，因为一旦所有对已注册对象的引用都将消失，它将死掉，
+          // 并且始终调用所有清除任务非常重要，因为这些清除任务可能会释放直接内存等。
+          cleanupThread.setDaemon(false);
+          cleanupThread.start();
+      }
+  }  
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4cleaner_task-清除任务">4.CLEANER_TASK 清除任务</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private static final Runnable CLEANER_TASK = new Runnable() {
+       @Override
+       public void run() {
+           boolean interrupted = false;
+           for (;;) {
+               // 只要LIVE_SET不为空，就继续进行处理，看看是否可以让此线程完成。
+               while (!LIVE_SET.isEmpty()) {
+                   final AutomaticCleanerReference reference;
+                   try {
+                       //获取回收对象，等待时间，默认10s
+                       reference = (AutomaticCleanerReference) REFERENCE_QUEUE.remove(REFERENCE_QUEUE_POLL_TIMEOUT_MS);
+                   } catch (InterruptedException ex) {
+                       // Just consume and move on
+                       interrupted = true;
+                       continue;
+                   }
+                   if (reference != null) {
+                       try {
+                           //清除操作 
+                           reference.cleanup();
+                       } catch (Throwable ignored) {
+                       }
+                       LIVE_SET.remove(reference);
+                   }
+               }
+               CLEANER_RUNNING.set(false);
+
+               // LIVE_SET为空线程退出
+               if (LIVE_SET.isEmpty() || !CLEANER_RUNNING.compareAndSet(false, true)) {
+                   break;
+               }
+           }
+           if (interrupted) {
+               Thread.currentThread().interrupt();
+           }
+       }
+   }; 
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-04-15 21:08
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/netty/">netty</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/netty/12.IdleStateHandler/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">IdleStateHandler</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/netty/08.Future%E5%92%8CPromise/">
+        <span class="next-text nav-default">Future和Promise</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

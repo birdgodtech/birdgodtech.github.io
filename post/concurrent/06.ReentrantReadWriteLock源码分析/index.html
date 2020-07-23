@@ -1,0 +1,2349 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ReentrantReadWriteLock - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="分析 读写锁ReentrantReadWriteLock 简介 提供了读写锁的机制，读锁使用AQS的共享模式，写锁使用独占模式。 实现写重入锁 支持公" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/06.ReentrantReadWriteLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/06.ReentrantReadWriteLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/06.ReentrantReadWriteLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="ReentrantReadWriteLock" />
+<meta property="og:description" content="分析 读写锁ReentrantReadWriteLock 简介 提供了读写锁的机制，读锁使用AQS的共享模式，写锁使用独占模式。 实现写重入锁 支持公" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/06.ReentrantReadWriteLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2017-03-25T21:00:11+00:00" />
+<meta property="article:modified_time" content="2017-03-25T21:00:11+00:00" />
+<meta itemprop="name" content="ReentrantReadWriteLock">
+<meta itemprop="description" content="分析 读写锁ReentrantReadWriteLock 简介 提供了读写锁的机制，读锁使用AQS的共享模式，写锁使用独占模式。 实现写重入锁 支持公">
+<meta itemprop="datePublished" content="2017-03-25T21:00:11&#43;00:00" />
+<meta itemprop="dateModified" content="2017-03-25T21:00:11&#43;00:00" />
+<meta itemprop="wordCount" content="7501">
+
+
+
+<meta itemprop="keywords" content="ReentrantReadWriteLock," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="ReentrantReadWriteLock"/>
+<meta name="twitter:description" content="分析 读写锁ReentrantReadWriteLock 简介 提供了读写锁的机制，读锁使用AQS的共享模式，写锁使用独占模式。 实现写重入锁 支持公"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">ReentrantReadWriteLock</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-03-25 21:00 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 7501 字 </span>
+      <span class="more-meta"> 预计阅读 15 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#一readwritelock接口">一、ReadWriteLock接口</a></li>
+    <li><a href="#二reentrantreadwritelocksync实现aqs">二.ReentrantReadWriteLock.Sync实现AQS</a>
+      <ul>
+        <li><a href="#1读写状态设计">1.读写状态设计</a></li>
+        <li><a href="#2tryacquire">2.tryAcquire</a></li>
+        <li><a href="#2tryrelease">2.tryRelease</a></li>
+        <li><a href="#3tryacquireshared">3.tryAcquireShared</a></li>
+        <li><a href="#4tryreleaseshared">4.tryReleaseShared</a></li>
+        <li><a href="#5isheldexclusively">5.isHeldExclusively</a></li>
+        <li><a href="#6trywritelock-非阻塞写锁">6.tryWriteLock 非阻塞写锁</a></li>
+        <li><a href="#6tryreadlock-非阻塞读锁">6.tryReadLock 非阻塞读锁</a></li>
+      </ul>
+    </li>
+    <li><a href="#二reentrantreadwritelocknonfairsync不公平锁实现aqsreentrantreadwritelocksync">二.ReentrantReadWriteLock.NonfairSync(不公平锁)实现AQSReentrantReadWriteLock.Sync</a></li>
+    <li><a href="#二reentrantreadwritelockfairsync公平锁实现aqsreentrantreadwritelocksync">二.ReentrantReadWriteLock.FairSync(公平锁)实现AQSReentrantReadWriteLock.Sync</a></li>
+    <li><a href="#三reentrantreadwritelockreadlock读锁继承lock接口">三.ReentrantReadWriteLock.ReadLock(读锁)继承Lock接口</a></li>
+    <li><a href="#四reentrantreadwritelockwritelock写锁继承lock接口">四.ReentrantReadWriteLock.WriteLock(写锁)继承Lock接口</a></li>
+    <li><a href="#五reentrantreadwritelock实现">五.ReentrantReadWriteLock实现</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-03-25T21:00:11" title="March 25, 2017">March 25, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="分析-读写锁reentrantreadwritelock">分析 读写锁ReentrantReadWriteLock</h1>
+<h1 id="简介">简介</h1>
+<ul>
+<li>提供了读写锁的机制，读锁使用AQS的共享模式，写锁使用独占模式。</li>
+<li>实现写重入锁</li>
+<li>支持公平/非公平锁。</li>
+<li>写锁会阻塞读锁和写锁，读锁只会阻塞写锁。</li>
+<li>写锁可以降级为读锁，但读锁不能升级为写锁。</li>
+</ul>
+<h2 id="一readwritelock接口">一、ReadWriteLock接口</h2>
+<p>ReentrantReadWriteLock 继承ReadWriteLock接口</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">ReadWriteLock</span> <span class="o">{</span>
+    <span class="cm">/**
+</span><span class="cm">     * Returns the lock used for reading.
+</span><span class="cm">     * 返回读取的锁。
+</span><span class="cm">     *
+</span><span class="cm">     * @return the lock used for reading.
+</span><span class="cm">     */</span>
+    <span class="n">Lock</span> <span class="nf">readLock</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Returns the lock used for writing.
+</span><span class="cm">     * 返回写的锁。
+</span><span class="cm">     * @return the lock used for writing.
+</span><span class="cm">     */</span>
+    <span class="n">Lock</span> <span class="nf">writeLock</span><span class="o">();</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二reentrantreadwritelocksync实现aqs">二.ReentrantReadWriteLock.Sync实现AQS</h2>
+<h3 id="1读写状态设计">1.读写状态设计</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">        <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">SHARED_SHIFT</span>   <span class="o">=</span> <span class="n">16</span><span class="o">;</span>
+        <span class="c1">//00000000 00000001 00000000 00000000 (65536)
+</span><span class="c1"></span>        <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">SHARED_UNIT</span>    <span class="o">=</span> <span class="o">(</span><span class="n">1</span> <span class="o">&lt;&lt;</span> <span class="n">SHARED_SHIFT</span><span class="o">);</span>
+        <span class="c1">//00000000 00000000 11111111 11111111 (65535)
+</span><span class="c1"></span>        <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">MAX_COUNT</span>      <span class="o">=</span> <span class="o">(</span><span class="n">1</span> <span class="o">&lt;&lt;</span> <span class="n">SHARED_SHIFT</span><span class="o">)</span> <span class="o">-</span> <span class="n">1</span><span class="o">;</span> 
+        <span class="c1">//00000000 00000000 11111111 11111111 
+</span><span class="c1"></span>        <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">EXCLUSIVE_MASK</span> <span class="o">=</span> <span class="o">(</span><span class="n">1</span> <span class="o">&lt;&lt;</span> <span class="n">SHARED_SHIFT</span><span class="o">)</span> <span class="o">-</span> <span class="n">1</span><span class="o">;</span>
+
+        <span class="cm">/** Returns the number of shared holds represented in count  */</span>
+        <span class="c1">//返回在count中表示的共享持有数
+</span><span class="c1"></span>        <span class="kd">static</span> <span class="kt">int</span> <span class="nf">sharedCount</span><span class="o">(</span><span class="kt">int</span> <span class="n">c</span><span class="o">)</span>    <span class="o">{</span> <span class="k">return</span> <span class="n">c</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">SHARED_SHIFT</span><span class="o">;</span> <span class="o">}</span>
+        <span class="cm">/** Returns the number of exclusive holds represented in count  */</span>
+        <span class="c1">//返回在count中所表示的独占的重入数
+</span><span class="c1"></span>        <span class="kd">static</span> <span class="kt">int</span> <span class="nf">exclusiveCount</span><span class="o">(</span><span class="kt">int</span> <span class="n">c</span><span class="o">)</span> <span class="o">{</span> <span class="k">return</span> <span class="n">c</span> <span class="o">&amp;</span> <span class="n">EXCLUSIVE_MASK</span><span class="o">;</span> <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>AQS的同步状态是int类型，java中int是4字节，32位int类型。高16位(17-31)读状态,第16位为写状态。</p>
+<h3 id="2tryacquire">2.tryAcquire</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">       <span class="kd">protected</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">tryAcquire</span><span class="o">(</span><span class="kt">int</span> <span class="n">acquires</span><span class="o">)</span> <span class="o">{</span>
+            <span class="cm">/*
+</span><span class="cm">             * Walkthrough:
+</span><span class="cm">             * 1. If read count nonzero or write count nonzero
+</span><span class="cm">             *    and owner is a different thread, fail.
+</span><span class="cm">             *    如果读count非零或写count非零,并且拥有者线程不同的当前线程，请求失败。
+</span><span class="cm">             *     
+</span><span class="cm">             * 2. If count would saturate, fail. (This can only
+</span><span class="cm">             *    happen if count is already nonzero.)
+</span><span class="cm">             *    如果锁持有次数超过上限，请求失败。
+</span><span class="cm">             * 3. Otherwise, this thread is eligible for lock if
+</span><span class="cm">             *    it is either a reentrant acquire or
+</span><span class="cm">             *    queue policy allows it. If so, update state
+</span><span class="cm">             *    and set owner.
+</span><span class="cm">             *     否则，如果当前线程重入请求，或者队列策略允许，
+</span><span class="cm">             *     那么当前线程可以获取锁，更新状态并设置锁所有者。
+</span><span class="cm">             */</span>
+            <span class="n">Thread</span> <span class="n">current</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+            <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">getState</span><span class="o">();</span>
+            <span class="c1">////获取写锁持有次数。
+</span><span class="c1"></span>            <span class="kt">int</span> <span class="n">w</span> <span class="o">=</span> <span class="n">exclusiveCount</span><span class="o">(</span><span class="n">c</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">!=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                <span class="c1">// (Note: if c != 0 and w == 0 then shared count != 0)
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">w</span> <span class="o">==</span> <span class="n">0</span> <span class="o">||</span> <span class="n">current</span> <span class="o">!=</span> <span class="n">getExclusiveOwnerThread</span><span class="o">())</span><span class="c1">// w为零， 说明读操作，
+</span><span class="c1"></span>                                                                   <span class="c1">// w不为零，当前线程不是持有线程。加入同步队列中
+</span><span class="c1"></span>                    <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>                                 <span class="c1">//  w不为零，当前对象为持有线程，可以重入
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">w</span> <span class="o">+</span> <span class="n">exclusiveCount</span><span class="o">(</span><span class="n">acquires</span><span class="o">)</span> <span class="o">&gt;</span> <span class="n">MAX_COUNT</span><span class="o">)</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="o">(</span><span class="s">&#34;Maximum lock count exceeded&#34;</span><span class="o">);</span>
+                <span class="c1">// Reentrant acquire 可重入当前线程
+</span><span class="c1"></span>                <span class="n">setState</span><span class="o">(</span><span class="n">c</span> <span class="o">+</span> <span class="n">acquires</span><span class="o">);</span>
+                <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">writerShouldBlock</span><span class="o">()</span> <span class="o">||</span>                         <span class="c1">//writerShouldBlock方法主要做是否公平加入
+</span><span class="c1"></span>                <span class="o">!</span><span class="n">compareAndSetState</span><span class="o">(</span><span class="n">c</span><span class="o">,</span> <span class="n">c</span> <span class="o">+</span> <span class="n">acquires</span><span class="o">))</span>
+                <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+            <span class="n">setExclusiveOwnerThread</span><span class="o">(</span><span class="n">current</span><span class="o">);</span>
+            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="cm">/**
+</span><span class="cm">         * Returns true if the current thread, when trying to acquire
+</span><span class="cm">         * the write lock, and otherwise eligible to do so, should block
+</span><span class="cm">         * because of policy for overtaking other waiting threads.
+</span><span class="cm">         */</span>
+        <span class="kd">abstract</span> <span class="kt">boolean</span> <span class="nf">writerShouldBlock</span><span class="o">();</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2tryrelease">2.tryRelease</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">        <span class="cm">/*
+</span><span class="cm">         * Note that tryRelease and tryAcquire can be called by
+</span><span class="cm">         * Conditions. So it is possible that their arguments contain
+</span><span class="cm">         * both read and write holds that are all released during a
+</span><span class="cm">         * condition wait and re-established in tryAcquire.
+</span><span class="cm">         */</span>
+
+        <span class="kd">protected</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">tryRelease</span><span class="o">(</span><span class="kt">int</span> <span class="n">releases</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">isHeldExclusively</span><span class="o">())</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalMonitorStateException</span><span class="o">();</span>
+            <span class="c1">//写锁重入次数减1 减去为零 才释放锁资源
+</span><span class="c1"></span>            <span class="kt">int</span> <span class="n">nextc</span> <span class="o">=</span> <span class="n">getState</span><span class="o">()</span> <span class="o">-</span> <span class="n">releases</span><span class="o">;</span>
+            <span class="kt">boolean</span> <span class="n">free</span> <span class="o">=</span> <span class="n">exclusiveCount</span><span class="o">(</span><span class="n">nextc</span><span class="o">)</span> <span class="o">==</span> <span class="n">0</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">free</span><span class="o">)</span>
+                <span class="n">setExclusiveOwnerThread</span><span class="o">(</span><span class="kc">null</span><span class="o">);</span>
+            <span class="n">setState</span><span class="o">(</span><span class="n">nextc</span><span class="o">);</span>
+            <span class="k">return</span> <span class="n">free</span><span class="o">;</span>
+        <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3tryacquireshared">3.tryAcquireShared</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span><span class="lnt">157
+</span><span class="lnt">158
+</span><span class="lnt">159
+</span><span class="lnt">160
+</span><span class="lnt">161
+</span><span class="lnt">162
+</span><span class="lnt">163
+</span><span class="lnt">164
+</span><span class="lnt">165
+</span><span class="lnt">166
+</span><span class="lnt">167
+</span><span class="lnt">168
+</span><span class="lnt">169
+</span><span class="lnt">170
+</span><span class="lnt">171
+</span><span class="lnt">172
+</span><span class="lnt">173
+</span><span class="lnt">174
+</span><span class="lnt">175
+</span><span class="lnt">176
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">protected</span> <span class="kd">final</span> <span class="kt">int</span> <span class="nf">tryAcquireShared</span><span class="o">(</span><span class="kt">int</span> <span class="n">unused</span><span class="o">)</span> <span class="o">{</span>
+            <span class="cm">/*
+</span><span class="cm">             * Walkthrough:
+</span><span class="cm">             * 1. If write lock held by another thread, fail.
+</span><span class="cm">             * 如果写入锁被另一个线程控制，则失败。
+</span><span class="cm">             * 2. Otherwise, this thread is eligible for
+</span><span class="cm">             *    lock wrt state, so ask if it should block
+</span><span class="cm">             *    because of queue policy. If not, try
+</span><span class="cm">             *    to grant by CASing state and updating count.
+</span><span class="cm">             *    Note that step does not check for reentrant
+</span><span class="cm">             *    acquires, which is postponed to full version
+</span><span class="cm">             *    to avoid having to check hold count in
+</span><span class="cm">             *    the more typical non-reentrant case.
+</span><span class="cm">             *    否则，这个线程可以锁定写状态，所以判断是否因队列策略而阻塞。如果不是，则尝试通过CAS更新计数。
+</span><span class="cm">             *    请注意，步骤不会检查重入获取，以避免在更典型的非重入情况下检查保留计数。
+</span><span class="cm">             * 3. If step 2 fails either because thread
+</span><span class="cm">             *    apparently not eligible or CAS fails or count
+</span><span class="cm">             *    saturated, chain to version with full retry loop.
+</span><span class="cm">             *    如果第2步失败，重试循环进行,调用fullTryAcquireShared方法。
+</span><span class="cm">             */</span>
+            <span class="n">Thread</span> <span class="n">current</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+            <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">getState</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">exclusiveCount</span><span class="o">(</span><span class="n">c</span><span class="o">)</span> <span class="o">!=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span>
+                <span class="n">getExclusiveOwnerThread</span><span class="o">()</span> <span class="o">!=</span> <span class="n">current</span><span class="o">)</span><span class="c1">// 写入锁被另一个线程控制,说明写锁可以降级
+</span><span class="c1"></span>                <span class="k">return</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">r</span> <span class="o">=</span> <span class="n">sharedCount</span><span class="o">(</span><span class="n">c</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">readerShouldBlock</span><span class="o">()</span> <span class="o">&amp;&amp;</span>
+                <span class="n">r</span> <span class="o">&lt;</span> <span class="n">MAX_COUNT</span> <span class="o">&amp;&amp;</span>
+                <span class="n">compareAndSetState</span><span class="o">(</span><span class="n">c</span><span class="o">,</span> <span class="n">c</span> <span class="o">+</span> <span class="n">SHARED_UNIT</span><span class="o">))</span> <span class="o">{</span><span class="c1">//判断readerShouldBlock策略，且读共享锁计数小于最大值，CAS更新同步状态，c+SHARED_UNIT其次等于c+65536,所以高16位加1
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">r</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span> <span class="c1">//第一次进入读锁 缓存一次数据
+</span><span class="c1"></span>                    <span class="n">firstReader</span> <span class="o">=</span> <span class="n">current</span><span class="o">;</span>
+                    <span class="n">firstReaderHoldCount</span> <span class="o">=</span> <span class="n">1</span><span class="o">;</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">firstReader</span> <span class="o">==</span> <span class="n">current</span><span class="o">)</span> <span class="o">{</span> <span class="c1">//重入进入第一读锁，firstReaderHoldCount进入次数
+</span><span class="c1"></span>                    <span class="n">firstReaderHoldCount</span><span class="o">++;</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                    <span class="n">HoldCounter</span> <span class="n">rh</span> <span class="o">=</span> <span class="n">cachedHoldCounter</span><span class="o">;</span>  <span class="c1">//第二次以后读锁缓存 ThreadLocal 本地线程做缓存读锁重入计数
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">rh</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">rh</span><span class="o">.</span><span class="na">tid</span> <span class="o">!=</span> <span class="n">current</span><span class="o">.</span><span class="na">getId</span><span class="o">())</span>
+                        <span class="n">cachedHoldCounter</span> <span class="o">=</span> <span class="n">rh</span> <span class="o">=</span> <span class="n">readHolds</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+                    <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">rh</span><span class="o">.</span><span class="na">count</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="c1">//这里多余判断，我思考情景下，没发现过rh.count等于零情况
+</span><span class="c1"></span>                        <span class="n">readHolds</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">rh</span><span class="o">);</span>
+                    <span class="n">rh</span><span class="o">.</span><span class="na">count</span><span class="o">++;</span>
+                <span class="o">}</span>
+                <span class="k">return</span> <span class="n">1</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="c1">//
+</span><span class="c1"></span>            <span class="k">return</span> <span class="n">fullTryAcquireShared</span><span class="o">(</span><span class="n">current</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">         * Full version of acquire for reads, that handles CAS misses
+</span><span class="cm">         * and reentrant reads not dealt with in tryAcquireShared.
+</span><span class="cm">         */</span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="nf">fullTryAcquireShared</span><span class="o">(</span><span class="n">Thread</span> <span class="n">current</span><span class="o">)</span> <span class="o">{</span>
+            <span class="cm">/*
+</span><span class="cm">             * This code is in part redundant with that in
+</span><span class="cm">             * tryAcquireShared but is simpler overall by not
+</span><span class="cm">             * complicating tryAcquireShared with interactions between
+</span><span class="cm">             * retries and lazily reading hold counts.
+</span><span class="cm">             * 这段代码在一定程度上是多余的，因为在尝试获得共享时，
+</span><span class="cm">             * 但总体上比较简单，而不是让尝试获取共享，并在重试和延迟读取之间的交互中共享。
+</span><span class="cm">             */</span>
+            <span class="n">HoldCounter</span> <span class="n">rh</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">getState</span><span class="o">();</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">exclusiveCount</span><span class="o">(</span><span class="n">c</span><span class="o">)</span> <span class="o">!=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">getExclusiveOwnerThread</span><span class="o">()</span> <span class="o">!=</span> <span class="n">current</span><span class="o">)</span>
+                        <span class="k">return</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>
+                    <span class="c1">// else we hold the exclusive lock; blocking here
+</span><span class="c1"></span>                    <span class="c1">// would cause deadlock.
+</span><span class="c1"></span>                    <span class="c1">// 否则，当前线程持有写锁，在这里阻塞将导致死锁。
+</span><span class="c1"></span>                <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">readerShouldBlock</span><span class="o">())</span> <span class="o">{</span>
+                    <span class="c1">// Make sure we&#39;re not acquiring read lock reentrantly
+</span><span class="c1"></span>                    <span class="c1">// 确保我们没有重新获得读锁
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">firstReader</span> <span class="o">==</span> <span class="n">current</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="c1">// assert firstReaderHoldCount &gt; 0;
+</span><span class="c1"></span>                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">rh</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                            <span class="n">rh</span> <span class="o">=</span> <span class="n">cachedHoldCounter</span><span class="o">;</span>
+                            <span class="k">if</span> <span class="o">(</span><span class="n">rh</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">rh</span><span class="o">.</span><span class="na">tid</span> <span class="o">!=</span> <span class="n">current</span><span class="o">.</span><span class="na">getId</span><span class="o">())</span> <span class="o">{</span>
+                                <span class="n">rh</span> <span class="o">=</span> <span class="n">readHolds</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+                                <span class="k">if</span> <span class="o">(</span><span class="n">rh</span><span class="o">.</span><span class="na">count</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span>
+                                    <span class="n">readHolds</span><span class="o">.</span><span class="na">remove</span><span class="o">();</span>
+                            <span class="o">}</span>
+                        <span class="o">}</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">rh</span><span class="o">.</span><span class="na">count</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span>
+                            <span class="k">return</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">sharedCount</span><span class="o">(</span><span class="n">c</span><span class="o">)</span> <span class="o">==</span> <span class="n">MAX_COUNT</span><span class="o">)</span> <span class="c1">//读锁数量达到最大值
+</span><span class="c1"></span>                    <span class="k">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="o">(</span><span class="s">&#34;Maximum lock count exceeded&#34;</span><span class="o">);</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">compareAndSetState</span><span class="o">(</span><span class="n">c</span><span class="o">,</span> <span class="n">c</span> <span class="o">+</span> <span class="n">SHARED_UNIT</span><span class="o">))</span> <span class="o">{</span>  <span class="c1">//更新同步状态 
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">sharedCount</span><span class="o">(</span><span class="n">c</span><span class="o">)</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">firstReader</span> <span class="o">=</span> <span class="n">current</span><span class="o">;</span>
+                        <span class="n">firstReaderHoldCount</span> <span class="o">=</span> <span class="n">1</span><span class="o">;</span>
+                    <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">firstReader</span> <span class="o">==</span> <span class="n">current</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">firstReaderHoldCount</span><span class="o">++;</span>
+                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">rh</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                            <span class="n">rh</span> <span class="o">=</span> <span class="n">cachedHoldCounter</span><span class="o">;</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">rh</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">rh</span><span class="o">.</span><span class="na">tid</span> <span class="o">!=</span> <span class="n">current</span><span class="o">.</span><span class="na">getId</span><span class="o">())</span>
+                            <span class="n">rh</span> <span class="o">=</span> <span class="n">readHolds</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+                        <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">rh</span><span class="o">.</span><span class="na">count</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span>
+                            <span class="n">readHolds</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">rh</span><span class="o">);</span>
+                        <span class="n">rh</span><span class="o">.</span><span class="na">count</span><span class="o">++;</span>
+                        <span class="n">cachedHoldCounter</span> <span class="o">=</span> <span class="n">rh</span><span class="o">;</span> <span class="c1">// cache for release
+</span><span class="c1"></span>                    <span class="o">}</span>
+                    <span class="k">return</span> <span class="n">1</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * A counter for per-thread read hold counts.
+</span><span class="cm">         * Maintained as a ThreadLocal; cached in cachedHoldCounter
+</span><span class="cm">         * ThreadLocal 缓存每个线程持有读锁的计数
+</span><span class="cm">         */</span>
+        <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">HoldCounter</span> <span class="o">{</span>
+            <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="c1">//每个线程持有读锁的计数
+</span><span class="c1"></span>            <span class="c1">// Use id, not reference, to avoid garbage retention
+</span><span class="c1"></span>            <span class="kd">final</span> <span class="kt">long</span> <span class="n">tid</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getId</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * ThreadLocal subclass. Easiest to explicitly define for sake
+</span><span class="cm">         * of deserialization mechanics.
+</span><span class="cm">         */</span>
+        <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">ThreadLocalHoldCounter</span>
+            <span class="kd">extends</span> <span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">HoldCounter</span><span class="o">&gt;</span> <span class="o">{</span>
+            <span class="kd">public</span> <span class="n">HoldCounter</span> <span class="nf">initialValue</span><span class="o">()</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="k">new</span> <span class="n">HoldCounter</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * The number of reentrant read locks held by current thread.
+</span><span class="cm">         * Initialized only in constructor and readObject.
+</span><span class="cm">         * Removed whenever a thread&#39;s read hold count drops to 0.
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kd">transient</span> <span class="n">ThreadLocalHoldCounter</span> <span class="n">readHolds</span><span class="o">;</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * The hold count of the last thread to successfully acquire
+</span><span class="cm">         * readLock. This saves ThreadLocal lookup in the common case
+</span><span class="cm">         * where the next thread to release is the last one to
+</span><span class="cm">         * acquire. This is non-volatile since it is just used
+</span><span class="cm">         * as a heuristic, and would be great for threads to cache.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;Can outlive the Thread for which it is caching the read
+</span><span class="cm">         * hold count, but avoids garbage retention by not retaining a
+</span><span class="cm">         * reference to the Thread.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;Accessed via a benign data race; relies on the memory
+</span><span class="cm">         * model&#39;s final field and out-of-thin-air guarantees.
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kd">transient</span> <span class="n">HoldCounter</span> <span class="n">cachedHoldCounter</span><span class="o">;</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * firstReader is the first thread to have acquired the read lock.
+</span><span class="cm">         * firstReaderHoldCount is firstReader&#39;s hold count.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;More precisely, firstReader is the unique thread that last
+</span><span class="cm">         * changed the shared count from 0 to 1, and has not released the
+</span><span class="cm">         * read lock since then; null if there is no such thread.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;Cannot cause garbage retention unless the thread terminated
+</span><span class="cm">         * without relinquishing its read locks, since tryReleaseShared
+</span><span class="cm">         * sets it to null.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;Accessed via a benign data race; relies on the memory
+</span><span class="cm">         * model&#39;s out-of-thin-air guarantees for references.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;This allows tracking of read holds for uncontended read
+</span><span class="cm">         * locks to be very cheap.
+</span><span class="cm">         * 这里记录第一次读锁时候信息 作用做跟踪吧
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kd">transient</span> <span class="n">Thread</span> <span class="n">firstReader</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="kd">private</span> <span class="kd">transient</span> <span class="kt">int</span> <span class="n">firstReaderHoldCount</span><span class="o">;</span>      
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4tryreleaseshared">4.tryReleaseShared</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">protected</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">tryReleaseShared</span><span class="o">(</span><span class="kt">int</span> <span class="n">unused</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">Thread</span> <span class="n">current</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+            <span class="c1">//// 清理第一次持有读锁缓存 或 firstReaderHoldCount里的持有读锁的计数
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(</span><span class="n">firstReader</span> <span class="o">==</span> <span class="n">current</span><span class="o">)</span> <span class="o">{</span>  
+                <span class="c1">// assert firstReaderHoldCount &gt; 0;
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">firstReaderHoldCount</span> <span class="o">==</span> <span class="n">1</span><span class="o">)</span>
+                    <span class="n">firstReader</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="k">else</span>
+                    <span class="n">firstReaderHoldCount</span><span class="o">--;</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="n">HoldCounter</span> <span class="n">rh</span> <span class="o">=</span> <span class="n">cachedHoldCounter</span><span class="o">;</span>   <span class="c1">//清理每个线程持有读锁的计数
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">rh</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">rh</span><span class="o">.</span><span class="na">tid</span> <span class="o">!=</span> <span class="n">current</span><span class="o">.</span><span class="na">getId</span><span class="o">())</span>
+                    <span class="n">rh</span> <span class="o">=</span> <span class="n">readHolds</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+                <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="n">rh</span><span class="o">.</span><span class="na">count</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">count</span> <span class="o">&lt;=</span> <span class="n">1</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">readHolds</span><span class="o">.</span><span class="na">remove</span><span class="o">();</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">count</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>
+                        <span class="k">throw</span> <span class="n">unmatchedUnlockException</span><span class="o">();</span>
+                <span class="o">}</span>
+                <span class="o">--</span><span class="n">rh</span><span class="o">.</span><span class="na">count</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">for</span> <span class="o">(;;)</span>  <span class="c1">//循环更新读锁同步状态
+</span><span class="c1"></span>                <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">getState</span><span class="o">();</span>
+                <span class="kt">int</span> <span class="n">nextc</span> <span class="o">=</span> <span class="n">c</span> <span class="o">-</span> <span class="n">SHARED_UNIT</span><span class="o">;</span> <span class="c1">//减去同步状态高16位值
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">compareAndSetState</span><span class="o">(</span><span class="n">c</span><span class="o">,</span> <span class="n">nextc</span><span class="o">))</span>
+                    <span class="c1">// Releasing the read lock has no effect on readers,
+</span><span class="c1"></span>                    <span class="c1">// but it may allow waiting writers to proceed if
+</span><span class="c1"></span>                    <span class="c1">// both read and write locks are now free.
+</span><span class="c1"></span>                    <span class="k">return</span> <span class="n">nextc</span> <span class="o">==</span> <span class="n">0</span><span class="o">;</span>  
+            <span class="o">}</span>
+        <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="5isheldexclusively">5.isHeldExclusively</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="c1">//检查当前线程是否为持有独占锁线程
+</span><span class="c1"></span>    <span class="kd">protected</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">isHeldExclusively</span><span class="o">()</span> <span class="o">{</span>
+            <span class="c1">// While we must in general read state before owner,
+</span><span class="c1"></span>            <span class="c1">// we don&#39;t need to do so to check if current thread is owner
+</span><span class="c1"></span>            <span class="k">return</span> <span class="n">getExclusiveOwnerThread</span><span class="o">()</span> <span class="o">==</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+        <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="6trywritelock-非阻塞写锁">6.tryWriteLock 非阻塞写锁</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">        <span class="cm">/**
+</span><span class="cm">         * Performs tryLock for write, enabling barging in both modes.
+</span><span class="cm">         * This is identical in effect to tryAcquire except for lack
+</span><span class="cm">         * of calls to writerShouldBlock.
+</span><span class="cm">         * 非阻塞写锁的请求方法,和tryAcquire实现一致。除了没有调用writerShouldBlock之外，
+</span><span class="cm">         */</span>
+        <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">tryWriteLock</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">Thread</span> <span class="n">current</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+            <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">getState</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">!=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kt">int</span> <span class="n">w</span> <span class="o">=</span> <span class="n">exclusiveCount</span><span class="o">(</span><span class="n">c</span><span class="o">);</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">w</span> <span class="o">==</span> <span class="n">0</span> <span class="o">||</span> <span class="n">current</span> <span class="o">!=</span> <span class="n">getExclusiveOwnerThread</span><span class="o">())</span>
+                    <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">w</span> <span class="o">==</span> <span class="n">MAX_COUNT</span><span class="o">)</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="o">(</span><span class="s">&#34;Maximum lock count exceeded&#34;</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">compareAndSetState</span><span class="o">(</span><span class="n">c</span><span class="o">,</span> <span class="n">c</span> <span class="o">+</span> <span class="n">1</span><span class="o">))</span>
+                <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+            <span class="n">setExclusiveOwnerThread</span><span class="o">(</span><span class="n">current</span><span class="o">);</span>
+            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="6tryreadlock-非阻塞读锁">6.tryReadLock 非阻塞读锁</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+        <span class="cm">/**
+</span><span class="cm">         * Performs tryLock for read, enabling barging in both modes.
+</span><span class="cm">         * This is identical in effect to tryAcquireShared except for
+</span><span class="cm">         * lack of calls to readerShouldBlock.
+</span><span class="cm">         * 非阻塞读锁的请求方法,和tryAcquireShared实现一致。除了没有调用readerShouldBlock之外，
+</span><span class="cm">         */</span>
+        <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">tryReadLock</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">Thread</span> <span class="n">current</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">getState</span><span class="o">();</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">exclusiveCount</span><span class="o">(</span><span class="n">c</span><span class="o">)</span> <span class="o">!=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span>
+                    <span class="n">getExclusiveOwnerThread</span><span class="o">()</span> <span class="o">!=</span> <span class="n">current</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+                <span class="kt">int</span> <span class="n">r</span> <span class="o">=</span> <span class="n">sharedCount</span><span class="o">(</span><span class="n">c</span><span class="o">);</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">r</span> <span class="o">==</span> <span class="n">MAX_COUNT</span><span class="o">)</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="o">(</span><span class="s">&#34;Maximum lock count exceeded&#34;</span><span class="o">);</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">compareAndSetState</span><span class="o">(</span><span class="n">c</span><span class="o">,</span> <span class="n">c</span> <span class="o">+</span> <span class="n">SHARED_UNIT</span><span class="o">))</span> <span class="o">{</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">r</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">firstReader</span> <span class="o">=</span> <span class="n">current</span><span class="o">;</span>
+                        <span class="n">firstReaderHoldCount</span> <span class="o">=</span> <span class="n">1</span><span class="o">;</span>
+                    <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">firstReader</span> <span class="o">==</span> <span class="n">current</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">firstReaderHoldCount</span><span class="o">++;</span>
+                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                        <span class="n">HoldCounter</span> <span class="n">rh</span> <span class="o">=</span> <span class="n">cachedHoldCounter</span><span class="o">;</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">rh</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">rh</span><span class="o">.</span><span class="na">tid</span> <span class="o">!=</span> <span class="n">current</span><span class="o">.</span><span class="na">getId</span><span class="o">())</span>
+                            <span class="n">cachedHoldCounter</span> <span class="o">=</span> <span class="n">rh</span> <span class="o">=</span> <span class="n">readHolds</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+                        <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">rh</span><span class="o">.</span><span class="na">count</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span>
+                            <span class="n">readHolds</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">rh</span><span class="o">);</span>
+                        <span class="n">rh</span><span class="o">.</span><span class="na">count</span><span class="o">++;</span>
+                    <span class="o">}</span>
+                    <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二reentrantreadwritelocknonfairsync不公平锁实现aqsreentrantreadwritelocksync">二.ReentrantReadWriteLock.NonfairSync(不公平锁)实现AQSReentrantReadWriteLock.Sync</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Nonfair version of Sync
+</span><span class="cm">     */</span>
+    <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">NonfairSync</span> <span class="kd">extends</span> <span class="n">Sync</span> <span class="o">{</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="o">-</span><span class="n">8159625535654395037L</span><span class="o">;</span>
+        
+        <span class="c1">//
+</span><span class="c1"></span>        <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">writerShouldBlock</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span> <span class="c1">// writers can always barge 写锁可以插队
+</span><span class="c1"></span>        <span class="o">}</span>
+        <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">readerShouldBlock</span><span class="o">()</span> <span class="o">{</span>
+            <span class="cm">/* As a heuristic to avoid indefinite writer starvation,
+</span><span class="cm">             * block if the thread that momentarily appears to be head
+</span><span class="cm">             * of queue, if one exists, is a waiting writer.  This is
+</span><span class="cm">             * only a probabilistic effect since a new reader will not
+</span><span class="cm">             * block if there is a waiting writer behind other enabled
+</span><span class="cm">             * readers that have not yet drained from the queue.
+</span><span class="cm">             */</span>
+            <span class="c1">//如果AQS同步等待队列头有写请求，那么当前读请求阻塞。
+</span><span class="c1"></span>            <span class="k">return</span> <span class="n">apparentlyFirstQueuedIsExclusive</span><span class="o">();</span>
+        <span class="o">}</span>
+     <span class="o">}</span>
+    
+</code></pre></td></tr></table>
+</div>
+</div><p>AQS源码apparentlyFirstQueuedIsExclusive</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Returns {@code true} if the apparent first queued thread, if one
+</span><span class="cm">     * exists, is waiting in exclusive mode.  If this method returns
+</span><span class="cm">     * {@code true}, and the current thread is attempting to acquire in
+</span><span class="cm">     * shared mode (that is, this method is invoked from {@link
+</span><span class="cm">     * #tryAcquireShared}) then it is guaranteed that the current thread
+</span><span class="cm">     * is not the first queued thread.  Used only as a heuristic in
+</span><span class="cm">     * ReentrantReadWriteLock.
+</span><span class="cm">     */</span>
+    <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">apparentlyFirstQueuedIsExclusive</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">Node</span> <span class="n">h</span><span class="o">,</span> <span class="n">s</span><span class="o">;</span>
+        <span class="k">return</span> <span class="o">(</span><span class="n">h</span> <span class="o">=</span> <span class="n">head</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span>
+            <span class="o">(</span><span class="n">s</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="na">next</span><span class="o">)</span>  <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span>
+            <span class="o">!</span><span class="n">s</span><span class="o">.</span><span class="na">isShared</span><span class="o">()</span>         <span class="o">&amp;&amp;</span>
+            <span class="n">s</span><span class="o">.</span><span class="na">thread</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二reentrantreadwritelockfairsync公平锁实现aqsreentrantreadwritelocksync">二.ReentrantReadWriteLock.FairSync(公平锁)实现AQSReentrantReadWriteLock.Sync</h2>
+<p>hasQueuedPredecessors就是防止插队。hasQueuedPredecessors在ReentrantLock源码分析.md具体分析过，在这里不做具体分析。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Fair version of Sync
+</span><span class="cm">     */</span>
+    <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">FairSync</span> <span class="kd">extends</span> <span class="n">Sync</span> <span class="o">{</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="o">-</span><span class="n">2274990926593161451L</span><span class="o">;</span>
+        <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">writerShouldBlock</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">hasQueuedPredecessors</span><span class="o">();</span> 
+        <span class="o">}</span>
+        <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">readerShouldBlock</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">hasQueuedPredecessors</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="三reentrantreadwritelockreadlock读锁继承lock接口">三.ReentrantReadWriteLock.ReadLock(读锁)继承Lock接口</h2>
+<ul>
+<li>ReadLock调用AQS共享锁</li>
+<li>ReadLock不支持条件堵塞</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span><span class="lnt">157
+</span><span class="lnt">158
+</span><span class="lnt">159
+</span><span class="lnt">160
+</span><span class="lnt">161
+</span><span class="lnt">162
+</span><span class="lnt">163
+</span><span class="lnt">164
+</span><span class="lnt">165
+</span><span class="lnt">166
+</span><span class="lnt">167
+</span><span class="lnt">168
+</span><span class="lnt">169
+</span><span class="lnt">170
+</span><span class="lnt">171
+</span><span class="lnt">172
+</span><span class="lnt">173
+</span><span class="lnt">174
+</span><span class="lnt">175
+</span><span class="lnt">176
+</span><span class="lnt">177
+</span><span class="lnt">178
+</span><span class="lnt">179
+</span><span class="lnt">180
+</span><span class="lnt">181
+</span><span class="lnt">182
+</span><span class="lnt">183
+</span><span class="lnt">184
+</span><span class="lnt">185
+</span><span class="lnt">186
+</span><span class="lnt">187
+</span><span class="lnt">188
+</span><span class="lnt">189
+</span><span class="lnt">190
+</span><span class="lnt">191
+</span><span class="lnt">192
+</span><span class="lnt">193
+</span><span class="lnt">194
+</span><span class="lnt">195
+</span><span class="lnt">196
+</span><span class="lnt">197
+</span><span class="lnt">198
+</span><span class="lnt">199
+</span><span class="lnt">200
+</span><span class="lnt">201
+</span><span class="lnt">202
+</span><span class="lnt">203
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">     <span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">ReadLock</span> <span class="kd">implements</span> <span class="n">Lock</span><span class="o">,</span> <span class="n">java</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">Serializable</span> <span class="o">{</span>
+         <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="o">-</span><span class="n">5992448646407690164L</span><span class="o">;</span>
+         <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sync</span> <span class="n">sync</span><span class="o">;</span>
+ 
+         <span class="cm">/**
+</span><span class="cm">          * Constructor for use by subclasses
+</span><span class="cm">          *
+</span><span class="cm">          * @param lock the outer lock object
+</span><span class="cm">          * @throws NullPointerException if the lock is null
+</span><span class="cm">          */</span>
+         <span class="kd">protected</span> <span class="nf">ReadLock</span><span class="o">(</span><span class="n">ReentrantReadWriteLock</span> <span class="n">lock</span><span class="o">)</span> <span class="o">{</span>
+             <span class="n">sync</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">sync</span><span class="o">;</span>
+         <span class="o">}</span>
+ 
+         <span class="cm">/**
+</span><span class="cm">          * Acquires the read lock.
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;Acquires the read lock if the write lock is not held by
+</span><span class="cm">          * another thread and returns immediately.
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;If the write lock is held by another thread then
+</span><span class="cm">          * the current thread becomes disabled for thread scheduling
+</span><span class="cm">          * purposes and lies dormant until the read lock has been acquired.
+</span><span class="cm">          */</span>
+         <span class="kd">public</span> <span class="kt">void</span> <span class="nf">lock</span><span class="o">()</span> <span class="o">{</span>
+             <span class="n">sync</span><span class="o">.</span><span class="na">acquireShared</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+         <span class="o">}</span>
+ 
+         <span class="cm">/**
+</span><span class="cm">          * Acquires the read lock unless the current thread is
+</span><span class="cm">          * {@linkplain Thread#interrupt interrupted}.
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;Acquires the read lock if the write lock is not held
+</span><span class="cm">          * by another thread and returns immediately.
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;If the write lock is held by another thread then the
+</span><span class="cm">          * current thread becomes disabled for thread scheduling
+</span><span class="cm">          * purposes and lies dormant until one of two things happens:
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;ul&gt;
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;li&gt;The read lock is acquired by the current thread; or
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;li&gt;Some other thread {@linkplain Thread#interrupt interrupts}
+</span><span class="cm">          * the current thread.
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;/ul&gt;
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;If the current thread:
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;ul&gt;
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;li&gt;has its interrupted status set on entry to this method; or
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;li&gt;is {@linkplain Thread#interrupt interrupted} while
+</span><span class="cm">          * acquiring the read lock,
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;/ul&gt;
+</span><span class="cm">          *
+</span><span class="cm">          * then {@link InterruptedException} is thrown and the current
+</span><span class="cm">          * thread&#39;s interrupted status is cleared.
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;In this implementation, as this method is an explicit
+</span><span class="cm">          * interruption point, preference is given to responding to
+</span><span class="cm">          * the interrupt over normal or reentrant acquisition of the
+</span><span class="cm">          * lock.
+</span><span class="cm">          *
+</span><span class="cm">          * @throws InterruptedException if the current thread is interrupted
+</span><span class="cm">          */</span>
+         <span class="kd">public</span> <span class="kt">void</span> <span class="nf">lockInterruptibly</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+             <span class="n">sync</span><span class="o">.</span><span class="na">acquireSharedInterruptibly</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+         <span class="o">}</span>
+ 
+         <span class="cm">/**
+</span><span class="cm">          * Acquires the read lock only if the write lock is not held by
+</span><span class="cm">          * another thread at the time of invocation.
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;Acquires the read lock if the write lock is not held by
+</span><span class="cm">          * another thread and returns immediately with the value
+</span><span class="cm">          * {@code true}. Even when this lock has been set to use a
+</span><span class="cm">          * fair ordering policy, a call to {@code tryLock()}
+</span><span class="cm">          * &lt;em&gt;will&lt;/em&gt; immediately acquire the read lock if it is
+</span><span class="cm">          * available, whether or not other threads are currently
+</span><span class="cm">          * waiting for the read lock.  This &amp;quot;barging&amp;quot; behavior
+</span><span class="cm">          * can be useful in certain circumstances, even though it
+</span><span class="cm">          * breaks fairness. If you want to honor the fairness setting
+</span><span class="cm">          * for this lock, then use {@link #tryLock(long, TimeUnit)
+</span><span class="cm">          * tryLock(0, TimeUnit.SECONDS) } which is almost equivalent
+</span><span class="cm">          * (it also detects interruption).
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;If the write lock is held by another thread then
+</span><span class="cm">          * this method will return immediately with the value
+</span><span class="cm">          * {@code false}.
+</span><span class="cm">          *
+</span><span class="cm">          * @return {@code true} if the read lock was acquired
+</span><span class="cm">          */</span>
+         <span class="kd">public</span>  <span class="kt">boolean</span> <span class="nf">tryLock</span><span class="o">()</span> <span class="o">{</span>
+             <span class="k">return</span> <span class="n">sync</span><span class="o">.</span><span class="na">tryReadLock</span><span class="o">();</span>
+         <span class="o">}</span>
+ 
+         <span class="cm">/**
+</span><span class="cm">          * Acquires the read lock if the write lock is not held by
+</span><span class="cm">          * another thread within the given waiting time and the
+</span><span class="cm">          * current thread has not been {@linkplain Thread#interrupt
+</span><span class="cm">          * interrupted}.
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;Acquires the read lock if the write lock is not held by
+</span><span class="cm">          * another thread and returns immediately with the value
+</span><span class="cm">          * {@code true}. If this lock has been set to use a fair
+</span><span class="cm">          * ordering policy then an available lock &lt;em&gt;will not&lt;/em&gt; be
+</span><span class="cm">          * acquired if any other threads are waiting for the
+</span><span class="cm">          * lock. This is in contrast to the {@link #tryLock()}
+</span><span class="cm">          * method. If you want a timed {@code tryLock} that does
+</span><span class="cm">          * permit barging on a fair lock then combine the timed and
+</span><span class="cm">          * un-timed forms together:
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;pre&gt;if (lock.tryLock() || lock.tryLock(timeout, unit) ) { ... }
+</span><span class="cm">          * &lt;/pre&gt;
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;If the write lock is held by another thread then the
+</span><span class="cm">          * current thread becomes disabled for thread scheduling
+</span><span class="cm">          * purposes and lies dormant until one of three things happens:
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;ul&gt;
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;li&gt;The read lock is acquired by the current thread; or
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;li&gt;Some other thread {@linkplain Thread#interrupt interrupts}
+</span><span class="cm">          * the current thread; or
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;li&gt;The specified waiting time elapses.
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;/ul&gt;
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;If the read lock is acquired then the value {@code true} is
+</span><span class="cm">          * returned.
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;If the current thread:
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;ul&gt;
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;li&gt;has its interrupted status set on entry to this method; or
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;li&gt;is {@linkplain Thread#interrupt interrupted} while
+</span><span class="cm">          * acquiring the read lock,
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;/ul&gt; then {@link InterruptedException} is thrown and the
+</span><span class="cm">          * current thread&#39;s interrupted status is cleared.
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;If the specified waiting time elapses then the value
+</span><span class="cm">          * {@code false} is returned.  If the time is less than or
+</span><span class="cm">          * equal to zero, the method will not wait at all.
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt;In this implementation, as this method is an explicit
+</span><span class="cm">          * interruption point, preference is given to responding to
+</span><span class="cm">          * the interrupt over normal or reentrant acquisition of the
+</span><span class="cm">          * lock, and over reporting the elapse of the waiting time.
+</span><span class="cm">          *
+</span><span class="cm">          * @param timeout the time to wait for the read lock
+</span><span class="cm">          * @param unit the time unit of the timeout argument
+</span><span class="cm">          * @return {@code true} if the read lock was acquired
+</span><span class="cm">          * @throws InterruptedException if the current thread is interrupted
+</span><span class="cm">          * @throws NullPointerException if the time unit is null
+</span><span class="cm">          *
+</span><span class="cm">          */</span>
+         <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">tryLock</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+                 <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+             <span class="k">return</span> <span class="n">sync</span><span class="o">.</span><span class="na">tryAcquireSharedNanos</span><span class="o">(</span><span class="n">1</span><span class="o">,</span> <span class="n">unit</span><span class="o">.</span><span class="na">toNanos</span><span class="o">(</span><span class="n">timeout</span><span class="o">));</span>
+         <span class="o">}</span>
+ 
+         <span class="cm">/**
+</span><span class="cm">          * Attempts to release this lock.
+</span><span class="cm">          *
+</span><span class="cm">          * &lt;p&gt; If the number of readers is now zero then the lock
+</span><span class="cm">          * is made available for write lock attempts.
+</span><span class="cm">          */</span>
+         <span class="kd">public</span>  <span class="kt">void</span> <span class="nf">unlock</span><span class="o">()</span> <span class="o">{</span>
+             <span class="n">sync</span><span class="o">.</span><span class="na">releaseShared</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+         <span class="o">}</span>
+ 
+         <span class="cm">/**
+</span><span class="cm">          * Throws {@code UnsupportedOperationException} because
+</span><span class="cm">          * {@code ReadLocks} do not support conditions.
+</span><span class="cm">          *
+</span><span class="cm">          * @throws UnsupportedOperationException always
+</span><span class="cm">          */</span>
+         <span class="kd">public</span> <span class="n">Condition</span> <span class="nf">newCondition</span><span class="o">()</span> <span class="o">{</span>
+             <span class="k">throw</span> <span class="k">new</span> <span class="n">UnsupportedOperationException</span><span class="o">();</span>
+         <span class="o">}</span>
+ 
+         <span class="cm">/**
+</span><span class="cm">          * Returns a string identifying this lock, as well as its lock state.
+</span><span class="cm">          * The state, in brackets, includes the String {@code &#34;Read locks =&#34;}
+</span><span class="cm">          * followed by the number of held read locks.
+</span><span class="cm">          *
+</span><span class="cm">          * @return a string identifying this lock, as well as its lock state
+</span><span class="cm">          */</span>
+         <span class="kd">public</span> <span class="n">String</span> <span class="nf">toString</span><span class="o">()</span> <span class="o">{</span>
+             <span class="kt">int</span> <span class="n">r</span> <span class="o">=</span> <span class="n">sync</span><span class="o">.</span><span class="na">getReadLockCount</span><span class="o">();</span>
+             <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">toString</span><span class="o">()</span> <span class="o">+</span>
+                 <span class="s">&#34;[Read locks = &#34;</span> <span class="o">+</span> <span class="n">r</span> <span class="o">+</span> <span class="s">&#34;]&#34;</span><span class="o">;</span>
+         <span class="o">}</span>
+     <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="四reentrantreadwritelockwritelock写锁继承lock接口">四.ReentrantReadWriteLock.WriteLock(写锁)继承Lock接口</h2>
+<ul>
+<li>WriteLock调用AQS独占锁</li>
+<li>WriteLock支持条件堵塞</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span><span class="lnt">157
+</span><span class="lnt">158
+</span><span class="lnt">159
+</span><span class="lnt">160
+</span><span class="lnt">161
+</span><span class="lnt">162
+</span><span class="lnt">163
+</span><span class="lnt">164
+</span><span class="lnt">165
+</span><span class="lnt">166
+</span><span class="lnt">167
+</span><span class="lnt">168
+</span><span class="lnt">169
+</span><span class="lnt">170
+</span><span class="lnt">171
+</span><span class="lnt">172
+</span><span class="lnt">173
+</span><span class="lnt">174
+</span><span class="lnt">175
+</span><span class="lnt">176
+</span><span class="lnt">177
+</span><span class="lnt">178
+</span><span class="lnt">179
+</span><span class="lnt">180
+</span><span class="lnt">181
+</span><span class="lnt">182
+</span><span class="lnt">183
+</span><span class="lnt">184
+</span><span class="lnt">185
+</span><span class="lnt">186
+</span><span class="lnt">187
+</span><span class="lnt">188
+</span><span class="lnt">189
+</span><span class="lnt">190
+</span><span class="lnt">191
+</span><span class="lnt">192
+</span><span class="lnt">193
+</span><span class="lnt">194
+</span><span class="lnt">195
+</span><span class="lnt">196
+</span><span class="lnt">197
+</span><span class="lnt">198
+</span><span class="lnt">199
+</span><span class="lnt">200
+</span><span class="lnt">201
+</span><span class="lnt">202
+</span><span class="lnt">203
+</span><span class="lnt">204
+</span><span class="lnt">205
+</span><span class="lnt">206
+</span><span class="lnt">207
+</span><span class="lnt">208
+</span><span class="lnt">209
+</span><span class="lnt">210
+</span><span class="lnt">211
+</span><span class="lnt">212
+</span><span class="lnt">213
+</span><span class="lnt">214
+</span><span class="lnt">215
+</span><span class="lnt">216
+</span><span class="lnt">217
+</span><span class="lnt">218
+</span><span class="lnt">219
+</span><span class="lnt">220
+</span><span class="lnt">221
+</span><span class="lnt">222
+</span><span class="lnt">223
+</span><span class="lnt">224
+</span><span class="lnt">225
+</span><span class="lnt">226
+</span><span class="lnt">227
+</span><span class="lnt">228
+</span><span class="lnt">229
+</span><span class="lnt">230
+</span><span class="lnt">231
+</span><span class="lnt">232
+</span><span class="lnt">233
+</span><span class="lnt">234
+</span><span class="lnt">235
+</span><span class="lnt">236
+</span><span class="lnt">237
+</span><span class="lnt">238
+</span><span class="lnt">239
+</span><span class="lnt">240
+</span><span class="lnt">241
+</span><span class="lnt">242
+</span><span class="lnt">243
+</span><span class="lnt">244
+</span><span class="lnt">245
+</span><span class="lnt">246
+</span><span class="lnt">247
+</span><span class="lnt">248
+</span><span class="lnt">249
+</span><span class="lnt">250
+</span><span class="lnt">251
+</span><span class="lnt">252
+</span><span class="lnt">253
+</span><span class="lnt">254
+</span><span class="lnt">255
+</span><span class="lnt">256
+</span><span class="lnt">257
+</span><span class="lnt">258
+</span><span class="lnt">259
+</span><span class="lnt">260
+</span><span class="lnt">261
+</span><span class="lnt">262
+</span><span class="lnt">263
+</span><span class="lnt">264
+</span><span class="lnt">265
+</span><span class="lnt">266
+</span><span class="lnt">267
+</span><span class="lnt">268
+</span><span class="lnt">269
+</span><span class="lnt">270
+</span><span class="lnt">271
+</span><span class="lnt">272
+</span><span class="lnt">273
+</span><span class="lnt">274
+</span><span class="lnt">275
+</span><span class="lnt">276
+</span><span class="lnt">277
+</span><span class="lnt">278
+</span><span class="lnt">279
+</span><span class="lnt">280
+</span><span class="lnt">281
+</span><span class="lnt">282
+</span><span class="lnt">283
+</span><span class="lnt">284
+</span><span class="lnt">285
+</span><span class="lnt">286
+</span><span class="lnt">287
+</span><span class="lnt">288
+</span><span class="lnt">289
+</span><span class="lnt">290
+</span><span class="lnt">291
+</span><span class="lnt">292
+</span><span class="lnt">293
+</span><span class="lnt">294
+</span><span class="lnt">295
+</span><span class="lnt">296
+</span><span class="lnt">297
+</span><span class="lnt">298
+</span><span class="lnt">299
+</span><span class="lnt">300
+</span><span class="lnt">301
+</span><span class="lnt">302
+</span><span class="lnt">303
+</span><span class="lnt">304
+</span><span class="lnt">305
+</span><span class="lnt">306
+</span><span class="lnt">307
+</span><span class="lnt">308
+</span><span class="lnt">309
+</span><span class="lnt">310
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">WriteLock</span> <span class="kd">implements</span> <span class="n">Lock</span><span class="o">,</span> <span class="n">java</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">Serializable</span> <span class="o">{</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="o">-</span><span class="n">4992448646407690164L</span><span class="o">;</span>
+        <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sync</span> <span class="n">sync</span><span class="o">;</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Constructor for use by subclasses
+</span><span class="cm">         *
+</span><span class="cm">         * @param lock the outer lock object
+</span><span class="cm">         * @throws NullPointerException if the lock is null
+</span><span class="cm">         */</span>
+        <span class="kd">protected</span> <span class="nf">WriteLock</span><span class="o">(</span><span class="n">ReentrantReadWriteLock</span> <span class="n">lock</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">sync</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">sync</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Acquires the write lock.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;Acquires the write lock if neither the read nor write lock
+</span><span class="cm">         * are held by another thread
+</span><span class="cm">         * and returns immediately, setting the write lock hold count to
+</span><span class="cm">         * one.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;If the current thread already holds the write lock then the
+</span><span class="cm">         * hold count is incremented by one and the method returns
+</span><span class="cm">         * immediately.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;If the lock is held by another thread then the current
+</span><span class="cm">         * thread becomes disabled for thread scheduling purposes and
+</span><span class="cm">         * lies dormant until the write lock has been acquired, at which
+</span><span class="cm">         * time the write lock hold count is set to one.
+</span><span class="cm">         */</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">lock</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">sync</span><span class="o">.</span><span class="na">acquire</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Acquires the write lock unless the current thread is
+</span><span class="cm">         * {@linkplain Thread#interrupt interrupted}.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;Acquires the write lock if neither the read nor write lock
+</span><span class="cm">         * are held by another thread
+</span><span class="cm">         * and returns immediately, setting the write lock hold count to
+</span><span class="cm">         * one.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;If the current thread already holds this lock then the
+</span><span class="cm">         * hold count is incremented by one and the method returns
+</span><span class="cm">         * immediately.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;If the lock is held by another thread then the current
+</span><span class="cm">         * thread becomes disabled for thread scheduling purposes and
+</span><span class="cm">         * lies dormant until one of two things happens:
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;ul&gt;
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt;The write lock is acquired by the current thread; or
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt;Some other thread {@linkplain Thread#interrupt interrupts}
+</span><span class="cm">         * the current thread.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;/ul&gt;
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;If the write lock is acquired by the current thread then the
+</span><span class="cm">         * lock hold count is set to one.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;If the current thread:
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;ul&gt;
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt;has its interrupted status set on entry to this method;
+</span><span class="cm">         * or
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt;is {@linkplain Thread#interrupt interrupted} while
+</span><span class="cm">         * acquiring the write lock,
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;/ul&gt;
+</span><span class="cm">         *
+</span><span class="cm">         * then {@link InterruptedException} is thrown and the current
+</span><span class="cm">         * thread&#39;s interrupted status is cleared.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;In this implementation, as this method is an explicit
+</span><span class="cm">         * interruption point, preference is given to responding to
+</span><span class="cm">         * the interrupt over normal or reentrant acquisition of the
+</span><span class="cm">         * lock.
+</span><span class="cm">         *
+</span><span class="cm">         * @throws InterruptedException if the current thread is interrupted
+</span><span class="cm">         */</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">lockInterruptibly</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+            <span class="n">sync</span><span class="o">.</span><span class="na">acquireInterruptibly</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Acquires the write lock only if it is not held by another thread
+</span><span class="cm">         * at the time of invocation.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;Acquires the write lock if neither the read nor write lock
+</span><span class="cm">         * are held by another thread
+</span><span class="cm">         * and returns immediately with the value {@code true},
+</span><span class="cm">         * setting the write lock hold count to one. Even when this lock has
+</span><span class="cm">         * been set to use a fair ordering policy, a call to
+</span><span class="cm">         * {@code tryLock()} &lt;em&gt;will&lt;/em&gt; immediately acquire the
+</span><span class="cm">         * lock if it is available, whether or not other threads are
+</span><span class="cm">         * currently waiting for the write lock.  This &amp;quot;barging&amp;quot;
+</span><span class="cm">         * behavior can be useful in certain circumstances, even
+</span><span class="cm">         * though it breaks fairness. If you want to honor the
+</span><span class="cm">         * fairness setting for this lock, then use {@link
+</span><span class="cm">         * #tryLock(long, TimeUnit) tryLock(0, TimeUnit.SECONDS) }
+</span><span class="cm">         * which is almost equivalent (it also detects interruption).
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt; If the current thread already holds this lock then the
+</span><span class="cm">         * hold count is incremented by one and the method returns
+</span><span class="cm">         * {@code true}.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;If the lock is held by another thread then this method
+</span><span class="cm">         * will return immediately with the value {@code false}.
+</span><span class="cm">         *
+</span><span class="cm">         * @return {@code true} if the lock was free and was acquired
+</span><span class="cm">         * by the current thread, or the write lock was already held
+</span><span class="cm">         * by the current thread; and {@code false} otherwise.
+</span><span class="cm">         */</span>
+        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">tryLock</span><span class="o">(</span> <span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">sync</span><span class="o">.</span><span class="na">tryWriteLock</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Acquires the write lock if it is not held by another thread
+</span><span class="cm">         * within the given waiting time and the current thread has
+</span><span class="cm">         * not been {@linkplain Thread#interrupt interrupted}.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;Acquires the write lock if neither the read nor write lock
+</span><span class="cm">         * are held by another thread
+</span><span class="cm">         * and returns immediately with the value {@code true},
+</span><span class="cm">         * setting the write lock hold count to one. If this lock has been
+</span><span class="cm">         * set to use a fair ordering policy then an available lock
+</span><span class="cm">         * &lt;em&gt;will not&lt;/em&gt; be acquired if any other threads are
+</span><span class="cm">         * waiting for the write lock. This is in contrast to the {@link
+</span><span class="cm">         * #tryLock()} method. If you want a timed {@code tryLock}
+</span><span class="cm">         * that does permit barging on a fair lock then combine the
+</span><span class="cm">         * timed and un-timed forms together:
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;pre&gt;if (lock.tryLock() || lock.tryLock(timeout, unit) ) { ... }
+</span><span class="cm">         * &lt;/pre&gt;
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;If the current thread already holds this lock then the
+</span><span class="cm">         * hold count is incremented by one and the method returns
+</span><span class="cm">         * {@code true}.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;If the lock is held by another thread then the current
+</span><span class="cm">         * thread becomes disabled for thread scheduling purposes and
+</span><span class="cm">         * lies dormant until one of three things happens:
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;ul&gt;
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt;The write lock is acquired by the current thread; or
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt;Some other thread {@linkplain Thread#interrupt interrupts}
+</span><span class="cm">         * the current thread; or
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt;The specified waiting time elapses
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;/ul&gt;
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;If the write lock is acquired then the value {@code true} is
+</span><span class="cm">         * returned and the write lock hold count is set to one.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;If the current thread:
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;ul&gt;
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt;has its interrupted status set on entry to this method;
+</span><span class="cm">         * or
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt;is {@linkplain Thread#interrupt interrupted} while
+</span><span class="cm">         * acquiring the write lock,
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;/ul&gt;
+</span><span class="cm">         *
+</span><span class="cm">         * then {@link InterruptedException} is thrown and the current
+</span><span class="cm">         * thread&#39;s interrupted status is cleared.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;If the specified waiting time elapses then the value
+</span><span class="cm">         * {@code false} is returned.  If the time is less than or
+</span><span class="cm">         * equal to zero, the method will not wait at all.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;In this implementation, as this method is an explicit
+</span><span class="cm">         * interruption point, preference is given to responding to
+</span><span class="cm">         * the interrupt over normal or reentrant acquisition of the
+</span><span class="cm">         * lock, and over reporting the elapse of the waiting time.
+</span><span class="cm">         *
+</span><span class="cm">         * @param timeout the time to wait for the write lock
+</span><span class="cm">         * @param unit the time unit of the timeout argument
+</span><span class="cm">         *
+</span><span class="cm">         * @return {@code true} if the lock was free and was acquired
+</span><span class="cm">         * by the current thread, or the write lock was already held by the
+</span><span class="cm">         * current thread; and {@code false} if the waiting time
+</span><span class="cm">         * elapsed before the lock could be acquired.
+</span><span class="cm">         *
+</span><span class="cm">         * @throws InterruptedException if the current thread is interrupted
+</span><span class="cm">         * @throws NullPointerException if the time unit is null
+</span><span class="cm">         *
+</span><span class="cm">         */</span>
+        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">tryLock</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+                <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">sync</span><span class="o">.</span><span class="na">tryAcquireNanos</span><span class="o">(</span><span class="n">1</span><span class="o">,</span> <span class="n">unit</span><span class="o">.</span><span class="na">toNanos</span><span class="o">(</span><span class="n">timeout</span><span class="o">));</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Attempts to release this lock.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;p&gt;If the current thread is the holder of this lock then
+</span><span class="cm">         * the hold count is decremented. If the hold count is now
+</span><span class="cm">         * zero then the lock is released.  If the current thread is
+</span><span class="cm">         * not the holder of this lock then {@link
+</span><span class="cm">         * IllegalMonitorStateException} is thrown.
+</span><span class="cm">         *
+</span><span class="cm">         * @throws IllegalMonitorStateException if the current thread does not
+</span><span class="cm">         * hold this lock.
+</span><span class="cm">         */</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">unlock</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">sync</span><span class="o">.</span><span class="na">release</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Returns a {@link Condition} instance for use with this
+</span><span class="cm">         * {@link Lock} instance.
+</span><span class="cm">         * &lt;p&gt;The returned {@link Condition} instance supports the same
+</span><span class="cm">         * usages as do the {@link Object} monitor methods ({@link
+</span><span class="cm">         * Object#wait() wait}, {@link Object#notify notify}, and {@link
+</span><span class="cm">         * Object#notifyAll notifyAll}) when used with the built-in
+</span><span class="cm">         * monitor lock.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;ul&gt;
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt;If this write lock is not held when any {@link
+</span><span class="cm">         * Condition} method is called then an {@link
+</span><span class="cm">         * IllegalMonitorStateException} is thrown.  (Read locks are
+</span><span class="cm">         * held independently of write locks, so are not checked or
+</span><span class="cm">         * affected. However it is essentially always an error to
+</span><span class="cm">         * invoke a condition waiting method when the current thread
+</span><span class="cm">         * has also acquired read locks, since other threads that
+</span><span class="cm">         * could unblock it will not be able to acquire the write
+</span><span class="cm">         * lock.)
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt;When the condition {@linkplain Condition#await() waiting}
+</span><span class="cm">         * methods are called the write lock is released and, before
+</span><span class="cm">         * they return, the write lock is reacquired and the lock hold
+</span><span class="cm">         * count restored to what it was when the method was called.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt;If a thread is {@linkplain Thread#interrupt interrupted} while
+</span><span class="cm">         * waiting then the wait will terminate, an {@link
+</span><span class="cm">         * InterruptedException} will be thrown, and the thread&#39;s
+</span><span class="cm">         * interrupted status will be cleared.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt; Waiting threads are signalled in FIFO order.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;li&gt;The ordering of lock reacquisition for threads returning
+</span><span class="cm">         * from waiting methods is the same as for threads initially
+</span><span class="cm">         * acquiring the lock, which is in the default case not specified,
+</span><span class="cm">         * but for &lt;em&gt;fair&lt;/em&gt; locks favors those threads that have been
+</span><span class="cm">         * waiting the longest.
+</span><span class="cm">         *
+</span><span class="cm">         * &lt;/ul&gt;
+</span><span class="cm">         *
+</span><span class="cm">         * @return the Condition object
+</span><span class="cm">         */</span>
+        <span class="kd">public</span> <span class="n">Condition</span> <span class="nf">newCondition</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">sync</span><span class="o">.</span><span class="na">newCondition</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Returns a string identifying this lock, as well as its lock
+</span><span class="cm">         * state.  The state, in brackets includes either the String
+</span><span class="cm">         * {@code &#34;Unlocked&#34;} or the String {@code &#34;Locked by&#34;}
+</span><span class="cm">         * followed by the {@linkplain Thread#getName name} of the owning thread.
+</span><span class="cm">         *
+</span><span class="cm">         * @return a string identifying this lock, as well as its lock state
+</span><span class="cm">         */</span>
+        <span class="kd">public</span> <span class="n">String</span> <span class="nf">toString</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">Thread</span> <span class="n">o</span> <span class="o">=</span> <span class="n">sync</span><span class="o">.</span><span class="na">getOwner</span><span class="o">();</span>
+            <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">toString</span><span class="o">()</span> <span class="o">+</span> <span class="o">((</span><span class="n">o</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span>
+                                       <span class="s">&#34;[Unlocked]&#34;</span> <span class="o">:</span>
+                                       <span class="s">&#34;[Locked by thread &#34;</span> <span class="o">+</span> <span class="n">o</span><span class="o">.</span><span class="na">getName</span><span class="o">()</span> <span class="o">+</span> <span class="s">&#34;]&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Queries if this write lock is held by the current thread.
+</span><span class="cm">         * Identical in effect to {@link
+</span><span class="cm">         * ReentrantReadWriteLock#isWriteLockedByCurrentThread}.
+</span><span class="cm">         *
+</span><span class="cm">         * @return {@code true} if the current thread holds this lock and
+</span><span class="cm">         *         {@code false} otherwise
+</span><span class="cm">         * @since 1.6
+</span><span class="cm">         */</span>
+        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isHeldByCurrentThread</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">sync</span><span class="o">.</span><span class="na">isHeldExclusively</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Queries the number of holds on this write lock by the current
+</span><span class="cm">         * thread.  A thread has a hold on a lock for each lock action
+</span><span class="cm">         * that is not matched by an unlock action.  Identical in effect
+</span><span class="cm">         * to {@link ReentrantReadWriteLock#getWriteHoldCount}.
+</span><span class="cm">         *
+</span><span class="cm">         * @return the number of holds on this lock by the current thread,
+</span><span class="cm">         *         or zero if this lock is not held by the current thread
+</span><span class="cm">         * @since 1.6
+</span><span class="cm">         */</span>
+        <span class="kd">public</span> <span class="kt">int</span> <span class="nf">getHoldCount</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">sync</span><span class="o">.</span><span class="na">getWriteHoldCount</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="五reentrantreadwritelock实现">五.ReentrantReadWriteLock实现</h2>
+<p>下面ReentrantReadWriteLock源码实现很简单，主要核心在ReentrantReadWriteLock.Sync抽象方法</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ReentrantReadWriteLock</span>
+        <span class="kd">implements</span> <span class="n">ReadWriteLock</span><span class="o">,</span> <span class="n">java</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">Serializable</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="o">-</span><span class="n">6992448646407690164L</span><span class="o">;</span>
+    <span class="cm">/** Inner class providing readlock */</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">ReentrantReadWriteLock</span><span class="o">.</span><span class="na">ReadLock</span> <span class="n">readerLock</span><span class="o">;</span>
+    <span class="cm">/** Inner class providing writelock */</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">ReentrantReadWriteLock</span><span class="o">.</span><span class="na">WriteLock</span> <span class="n">writerLock</span><span class="o">;</span>
+    <span class="cm">/** Performs all synchronization mechanics */</span>
+    <span class="kd">final</span> <span class="n">Sync</span> <span class="n">sync</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a new {@code ReentrantReadWriteLock} with
+</span><span class="cm">     * default (nonfair) ordering properties.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">ReentrantReadWriteLock</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a new {@code ReentrantReadWriteLock} with
+</span><span class="cm">     * the given fairness policy.
+</span><span class="cm">     *
+</span><span class="cm">     * @param fair {@code true} if this lock should use a fair ordering policy
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">ReentrantReadWriteLock</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">fair</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">sync</span> <span class="o">=</span> <span class="n">fair</span> <span class="o">?</span> <span class="k">new</span> <span class="n">FairSync</span><span class="o">()</span> <span class="o">:</span> <span class="k">new</span> <span class="n">NonfairSync</span><span class="o">();</span>
+        <span class="n">readerLock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ReadLock</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+        <span class="n">writerLock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WriteLock</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="kd">public</span> <span class="n">ReentrantReadWriteLock</span><span class="o">.</span><span class="na">WriteLock</span> <span class="nf">writeLock</span><span class="o">()</span> <span class="o">{</span> <span class="k">return</span> <span class="n">writerLock</span><span class="o">;</span> <span class="o">}</span>
+    <span class="kd">public</span> <span class="n">ReentrantReadWriteLock</span><span class="o">.</span><span class="na">ReadLock</span>  <span class="nf">readLock</span><span class="o">()</span>  <span class="o">{</span> <span class="k">return</span> <span class="n">readerLock</span><span class="o">;</span> <span class="o">}</span>
+ <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-03-25 21:00
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/ReentrantReadWriteLock/">ReentrantReadWriteLock</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/07.CountDownLatch%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">CountDownLatch</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/05.ReentrantLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">ReentrantLock</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Recycler对象池 - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="一、简介 博客 Recyclers是本地线程堆栈的轻量级对象池，是抽象方法；Recycler主要提供了3个方法： get():获取一个对象。 new" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/netty/03.Recycler%E5%AF%B9%E8%B1%A1%E6%B1%A0/" />
+<link href="/post/netty/03.Recycler%E5%AF%B9%E8%B1%A1%E6%B1%A0/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/netty/03.Recycler%E5%AF%B9%E8%B1%A1%E6%B1%A0/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="Recycler对象池" />
+<meta property="og:description" content="一、简介 博客 Recyclers是本地线程堆栈的轻量级对象池，是抽象方法；Recycler主要提供了3个方法： get():获取一个对象。 new" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/netty/03.Recycler%E5%AF%B9%E8%B1%A1%E6%B1%A0/" />
+<meta property="article:published_time" content="2019-03-12T22:18:08+00:00" />
+<meta property="article:modified_time" content="2019-03-12T22:18:08+00:00" />
+<meta itemprop="name" content="Recycler对象池">
+<meta itemprop="description" content="一、简介 博客 Recyclers是本地线程堆栈的轻量级对象池，是抽象方法；Recycler主要提供了3个方法： get():获取一个对象。 new">
+<meta itemprop="datePublished" content="2019-03-12T22:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2019-03-12T22:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="4287">
+
+
+
+<meta itemprop="keywords" content="netty," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Recycler对象池"/>
+<meta name="twitter:description" content="一、简介 博客 Recyclers是本地线程堆栈的轻量级对象池，是抽象方法；Recycler主要提供了3个方法： get():获取一个对象。 new"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">Recycler对象池</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2019-03-12 22:18 </span>
+      <div class="post-category">
+        <a href="/categories/netty/"> netty </a>
+        </div>
+      <span class="more-meta"> 约 4287 字 </span>
+      <span class="more-meta"> 预计阅读 9 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1对象池数据结构图">1.对象池数据结构图</a></li>
+    <li><a href="#2get获取对象流程">2.get获取对象流程</a></li>
+    <li><a href="#3recycle回收对象">3.recycle回收对象</a>
+      <ul>
+        <li><a href="#a为什么其他线程回收时直接放到stack中呢">a.为什么其他线程回收时，直接放到Stack中呢？</a></li>
+        <li><a href="#b那么获取对象时产生并发问题当前线程处理线程a的weakorderqueue回收stack线程a处理回收到weakorderqueue">b.那么获取对象时产生并发问题，当前线程处理线程A的WeakOrderQueue回收Stack，线程A处理回收到WeakOrderQueue;</a></li>
+      </ul>
+    </li>
+    <li><a href="#4recycler内部关系图">4.Recycler内部关系图</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1fastthreadlocal创建stack">1.FastThreadLocal创建Stack</a></li>
+    <li><a href="#2数据结构">2.数据结构</a></li>
+    <li><a href="#3pop">3.pop</a>
+      <ul>
+        <li><a href="#ascavenge-从其他线程的weakorderqueue中获取回收对象">a.scavenge 从其他线程的WeakOrderQueue中获取回收对象</a></li>
+      </ul>
+    </li>
+    <li><a href="#4push">4.push</a>
+      <ul>
+        <li><a href="#apushnow-stack持用当前线程">a.pushNow Stack持用当前线程</a></li>
+        <li><a href="#bdrophandle-验证是否能回收">b.dropHandle 验证是否能回收</a></li>
+        <li><a href="#cpushlater-stack不是当前线程">c.pushLater Stack不是当前线程</a></li>
+      </ul>
+    </li>
+    <li><a href="#5weakorderqueue的head控制添加对象锁">5.WeakOrderQueue的head控制，添加对象锁</a>
+      <ul>
+        <li><a href="#1创建weakorderqueue">1.创建WeakOrderQueue</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#1fastthreadlocal缓存weakorderqueue">1.FastThreadLocal缓存WeakOrderQueue</a></li>
+    <li><a href="#2数据结构-1">2.数据结构</a></li>
+    <li><a href="#3添加defaulthandle">3.添加DefaultHandle</a></li>
+    <li><a href="#4transfer-数据同步到stack">4.transfer 数据同步到Stack</a></li>
+    <li><a href="#5finalize-gc回收调用方法">5.finalize gc回收调用方法</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1get">1.get</a></li>
+    <li><a href="#2配置信息">2.配置信息</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2019-03-12T22:18:08" title="March 12, 2019">March 12, 2019</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="一简介">一、简介</h1>
+<p><a href="https://www.jianshu.com/p/4eab8450560c">博客</a></p>
+<p>Recyclers是本地线程堆栈的轻量级对象池，是抽象方法；Recycler主要提供了3个方法：</p>
+<ul>
+<li>get():获取一个对象。</li>
+<li>newObject(Handle):当没有可用对象时创建对象的实现方法。</li>
+<li>recycle(T, Handle)：回收一个对象已经过期，用Handle#recycle</li>
+</ul>
+<h2 id="1对象池数据结构图">1.对象池数据结构图</h2>
+<p><img src="/netty/Recycler02.png" alt=""></p>
+<p>盗用上面博客图片</p>
+<h2 id="2get获取对象流程">2.get获取对象流程</h2>
+<ul>
+<li>第一步先从本地线程中Stack获取对象，获取到立即返回，未获取到进行第二步；</li>
+<li>第二步调用scavenge(),就是Stack的head已用其他线程WeakOrderQueue,进行回收对象到Stack中，立即返回；</li>
+</ul>
+<h2 id="3recycle回收对象">3.recycle回收对象</h2>
+<ul>
+<li>第一步，调用DefaultHandle#recycle回收对象,判断Stack中的线程是否当前线程，是回收到Stack中；否进入第第二步；</li>
+<li>第二步，回收到当前线程中Stack对应WeakOrderQueue;</li>
+</ul>
+<h3 id="a为什么其他线程回收时直接放到stack中呢">a.为什么其他线程回收时，直接放到Stack中呢？</h3>
+<p>这一来Stack就会产生线程安全问题；回收对象时可能出现并发问题；</p>
+<h3 id="b那么获取对象时产生并发问题当前线程处理线程a的weakorderqueue回收stack线程a处理回收到weakorderqueue">b.那么获取对象时产生并发问题，当前线程处理线程A的WeakOrderQueue回收Stack，线程A处理回收到WeakOrderQueue;</h3>
+<p>在WeakOrderQueue中保存链表+数据结构Link，定义head, tail属性，读去head操作，写就用tail；不存在数据竞争情况；</p>
+<h2 id="4recycler内部关系图">4.Recycler内部关系图</h2>
+<p><img src="/netty/Recycler01.png" alt=""></p>
+<h1 id="二defaulthandle">二、DefaultHandle</h1>
+<p>DefaultHandle就是就是Stack的包装对象,持有stack的引用,可以回收自己到stack中,以及回收对象;</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   static final class DefaultHandle&lt;T&gt; implements Handle&lt;T&gt; { 
+       private int lastRecycledId; //标记最新一次回收的线程id
+       private int recycleId;      //也是一个标记,是用来回收前的校验的.
+
+       boolean hasBeenRecycled;    //标记是否已经被回收
+
+       private Stack&lt;?&gt; stack;     //持有stack的引用
+       private Object value;
+
+       DefaultHandle(Stack&lt;?&gt; stack) {
+           this.stack = stack;
+       }
+
+       @Override
+       public void recycle(Object object) {
+           if (object != value) {
+               throw new IllegalArgumentException(&#34;object does not belong to handle&#34;);
+           }
+           stack.push(this);   //可以回收自己到stack中
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="三stack">三、Stack</h1>
+<h2 id="1fastthreadlocal创建stack">1.FastThreadLocal创建Stack</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private final FastThreadLocal&lt;Stack&lt;T&gt;&gt; threadLocal = new FastThreadLocal&lt;Stack&lt;T&gt;&gt;() {     //FastThreadLocal是线程本地变量, 所以每个线程都对应一个自己的Stack.
+       @Override
+       protected Stack&lt;T&gt; initialValue() {
+           return new Stack&lt;T&gt;(Recycler.this, Thread.currentThread(), maxCapacityPerThread, maxSharedCapacityFactor,
+                   ratioMask, maxDelayedQueuesPerThread);
+       }
+   }; 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2数据结构">2.数据结构</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">       //用于回收
+       final Recycler&lt;T&gt; parent;
+       //持有线程
+       final Thread thread;
+       //容量,控制回收对象数量，其他线程可以回收对象，CAS控制并发; 
+       //maxCapacity / maxSharedCapacityFactor方式控制大小  
+       final AtomicInteger availableSharedCapacity;
+       //控制其他线程创建WeakOrderQueue数量    
+       final int maxDelayedQueues;
+       //最大容量
+       private final int maxCapacity;
+       //DefaultHandle.hasBeenRecycled=fasle根据handleRecycleCount&amp;ratioMask做判断条件进行回收
+       //默认8，每执行8次添加一个回收对象；具体逻辑在dropHandle方法中
+       private final int ratioMask;
+       private DefaultHandle&lt;?&gt;[] elements;
+       private int size;
+       private int handleRecycleCount = -1;    // Start with -1 so the first one will be recycled.
+       //scavengeSome扫描其他线程WeakOrderQueue，变量保存
+       private WeakOrderQueue cursor, prev;    // 指向当前的WeakOrderQueue 和 前一个
+       //WeakOrderQueue可能被GC线程回收，用volatile控制可见性
+       private volatile WeakOrderQueue head; 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3pop">3.pop</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">       DefaultHandle&lt;T&gt; pop() {
+           int size = this.size;
+           if (size == 0) {
+               if (!scavenge()) {
+                   return null;
+               }
+               size = this.size;
+           }
+           size --;
+           DefaultHandle ret = elements[size];
+           elements[size] = null;
+           if (ret.lastRecycledId != ret.recycleId) {  //这两个应该相等
+               throw new IllegalStateException(&#34;recycled multiple times&#34;);
+           }
+           ret.recycleId = 0;          //获取出的对象,置为0表示没有被回收
+           ret.lastRecycledId = 0;     //获取出的对象,置为0表示没有被回收
+           this.size = size;
+           return ret;
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="ascavenge-从其他线程的weakorderqueue中获取回收对象">a.scavenge 从其他线程的WeakOrderQueue中获取回收对象</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">       boolean scavengeSome() {    //尝试回收
+           WeakOrderQueue prev;
+           WeakOrderQueue cursor = this.cursor;    //指向当前的指针
+           if (cursor == null) {                   //当前为null,就指向head,head也为null就跳出返回false
+               prev = null;
+               cursor = head;
+               if (cursor == null) {
+                   return false;
+               }
+           } else {
+               prev = this.prev;
+           }
+
+           boolean success = false;
+           do {
+               //在WeakOrderQueue讲解
+               if (cursor.transfer(this)) {
+                   success = true;
+                   break;
+               }
+               WeakOrderQueue next = cursor.next;
+               if (cursor.owner.get() == null) {   //线程被回收了  
+                   //cursor.owner.get() == null表示,GC已经回收该线程，也没必要同步数据
+                   //是head，第一个WeakOrderQueue，这里不用处理，可能发送并发情况；
+                   if (cursor.hasFinalData()) {
+                       for (;;) {
+                           if (cursor.transfer(this)) {
+                               success = true;
+                           } else {
+                               break;  //cursor.transfer(this)返回false,代表没有读取的数据了
+                           }
+                       }
+                   }
+
+                   if (prev != null) {
+                       prev.setNext(next);     //这是一个单向链表,只要改变prev的引用,老的节点会被回收的.
+                   }
+               } else {
+                   prev = cursor;
+               }
+               cursor = next;
+
+           } while (cursor != null &amp;&amp; !success);
+           this.prev = prev;
+           this.cursor = cursor;
+           return success;
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4push">4.push</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> void push(DefaultHandle&lt;?&gt; item) {  //会综合判断,如果是当前线程,直接放进数组中,如果不是,就先报错到WeakOrderQueue中.
+           Thread currentThread = Thread.currentThread();
+           if (thread == currentThread) {
+               // The current Thread is the thread that belongs to the Stack, we can try to push the object now.
+               pushNow(item);
+           } else {
+               // The current Thread is not the one that belongs to the Stack, we need to signal that the push     //保存到WeakOrderQueue,等待回收.
+               // happens later.
+               pushLater(item, currentThread);
+           }
+       }
+
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="apushnow-stack持用当前线程">a.pushNow Stack持用当前线程</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">       private void pushNow(DefaultHandle&lt;?&gt; item) {               
+           if ((item.recycleId | item.lastRecycledId) != 0) {     
+               throw new IllegalStateException(&#34;recycled already&#34;);
+           }
+           item.recycleId = item.lastRecycledId = OWN_THREAD_ID;   //都更新为OWN_THREAD_ID,表示被回收过了
+
+           int size = this.size;
+           //达到容量值，不进行回收，dropHandle()方法验证是否能回收
+           if (size &gt;= maxCapacity || dropHandle(item)) {          
+               return;
+           }
+           if (size == elements.length) {
+               //扩容，按2倍扩容                         
+               elements = Arrays.copyOf(elements, min(size &lt;&lt; 1, maxCapacity));
+           }
+
+           elements[size] = item;
+           this.size = size + 1; 
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="bdrophandle-验证是否能回收">b.dropHandle 验证是否能回收</h3>
+<p>DefaultHandle.hasBeenRecycled为false,根据ratioMask判断是否回收，能回收设置hasBeenRecycled为ture;</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">boolean dropHandle(DefaultHandle&lt;?&gt; handle) {
+           if (!handle.hasBeenRecycled) {                      
+               if ((++handleRecycleCount &amp; ratioMask) != 0) {  
+                   return true;
+               }
+               handle.hasBeenRecycled = true;
+           }
+           return false;
+} 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="cpushlater-stack不是当前线程">c.pushLater Stack不是当前线程</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">private void pushLater(DefaultHandle&lt;?&gt; item, Thread thread) {                         
+    Map&lt;Stack&lt;?&gt;, WeakOrderQueue&gt; delayedRecycled = DELAYED_RECYCLED.get();     
+    WeakOrderQueue queue = delayedRecycled.get(this);                           
+    if (queue == null) {                                        //如果queue就需要创建一个
+        //大于上限,就放入一个DUMMY,表示满了
+        if (delayedRecycled.size() &gt;= maxDelayedQueues) {       
+            // Add a dummy queue so we know we should drop the object
+            delayedRecycled.put(this, WeakOrderQueue.DUMMY);
+            return;
+        }
+        // 检查是否已经达到延迟队列的最大数量，是否可以分配。
+        if ((queue = WeakOrderQueue.allocate(this, thread)) == null) {
+            return;
+        }
+        delayedRecycled.put(this, queue);
+    } else if (queue == WeakOrderQueue.DUMMY) {
+        return;
+    }
+    queue.add(item);
+}  
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="5weakorderqueue的head控制添加对象锁">5.WeakOrderQueue的head控制，添加对象锁</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  synchronized void setHead(WeakOrderQueue queue) {   
+      queue.setNext(head);  
+      head = queue;
+  }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1创建weakorderqueue">1.创建WeakOrderQueue</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> static WeakOrderQueue newQueue(Stack&lt;?&gt; stack, Thread thread) {
+      WeakOrderQueue queue = new WeakOrderQueue(stack, thread);
+      //stack.setHead(queue)必须在构造器外进行,防止对象溢出.
+      stack.setHead(queue);   //这个stack,头指针指向 这个新创建的WeakOrderQueue
+      return queue;
+  } 
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="四weakorderqueue">四、WeakOrderQueue</h1>
+<h2 id="1fastthreadlocal缓存weakorderqueue">1.FastThreadLocal缓存WeakOrderQueue</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    private static final FastThreadLocal&lt;Map&lt;Stack&lt;?&gt;, WeakOrderQueue&gt;&gt; DELAYED_RECYCLED =      // 这也是一个线程本地变量,每个线程都有自己的Map&lt;Stack&lt;?&gt;, WeakOrderQueue&gt;
+            new FastThreadLocal&lt;Map&lt;Stack&lt;?&gt;, WeakOrderQueue&gt;&gt;() {                              // 根据Stack可以获取到对应的WeakOrderQueue
+        @Override                                                                               // 需要注意的是这边两个对象都有弱引用,WeakReference
+        protected Map&lt;Stack&lt;?&gt;, WeakOrderQueue&gt; initialValue() {
+            return new WeakHashMap&lt;Stack&lt;?&gt;, WeakOrderQueue&gt;();     // 使用WeakHashMap,保证对key也就是Stack是弱引用; 一旦Stack没有强引用了, 会被回收的,WeakHashMap不会无限占用内存;
+        }
+    };
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2数据结构-1">2.数据结构</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">        //链表+数组
+        //数组数据控制同步Stack最大容量
+        private static final class Link extends AtomicInteger {
+            private final DefaultHandle&lt;?&gt;[] elements = new DefaultHandle[LINK_CAPACITY];
+            private int readIndex;
+            private Link next;
+        }
+        //数据链表
+        private Link head, tail;
+        // 执行下个线程中WeakOrderQueue
+        private WeakOrderQueue next;
+        //弱引用，
+        private final WeakReference&lt;Thread&gt; owner;
+        private final int id = ID_GENERATOR.getAndIncrement();
+        private final AtomicInteger availableSharedCapacity;
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3添加defaulthandle">3.添加DefaultHandle</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   void add(DefaultHandle&lt;?&gt; handle) {
+       handle.lastRecycledId = id;     //更新最近一次回收的id, 注意这里只更新了lastRecycledId, recycleId没有更新, 等到真正回收的时候,会改成一致的.
+
+       Link tail = this.tail;
+       int writeIndex;
+       if ((writeIndex = tail.get()) == LINK_CAPACITY) {
+           //控制回收数量
+           if (!reserveSpace(availableSharedCapacity, LINK_CAPACITY)) {    //判断剩余空间是否足够
+               // Drop it.
+               return;
+           }
+           // We allocate a Link so reserve the space
+           this.tail = tail = tail.next = new Link();
+
+           writeIndex = tail.get();        //tail这是一个自增的变量,每次tail.get()就表示放到末尾了
+       }
+       tail.elements[writeIndex] = handle; //把对应的handle引用放到末尾的数组里
+       handle.stack = null;
+       // 我们延迟设置以确保将handle.stack为空，然后再在拥有线程中将其取消为空。
+       // 这也意味着，如果我们看到索引已更新，我们将保证队列中某个元素的可见性
+       tail.lazySet(writeIndex + 1); 
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4transfer-数据同步到stack">4.transfer 数据同步到Stack</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">       boolean transfer(Stack&lt;?&gt; dst) { 
+           Link head = this.head;
+           if (head == null) {
+               return false;
+           }
+          //清楚已读取数据
+           if (head.readIndex == LINK_CAPACITY) {
+               if (head.next == null) {
+                   return false;
+               }
+               this.head = head = head.next;
+           }
+
+           final int srcStart = head.readIndex;
+           int srcEnd = head.get();
+           final int srcSize = srcEnd - srcStart;
+           if (srcSize == 0) {
+               return false;
+           }
+
+           final int dstSize = dst.size;
+           final int expectedCapacity = dstSize + srcSize;
+
+           if (expectedCapacity &gt; dst.elements.length) {
+               final int actualCapacity = dst.increaseCapacity(expectedCapacity);  //扩容
+               srcEnd = min(srcStart + actualCapacity - dstSize, srcEnd);
+           }
+
+           if (srcStart != srcEnd) {
+               final DefaultHandle[] srcElems = head.elements;
+               final DefaultHandle[] dstElems = dst.elements;
+               int newDstSize = dstSize;
+               for (int i = srcStart; i &lt; srcEnd; i++) {
+                   DefaultHandle element = srcElems[i];
+                   if (element.recycleId == 0) {
+                       element.recycleId = element.lastRecycledId;     //前面的add方法只更新了lastRecycledId, transfer执行好了,需要更新recycleId一致,表示回收成功.
+                   } else if (element.recycleId != element.lastRecycledId) {   //recycleId=0才表示可回收的
+                       throw new IllegalStateException(&#34;recycled already&#34;);
+                   }
+                   srcElems[i] = null;             //成功了,就把WeakOrderQueue数组里置为空,释放对对象的引用
+
+                   if (dst.dropHandle(element)) {  //判断是否回收
+                       // Drop the object.
+                       continue;
+                   }
+                   element.stack = dst;                //element是Link数组里的对象,stack指向目标stack
+                   dstElems[newDstSize ++] = element;  //目标Stack数组的尾部, 放入element
+               }
+
+               if (srcEnd == LINK_CAPACITY &amp;&amp; head.next != null) {     //如果head.next还有,就需要继续扩容
+                   // Add capacity back as the Link is GCed.
+                   reclaimSpace(LINK_CAPACITY);    //扩容
+
+                   this.head = head.next;          //指向下一个,等待下一次循环继续上面的操作.transfer方法外层是被循环调用的.
+               }
+
+               head.readIndex = srcEnd;            //下次从这里开始读
+               if (dst.size == newDstSize) {       //如果相等则表示没有剩余空间了,返回false
+                   return false;
+               }
+               dst.size = newDstSize;              //目标数组size修改
+               return true;
+           } else {
+               // Stack数据已满不错处理
+               return false;
+           }
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="5finalize-gc回收调用方法">5.finalize gc回收调用方法</h2>
+<ul>
+<li>WeakOrderQueue.next已被移除，可能会被GC</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  protected void finalize() throws Throwable {
+            try {
+                super.finalize();  
+            } finally {
+                Link link = head;
+                while (link != null) {
+                    //availableSharedCapacity.addAndGet(space)
+                    reclaimSpace(LINK_CAPACITY);
+                    link = link.next;
+                }
+            }
+        }
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="五recycler-源码分析">五、Recycler 源码分析</h1>
+<h2 id="1get">1.get</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public final T get() {
+       if (maxCapacityPerThread == 0) {        // 通过修改maxCapacityPerThread=0可以关闭回收功能, 默认值是32768
+           return newObject((Handle&lt;T&gt;) NOOP_HANDLE);
+       }
+       Stack&lt;T&gt; stack = threadLocal.get();     // 获取当前线程对应的Stack
+       DefaultHandle&lt;T&gt; handle = stack.pop();  // 从对象池获取对象
+       if (handle == null) {
+           handle = stack.newHandle();
+           handle.value = newObject(handle);   // 没有对象,则调用子类的newObject方法创建新的对象
+       }
+       return (T) handle.value;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2配置信息">2.配置信息</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    //最大容量 默认32768
+    private final int maxCapacityPerThread;
+    //其他线程容量控制因子
+    private final int maxSharedCapacityFactor;
+    //控制回收对象次数，默认每8次执行回收
+    private final int ratioMask;
+    //单线程控制创建WeakOrderQueue数量
+    private final int maxDelayedQueuesPerThread;
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-03-12 22:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/netty/">netty</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/netty/04.Channel/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Channel</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/netty/02.PooledByteBuf%E5%86%85%E5%AD%98%E6%B1%A0/">
+        <span class="next-text nav-default">PooledByteBuf内存池</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

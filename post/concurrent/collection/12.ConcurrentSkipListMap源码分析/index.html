@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ConcurrentSkipListMap - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="ConcurrentSkipListMap源码分析 简介 ConcurrentSkipListMap是一种线程安全的有序的Map; Concurr" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/collection/12.ConcurrentSkipListMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/collection/12.ConcurrentSkipListMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/collection/12.ConcurrentSkipListMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="ConcurrentSkipListMap" />
+<meta property="og:description" content="ConcurrentSkipListMap源码分析 简介 ConcurrentSkipListMap是一种线程安全的有序的Map; Concurr" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/collection/12.ConcurrentSkipListMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2017-08-10T22:18:08+00:00" />
+<meta property="article:modified_time" content="2017-08-10T22:18:08+00:00" />
+<meta itemprop="name" content="ConcurrentSkipListMap">
+<meta itemprop="description" content="ConcurrentSkipListMap源码分析 简介 ConcurrentSkipListMap是一种线程安全的有序的Map; Concurr">
+<meta itemprop="datePublished" content="2017-08-10T22:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2017-08-10T22:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="3589">
+
+
+
+<meta itemprop="keywords" content="ConcurrentSkipListMap," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="ConcurrentSkipListMap"/>
+<meta name="twitter:description" content="ConcurrentSkipListMap源码分析 简介 ConcurrentSkipListMap是一种线程安全的有序的Map; Concurr"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">ConcurrentSkipListMap</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-08-10 22:18 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 3589 字 </span>
+      <span class="more-meta"> 预计阅读 8 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#一concurrentskiplistmap-数据结构实现">一、ConcurrentSkipListMap 数据结构实现</a>
+      <ul>
+        <li><a href="#1node节点">1.Node节点</a></li>
+        <li><a href="#2index-node索引节点">(2).Index node(索引节点)</a></li>
+        <li><a href="#3headindex头索引节点">(3).HeadIndex(头索引节点)</a></li>
+        <li><a href="#4concurrentskiplistmap内部结构">(4).ConcurrentSkipListMap内部结构</a></li>
+      </ul>
+    </li>
+    <li><a href="#二put-添加元素">二、put 添加元素</a>
+      <ul>
+        <li><a href="#1findpredecessor-按key查询前节点值索引结束该节点值">1.findPredecessor 按key查询前节点值，索引结束该节点值</a></li>
+        <li><a href="#2randomlevel-随机获取层次">2.randomLevel 随机获取层次</a></li>
+        <li><a href="#2insertindex-插入索引节点">2.insertIndex 插入索引节点</a></li>
+        <li><a href="#3addindex-建立索引关系">3.addIndex 建立索引关系</a></li>
+        <li><a href="#4findnode-查找节点">4.findNode 查找节点</a></li>
+      </ul>
+    </li>
+    <li><a href="#二get-获取元素">二、get 获取元素</a></li>
+    <li><a href="#三remove-删除元素">三、remove 删除元素</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#四size">四，size</a></li>
+    <li><a href="#五总结">五、总结</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-08-10T22:18:08" title="August 10, 2017">August 10, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="concurrentskiplistmap源码分析">ConcurrentSkipListMap源码分析</h1>
+<h2 id="简介">简介</h2>
+<ul>
+<li>ConcurrentSkipListMap是一种线程安全的有序的Map;</li>
+<li>ConcurrentSkipListMap内部的数据结构是SkipList(跳表)。</li>
+</ul>
+<h2 id="一concurrentskiplistmap-数据结构实现">一、ConcurrentSkipListMap 数据结构实现</h2>
+<p>ConcurrentSkipListMap实现ConcurrentNavigableMap接口，ConcurrentNavigableMap依赖关系图</p>
+<p><img src="/concurrent//ConcurrentNavigableMapImp.png" alt=""></p>
+<p>　　ConcurrentSkipListMap结构如图下面</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-text" data-lang="text">        * Head nodes          Index nodes
+        * +-+    right        +-+                      +-+
+        * |2|----------------&gt;| |---------------------&gt;| |-&gt;null
+        * +-+                 +-+                      +-+
+        *  | down              |                        |
+        *  v                   v                        v
+        * +-+            +-+  +-+       +-+            +-+       +-+
+        * |1|-----------&gt;| |-&gt;| |------&gt;| |-----------&gt;| |------&gt;| |-&gt;null
+        * +-+            +-+  +-+       +-+            +-+       +-+
+        *  v              |    |         |              |         |
+        * Nodes  next     v    v         v              v         v
+        * +-+  +-+  +-+  +-+  +-+  +-+  +-+  +-+  +-+  +-+  +-+  +-+
+        * | |-&gt;|A|-&gt;|B|-&gt;|C|-&gt;|D|-&gt;|E|-&gt;|F|-&gt;|G|-&gt;|H|-&gt;|I|-&gt;|J|-&gt;|K|-&gt;null
+        * +-+  +-+  +-+  +-+  +-+  +-+  +-+  +-+  +-+  +-+  +-+  +-+
+        *
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>三个节点
+<ul>
+<li>Head nodes 头节点</li>
+<li>Index nodes 索引节点</li>
+<li>真实数据节点Node</li>
+</ul>
+</li>
+</ul>
+<h3 id="1node节点">1.Node节点</h3>
+<h4 id="a数据结构">a.数据结构</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">       <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="o">{</span>
+           <span class="kd">final</span> <span class="n">K</span> <span class="n">key</span><span class="o">;</span>
+           <span class="kd">volatile</span> <span class="n">Object</span> <span class="n">value</span><span class="o">;</span>
+           <span class="kd">volatile</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">next</span><span class="o">;</span>
+   
+           <span class="cm">/**
+</span><span class="cm">            * Creates a new regular node.
+</span><span class="cm">            */</span>
+           <span class="n">Node</span><span class="o">(</span><span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">Object</span> <span class="n">value</span><span class="o">,</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">next</span><span class="o">)</span> <span class="o">{</span>
+               <span class="k">this</span><span class="o">.</span><span class="na">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">;</span>
+               <span class="k">this</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
+               <span class="k">this</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">next</span><span class="o">;</span>
+           <span class="o">}</span>
+   
+          <span class="cm">/**
+</span><span class="cm">            * 
+</span><span class="cm">            * 创建一个标记节点。用于删除操作
+</span><span class="cm">            */</span>
+           <span class="n">Node</span><span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">next</span><span class="o">)</span> <span class="o">{</span>
+               <span class="k">this</span><span class="o">.</span><span class="na">key</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+               <span class="k">this</span><span class="o">.</span><span class="na">value</span> <span class="o">=</span> <span class="k">this</span><span class="o">;</span>
+               <span class="k">this</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">next</span><span class="o">;</span>
+           <span class="o">}</span>
+   
+           <span class="cm">/**
+</span><span class="cm">            *
+</span><span class="cm">            * 判断节点是否为标记节点。
+</span><span class="cm">            */</span>
+           <span class="kt">boolean</span> <span class="nf">isMarker</span><span class="o">()</span> <span class="o">{</span>
+               <span class="k">return</span> <span class="n">value</span> <span class="o">==</span> <span class="k">this</span><span class="o">;</span>
+           <span class="o">}</span>
+   
+           <span class="cm">/**
+</span><span class="cm">            * 判断节点是否是base-level链表的头节点。
+</span><span class="cm">            */</span>
+           <span class="kt">boolean</span> <span class="nf">isBaseHeader</span><span class="o">()</span> <span class="o">{</span>
+               <span class="k">return</span> <span class="n">value</span> <span class="o">==</span> <span class="n">BASE_HEADER</span><span class="o">;</span>
+           <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="ahelpdelete-先建立软删除next添加删除标记节点后面在删除">a.helpDelete 先建立软删除(next添加删除标记节点)，后面在删除</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">     void helpDelete(Node&lt;K,V&gt; b, Node&lt;K,V&gt; f) {
+              if (f == next &amp;&amp; this == b.next) {
+                  if (f == null || f.value != f)   //添加删除标记节点
+                      //casNext(f, new Node&lt;K,V&gt;(f)); 
+                      appendMarker(f);
+                  else
+                      b.casNext(this, f.next);
+              }
+          }
+      } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2index-node索引节点">(2).Index node(索引节点)</h3>
+<h4 id="aindex数据结构">a.Index数据结构</h4>
+<ul>
+<li>添加down(下)和right(右)指向索引；</li>
+<li>down索引创建不能更改；</li>
+<li>索引节点删除，node赋值null</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">       <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="o">{</span>
+           <span class="kd">final</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">node</span><span class="o">;</span>
+           <span class="kd">final</span> <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">down</span><span class="o">;</span>
+           <span class="kd">volatile</span> <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">right</span><span class="o">;</span>
+   
+           <span class="cm">/**
+</span><span class="cm">            * Creates index node with given values.
+</span><span class="cm">            */</span>
+           <span class="n">Index</span><span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">node</span><span class="o">,</span> <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">down</span><span class="o">,</span> <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">right</span><span class="o">)</span> <span class="o">{</span>
+               <span class="k">this</span><span class="o">.</span><span class="na">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">;</span>
+               <span class="k">this</span><span class="o">.</span><span class="na">down</span> <span class="o">=</span> <span class="n">down</span><span class="o">;</span>
+               <span class="k">this</span><span class="o">.</span><span class="na">right</span> <span class="o">=</span> <span class="n">right</span><span class="o">;</span>
+           <span class="o">}</span>
+
+          <span class="c1">//删除节点
+</span><span class="c1"></span>          <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">indexesDeletedNode</span><span class="o">()</span> <span class="o">{</span>
+               <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="na">value</span> <span class="o">==</span> <span class="kc">null</span><span class="o">;</span>
+           <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="alink或者unlinkcas控制right">a.link或者unlink,CAS控制right</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">        <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">link</span><span class="o">(</span><span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">succ</span><span class="o">,</span> <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">newSucc</span><span class="o">)</span> <span class="o">{</span>
+              <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="n">node</span><span class="o">;</span>
+              <span class="n">newSucc</span><span class="o">.</span><span class="na">right</span> <span class="o">=</span> <span class="n">succ</span><span class="o">;</span>
+              <span class="k">return</span> <span class="n">n</span><span class="o">.</span><span class="na">value</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">casRight</span><span class="o">(</span><span class="n">succ</span><span class="o">,</span> <span class="n">newSucc</span><span class="o">);</span>
+          <span class="o">}</span>
+  
+          <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">unlink</span><span class="o">(</span><span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">succ</span><span class="o">)</span> <span class="o">{</span>
+              <span class="k">return</span> <span class="o">!</span><span class="n">indexesDeletedNode</span><span class="o">()</span> <span class="o">&amp;&amp;</span> <span class="n">casRight</span><span class="o">(</span><span class="n">succ</span><span class="o">,</span> <span class="n">succ</span><span class="o">.</span><span class="na">right</span><span class="o">);</span>
+          <span class="o">}</span> 
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3headindex头索引节点">(3).HeadIndex(头索引节点)</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">        * Nodes heading each level keep track of their level.
+</span><span class="cm">        * 头节点，每个头节点都包含一个表示层级的域。
+</span><span class="cm">        */</span>
+       <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">HeadIndex</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="o">{</span>
+           <span class="kd">final</span> <span class="kt">int</span> <span class="n">level</span><span class="o">;</span>
+           <span class="n">HeadIndex</span><span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">node</span><span class="o">,</span> <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">down</span><span class="o">,</span> <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">right</span><span class="o">,</span> <span class="kt">int</span> <span class="n">level</span><span class="o">)</span> <span class="o">{</span>
+               <span class="kd">super</span><span class="o">(</span><span class="n">node</span><span class="o">,</span> <span class="n">down</span><span class="o">,</span> <span class="n">right</span><span class="o">);</span>
+               <span class="k">this</span><span class="o">.</span><span class="na">level</span> <span class="o">=</span> <span class="n">level</span><span class="o">;</span>
+           <span class="o">}</span>    
+
+       <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4concurrentskiplistmap内部结构">(4).ConcurrentSkipListMap内部结构</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ConcurrentSkipListMap</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="o">...{</span>
+    
+   
+       <span class="cm">/**
+</span><span class="cm">        * 为randomLevel中使用的便宜实例随机数生成器生成初始随机种子。
+</span><span class="cm">        */</span>
+       <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Random</span> <span class="n">seedGenerator</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">();</span>
+   
+       <span class="cm">/**
+</span><span class="cm">        * 用来定义base-level的头结点。
+</span><span class="cm">        */</span>
+       <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Object</span> <span class="n">BASE_HEADER</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Object</span><span class="o">();</span>
+   
+       <span class="cm">/**
+</span><span class="cm">        * The topmost head index of the skiplist.
+</span><span class="cm">        * 
+</span><span class="cm">        */</span>
+       <span class="kd">private</span> <span class="kd">transient</span> <span class="kd">volatile</span> <span class="n">HeadIndex</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">head</span><span class="o">;</span>
+   
+       <span class="cm">/**
+</span><span class="cm">        * 比较器
+</span><span class="cm">        * @serial
+</span><span class="cm">        */</span>
+       <span class="kd">private</span> <span class="kd">final</span> <span class="n">Comparator</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">K</span><span class="o">&gt;</span> <span class="n">comparator</span><span class="o">;</span>
+   
+       <span class="cm">/**
+</span><span class="cm">        * 随机种子，这里没有用volatile修饰，多个线程看到不同的值也没关系。
+</span><span class="cm">        */</span>
+       <span class="kd">private</span> <span class="kd">transient</span> <span class="kt">int</span> <span class="n">randomSeed</span><span class="o">;</span>
+  
+   
+    <span class="kd">public</span> <span class="nf">ConcurrentSkipListMap</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">comparator</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="n">initialize</span><span class="o">();</span>
+    <span class="o">}</span>
+
+      <span class="cm">/**
+</span><span class="cm">       * 初始化或重置内部状态。
+</span><span class="cm">       */</span>
+      <span class="kd">final</span> <span class="kt">void</span> <span class="nf">initialize</span><span class="o">()</span> <span class="o">{</span>
+          <span class="n">keySet</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+          <span class="n">entrySet</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+          <span class="n">values</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+          <span class="n">descendingMap</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+          <span class="c1">//生成随机种子，这个种子用来生成随机的Level。
+</span><span class="c1"></span>          <span class="n">randomSeed</span> <span class="o">=</span> <span class="n">seedGenerator</span><span class="o">.</span><span class="na">nextInt</span><span class="o">()</span> <span class="o">|</span> <span class="n">0x0100</span><span class="o">;</span> <span class="c1">// ensure nonzero 确保非零 
+</span><span class="c1"></span>          <span class="c1">//生成头节点，该节点value是BASE_HEADER，level是1。
+</span><span class="c1"></span>          <span class="n">head</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HeadIndex</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;(</span><span class="k">new</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;(</span><span class="kc">null</span><span class="o">,</span> <span class="n">BASE_HEADER</span><span class="o">,</span> <span class="kc">null</span><span class="o">),</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">1</span><span class="o">);</span>
+      <span class="o">}</span>
+  
+  <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二put-添加元素">二、put 添加元素</h2>
+<ul>
+<li>value 不能为空</li>
+<li>Key必须实现Comparable</li>
+<li>设置comparator</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">      <span class="kd">public</span> <span class="n">V</span> <span class="nf">put</span><span class="o">(</span><span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+          <span class="k">if</span> <span class="o">(</span><span class="n">value</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+              <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+          <span class="k">return</span> <span class="n">doPut</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+      <span class="o">}</span>
+
+      <span class="kd">private</span> <span class="n">V</span> <span class="nf">doPut</span><span class="o">(</span><span class="n">K</span> <span class="n">kkey</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">onlyIfAbsent</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">Comparable</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">K</span><span class="o">&gt;</span> <span class="n">key</span> <span class="o">=</span> <span class="n">comparable</span><span class="o">(</span><span class="n">kkey</span><span class="o">);</span>
+          <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+              <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">findPredecessor</span><span class="o">(</span><span class="n">key</span><span class="o">);</span> <span class="c1">//查询key 节点前node
+</span><span class="c1"></span>              <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+              <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                  <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                      <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+                      <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">!=</span> <span class="n">b</span><span class="o">.</span><span class="na">next</span><span class="o">)</span>               <span class="c1">// inconsistent read 不一致，发生竞争重试
+</span><span class="c1"></span>                          <span class="k">break</span><span class="o">;</span>
+                      <span class="n">Object</span> <span class="n">v</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
+                      <span class="k">if</span> <span class="o">(</span><span class="n">v</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>               <span class="c1">// n is deleted 节点n已经被删除了
+</span><span class="c1"></span>                          <span class="n">n</span><span class="o">.</span><span class="na">helpDelete</span><span class="o">(</span><span class="n">b</span><span class="o">,</span> <span class="n">f</span><span class="o">);</span>   
+                          <span class="k">break</span><span class="o">;</span>
+                      <span class="o">}</span>
+                      <span class="k">if</span> <span class="o">(</span><span class="n">v</span> <span class="o">==</span> <span class="n">n</span> <span class="o">||</span> <span class="n">b</span><span class="o">.</span><span class="na">value</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="c1">// b is deleted  节点b已经被删除了
+</span><span class="c1"></span>                          <span class="k">break</span><span class="o">;</span>
+                      <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">n</span><span class="o">.</span><span class="na">key</span><span class="o">);</span>
+                      <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                          <span class="n">b</span> <span class="o">=</span> <span class="n">n</span><span class="o">;</span>
+                          <span class="n">n</span> <span class="o">=</span> <span class="n">f</span><span class="o">;</span>
+                          <span class="k">continue</span><span class="o">;</span>
+                      <span class="o">}</span>
+                      <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                          <span class="k">if</span> <span class="o">(</span><span class="n">onlyIfAbsent</span> <span class="o">||</span> <span class="n">n</span><span class="o">.</span><span class="na">casValue</span><span class="o">(</span><span class="n">v</span><span class="o">,</span> <span class="n">value</span><span class="o">))</span>
+                              <span class="k">return</span> <span class="o">(</span><span class="n">V</span><span class="o">)</span><span class="n">v</span><span class="o">;</span>
+                          <span class="k">else</span>
+                              <span class="k">break</span><span class="o">;</span> <span class="c1">// restart if lost race to replace value
+</span><span class="c1"></span>                      <span class="o">}</span>
+                      <span class="c1">// else c &lt; 0; fall through
+</span><span class="c1"></span>                  <span class="o">}</span>
+  
+                  <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">z</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;(</span><span class="n">kkey</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">n</span><span class="o">);</span> <span class="c1">//创建一个节点
+</span><span class="c1"></span>                  <span class="k">if</span> <span class="o">(!</span><span class="n">b</span><span class="o">.</span><span class="na">casNext</span><span class="o">(</span><span class="n">n</span><span class="o">,</span> <span class="n">z</span><span class="o">))</span> 
+                      <span class="k">break</span><span class="o">;</span>         <span class="c1">// restart if lost race to append to b
+</span><span class="c1"></span>                  <span class="kt">int</span> <span class="n">level</span> <span class="o">=</span> <span class="n">randomLevel</span><span class="o">();</span> <span class="c1">//随机生成层级 层级最大31
+</span><span class="c1"></span>                  <span class="k">if</span> <span class="o">(</span><span class="n">level</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span>
+                      <span class="n">insertIndex</span><span class="o">(</span><span class="n">z</span><span class="o">,</span> <span class="n">level</span><span class="o">);</span> <span class="c1">//添加索引层次
+</span><span class="c1"></span>                  <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+              <span class="o">}</span>
+          <span class="o">}</span>
+      <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1findpredecessor-按key查询前节点值索引结束该节点值">1.findPredecessor 按key查询前节点值，索引结束该节点值</h3>
+<ul>
+<li>先从head节点查询开始；遍历到最底层节点；
+<ul>
+<li>大于key往right遍历</li>
+<li>小于等于往down遍历</li>
+</ul>
+</li>
+<li>处理索引节点为空情况，处理unlink</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">     <span class="kd">private</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">findPredecessor</span><span class="o">(</span><span class="n">Comparable</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">K</span><span class="o">&gt;</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+         <span class="k">if</span> <span class="o">(</span><span class="n">key</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+             <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span> <span class="c1">// don&#39;t postpone errors
+</span><span class="c1"></span>         <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+             <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">q</span> <span class="o">=</span> <span class="n">head</span><span class="o">;</span>
+             <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">r</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">right</span><span class="o">;</span>
+             <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                 <span class="k">if</span> <span class="o">(</span><span class="n">r</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                     <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="na">node</span><span class="o">;</span>
+                     <span class="n">K</span> <span class="n">k</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="na">key</span><span class="o">;</span>
+                     <span class="k">if</span> <span class="o">(</span><span class="n">n</span><span class="o">.</span><span class="na">value</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span><span class="c1">//节点为空，删除改索引节点。
+</span><span class="c1"></span>                         <span class="k">if</span> <span class="o">(!</span><span class="n">q</span><span class="o">.</span><span class="na">unlink</span><span class="o">(</span><span class="n">r</span><span class="o">))</span>
+                             <span class="k">break</span><span class="o">;</span>           <span class="c1">// restart
+</span><span class="c1"></span>                         <span class="n">r</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">right</span><span class="o">;</span>         <span class="c1">// reread r
+</span><span class="c1"></span>                         <span class="k">continue</span><span class="o">;</span>
+                     <span class="o">}</span>
+                     <span class="k">if</span> <span class="o">(</span><span class="n">key</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">k</span><span class="o">)</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                         <span class="n">q</span> <span class="o">=</span> <span class="n">r</span><span class="o">;</span>
+                         <span class="n">r</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="na">right</span><span class="o">;</span>
+                         <span class="k">continue</span><span class="o">;</span>
+                     <span class="o">}</span>
+                 <span class="o">}</span>
+                 <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">d</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">down</span><span class="o">;</span>
+                 <span class="k">if</span> <span class="o">(</span><span class="n">d</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                     <span class="n">q</span> <span class="o">=</span> <span class="n">d</span><span class="o">;</span>
+                     <span class="n">r</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="na">right</span><span class="o">;</span>
+                 <span class="o">}</span> <span class="k">else</span>
+                     <span class="k">return</span> <span class="n">q</span><span class="o">.</span><span class="na">node</span><span class="o">;</span>
+             <span class="o">}</span>
+         <span class="o">}</span>
+     <span class="o">}</span>     
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2randomlevel-随机获取层次">2.randomLevel 随机获取层次</h3>
+<ul>
+<li>利用Xorshift随机算法</li>
+<li>根据随机值，左移一位&amp;1计算层次</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">        <span class="kd">private</span> <span class="kt">int</span> <span class="nf">randomLevel</span><span class="o">()</span> <span class="o">{</span>
+            <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">randomSeed</span><span class="o">;</span>
+            <span class="n">x</span> <span class="o">^=</span> <span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="n">13</span><span class="o">;</span>
+            <span class="n">x</span> <span class="o">^=</span> <span class="n">x</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">17</span><span class="o">;</span>
+            <span class="n">randomSeed</span> <span class="o">=</span> <span class="n">x</span> <span class="o">^=</span> <span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="n">5</span><span class="o">;</span>  <span class="c1">// 运用 Xorshift随机算法， https://en.wikipedia.org/wiki/Xorshift
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">((</span><span class="n">x</span> <span class="o">&amp;</span> <span class="n">0x80000001</span><span class="o">)</span> <span class="o">!=</span> <span class="n">0</span><span class="o">)</span> <span class="c1">// test highest and lowest bits  最高(31)和最低位
+</span><span class="c1"></span>                <span class="k">return</span> <span class="n">0</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">level</span> <span class="o">=</span> <span class="n">1</span><span class="o">;</span>
+            <span class="k">while</span> <span class="o">(((</span><span class="n">x</span> <span class="o">&gt;&gt;&gt;=</span> <span class="n">1</span><span class="o">)</span> <span class="o">&amp;</span> <span class="n">1</span><span class="o">)</span> <span class="o">!=</span> <span class="n">0</span><span class="o">)</span> <span class="o">++</span><span class="n">level</span><span class="o">;</span>
+            <span class="k">return</span> <span class="n">level</span><span class="o">;</span>
+        <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2insertindex-插入索引节点">2.insertIndex 插入索引节点</h3>
+<ul>
+<li>分两种处理</li>
+<li>当前创建层次小于等于现在层次高度</li>
+<li>当前创建层次大于现在层次高度
+<ul>
+<li>CAS的head头节点</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">insertIndex</span><span class="o">(</span><span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">z</span><span class="o">,</span> <span class="kt">int</span> <span class="n">level</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">HeadIndex</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">h</span> <span class="o">=</span> <span class="n">head</span><span class="o">;</span>
+        <span class="kt">int</span> <span class="n">max</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="na">level</span><span class="o">;</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">level</span> <span class="o">&lt;=</span> <span class="n">max</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">idx</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">1</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">level</span><span class="o">;</span> <span class="o">++</span><span class="n">i</span><span class="o">)</span> <span class="c1">// 建立该Node层级关系
+</span><span class="c1"></span>                <span class="n">idx</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;(</span><span class="n">z</span><span class="o">,</span> <span class="n">idx</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+            <span class="n">addIndex</span><span class="o">(</span><span class="n">idx</span><span class="o">,</span> <span class="n">h</span><span class="o">,</span> <span class="n">level</span><span class="o">);</span>
+
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span> <span class="c1">// Add a new level
+</span><span class="c1"></span>            <span class="n">level</span> <span class="o">=</span> <span class="n">max</span> <span class="o">+</span> <span class="n">1</span><span class="o">;</span>
+            <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;[]</span> <span class="n">idxs</span> <span class="o">=</span> <span class="o">(</span><span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;[])</span><span class="k">new</span> <span class="n">Index</span><span class="o">[</span><span class="n">level</span><span class="o">+</span><span class="n">1</span><span class="o">];</span>
+            <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">idx</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">1</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">level</span><span class="o">;</span> <span class="o">++</span><span class="n">i</span><span class="o">)</span>
+                <span class="n">idxs</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;(</span><span class="n">z</span><span class="o">,</span> <span class="n">idx</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>  <span class="c1">// 建立该Node层级关系
+</span><span class="c1"></span>
+            <span class="n">HeadIndex</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">oldh</span><span class="o">;</span> <span class="c1">//头节点
+</span><span class="c1"></span>            <span class="kt">int</span> <span class="n">k</span><span class="o">;</span>
+            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="n">oldh</span> <span class="o">=</span> <span class="n">head</span><span class="o">;</span>
+                <span class="kt">int</span> <span class="n">oldLevel</span> <span class="o">=</span> <span class="n">oldh</span><span class="o">.</span><span class="na">level</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">level</span> <span class="o">&lt;=</span> <span class="n">oldLevel</span><span class="o">)</span> <span class="o">{</span> <span class="c1">// lost race to add level  竞争条件
+</span><span class="c1"></span>                    <span class="n">k</span> <span class="o">=</span> <span class="n">level</span><span class="o">;</span>
+                    <span class="k">break</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="n">HeadIndex</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">newh</span> <span class="o">=</span> <span class="n">oldh</span><span class="o">;</span>
+                <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">oldbase</span> <span class="o">=</span> <span class="n">oldh</span><span class="o">.</span><span class="na">node</span><span class="o">;</span>
+                <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="n">oldLevel</span><span class="o">+</span><span class="n">1</span><span class="o">;</span> <span class="n">j</span> <span class="o">&lt;=</span> <span class="n">level</span><span class="o">;</span> <span class="o">++</span><span class="n">j</span><span class="o">)</span>
+                    <span class="n">newh</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HeadIndex</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;(</span><span class="n">oldbase</span><span class="o">,</span> <span class="n">newh</span><span class="o">,</span> <span class="n">idxs</span><span class="o">[</span><span class="n">j</span><span class="o">],</span> <span class="n">j</span><span class="o">);</span> <span class="c1">// 建立头节点层级关系
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">casHead</span><span class="o">(</span><span class="n">oldh</span><span class="o">,</span> <span class="n">newh</span><span class="o">))</span> <span class="o">{</span> <span class="c1">// CAS 更新头结点
+</span><span class="c1"></span>                    <span class="n">k</span> <span class="o">=</span> <span class="n">oldLevel</span><span class="o">;</span>
+                    <span class="k">break</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+            <span class="n">addIndex</span><span class="o">(</span><span class="n">idxs</span><span class="o">[</span><span class="n">k</span><span class="o">],</span> <span class="n">oldh</span><span class="o">,</span> <span class="n">k</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3addindex-建立索引关系">3.addIndex 建立索引关系</h3>
+<ul>
+<li>查找类似findPredecessor</li>
+<li>当查找到建立跟索引层次相同，进行link链接操作</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">addIndex</span><span class="o">(</span><span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">idx</span><span class="o">,</span> <span class="n">HeadIndex</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">h</span><span class="o">,</span> <span class="kt">int</span> <span class="n">indexLevel</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// Track next level to insert in case of retries 跟踪下一个级别，以便在重试时插入
+</span><span class="c1"></span>        <span class="kt">int</span> <span class="n">insertionLevel</span> <span class="o">=</span> <span class="n">indexLevel</span><span class="o">;</span>
+        <span class="n">Comparable</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">K</span><span class="o">&gt;</span> <span class="n">key</span> <span class="o">=</span> <span class="n">comparable</span><span class="o">(</span><span class="n">idx</span><span class="o">.</span><span class="na">node</span><span class="o">.</span><span class="na">key</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">key</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+
+        <span class="c1">// 类似于findPredecessor，但添加索引节点
+</span><span class="c1"></span>        <span class="c1">// path to key.
+</span><span class="c1"></span>        <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+            <span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="na">level</span><span class="o">;</span>
+            <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">q</span> <span class="o">=</span> <span class="n">h</span><span class="o">;</span>
+            <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">r</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">right</span><span class="o">;</span>
+            <span class="n">Index</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">t</span> <span class="o">=</span> <span class="n">idx</span><span class="o">;</span>
+            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">r</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="na">node</span><span class="o">;</span>
+                    <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">n</span><span class="o">.</span><span class="na">key</span><span class="o">);</span>
+                    <span class="c1">//索引删除操作
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">n</span><span class="o">.</span><span class="na">value</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="k">if</span> <span class="o">(!</span><span class="n">q</span><span class="o">.</span><span class="na">unlink</span><span class="o">(</span><span class="n">r</span><span class="o">))</span>
+                            <span class="k">break</span><span class="o">;</span>
+                        <span class="n">r</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">right</span><span class="o">;</span>
+                        <span class="k">continue</span><span class="o">;</span>
+                    <span class="o">}</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span> <span class="c1">// 判断key 大于right key 值 
+</span><span class="c1"></span>                        <span class="n">q</span> <span class="o">=</span> <span class="n">r</span><span class="o">;</span>
+                        <span class="n">r</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="na">right</span><span class="o">;</span>
+                        <span class="k">continue</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+
+                <span class="k">if</span> <span class="o">(</span><span class="n">j</span> <span class="o">==</span> <span class="n">insertionLevel</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="c1">// 如果节点已经被删除，不要插入索引
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">t</span><span class="o">.</span><span class="na">indexesDeletedNode</span><span class="o">())</span> <span class="o">{</span>
+                        <span class="n">findNode</span><span class="o">(</span><span class="n">key</span><span class="o">);</span> <span class="c1">// cleans up
+</span><span class="c1"></span>                        <span class="k">return</span><span class="o">;</span>
+                    <span class="o">}</span>
+                    <span class="k">if</span> <span class="o">(!</span><span class="n">q</span><span class="o">.</span><span class="na">link</span><span class="o">(</span><span class="n">r</span><span class="o">,</span> <span class="n">t</span><span class="o">))</span>
+                        <span class="k">break</span><span class="o">;</span> <span class="c1">// restart
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(--</span><span class="n">insertionLevel</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="c1">// 在返回之前需要最终的删除检查
+</span><span class="c1"></span>                        <span class="k">if</span> <span class="o">(</span><span class="n">t</span><span class="o">.</span><span class="na">indexesDeletedNode</span><span class="o">())</span>
+                            <span class="n">findNode</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+                        <span class="k">return</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+
+                <span class="k">if</span> <span class="o">(--</span><span class="n">j</span> <span class="o">&gt;=</span> <span class="n">insertionLevel</span> <span class="o">&amp;&amp;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">indexLevel</span><span class="o">)</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="na">down</span><span class="o">;</span>
+                <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">down</span><span class="o">;</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">right</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4findnode-查找节点">4.findNode 查找节点</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">findNode</span><span class="o">(</span><span class="n">Comparable</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">K</span><span class="o">&gt;</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+            <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">findPredecessor</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+            <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">!=</span> <span class="n">b</span><span class="o">.</span><span class="na">next</span><span class="o">)</span>                <span class="c1">// inconsistent read
+</span><span class="c1"></span>                    <span class="k">break</span><span class="o">;</span>
+                <span class="n">Object</span> <span class="n">v</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">v</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>                <span class="c1">// n is deleted
+</span><span class="c1"></span>                    <span class="n">n</span><span class="o">.</span><span class="na">helpDelete</span><span class="o">(</span><span class="n">b</span><span class="o">,</span> <span class="n">f</span><span class="o">);</span>
+                    <span class="k">break</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">v</span> <span class="o">==</span> <span class="n">n</span> <span class="o">||</span> <span class="n">b</span><span class="o">.</span><span class="na">value</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>  <span class="c1">// b is deleted
+</span><span class="c1"></span>                    <span class="k">break</span><span class="o">;</span>
+                <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">n</span><span class="o">.</span><span class="na">key</span><span class="o">);</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="n">n</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="n">b</span> <span class="o">=</span> <span class="n">n</span><span class="o">;</span>
+                <span class="n">n</span> <span class="o">=</span> <span class="n">f</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二get-获取元素">二、get 获取元素</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">public</span> <span class="n">V</span> <span class="nf">get</span><span class="o">(</span><span class="n">Object</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">doGet</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * Gets value for key using findNode.
+</span><span class="cm">     * @param okey the key
+</span><span class="cm">     * @return the value, or null if absent
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="n">V</span> <span class="nf">doGet</span><span class="o">(</span><span class="n">Object</span> <span class="n">okey</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">Comparable</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">K</span><span class="o">&gt;</span> <span class="n">key</span> <span class="o">=</span> <span class="n">comparable</span><span class="o">(</span><span class="n">okey</span><span class="o">);</span>
+        <span class="cm">/*
+</span><span class="cm">         * 在这里和其他地方需要循环的情况下值字段变空，就像它即将返回一样，在这种情况下，
+</span><span class="cm">         * 我们失去了一个删除的竞争，所以必须重试。
+</span><span class="cm">         */</span>
+        <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+            <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="n">findNode</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="n">Object</span> <span class="n">v</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">v</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                <span class="k">return</span> <span class="o">(</span><span class="n">V</span><span class="o">)</span><span class="n">v</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span> 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="三remove-删除元素">三、remove 删除元素</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">public</span> <span class="n">V</span> <span class="nf">remove</span><span class="o">(</span><span class="n">Object</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">doRemove</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">final</span> <span class="n">V</span> <span class="nf">doRemove</span><span class="o">(</span><span class="n">Object</span> <span class="n">okey</span><span class="o">,</span> <span class="n">Object</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">Comparable</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">K</span><span class="o">&gt;</span> <span class="n">key</span> <span class="o">=</span> <span class="n">comparable</span><span class="o">(</span><span class="n">okey</span><span class="o">);</span>
+        <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+            <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">findPredecessor</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+            <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">n</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="n">Node</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">!=</span> <span class="n">b</span><span class="o">.</span><span class="na">next</span><span class="o">)</span>                    <span class="c1">// inconsistent read
+</span><span class="c1"></span>                    <span class="k">break</span><span class="o">;</span>
+                <span class="n">Object</span> <span class="n">v</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">v</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>                    <span class="c1">// n is deleted
+</span><span class="c1"></span>                    <span class="n">n</span><span class="o">.</span><span class="na">helpDelete</span><span class="o">(</span><span class="n">b</span><span class="o">,</span> <span class="n">f</span><span class="o">);</span>
+                    <span class="k">break</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">v</span> <span class="o">==</span> <span class="n">n</span> <span class="o">||</span> <span class="n">b</span><span class="o">.</span><span class="na">value</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>      <span class="c1">// b is deleted
+</span><span class="c1"></span>                    <span class="k">break</span><span class="o">;</span>
+                <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">n</span><span class="o">.</span><span class="na">key</span><span class="o">);</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">b</span> <span class="o">=</span> <span class="n">n</span><span class="o">;</span>
+                    <span class="n">n</span> <span class="o">=</span> <span class="n">f</span><span class="o">;</span>
+                    <span class="k">continue</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">value</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">value</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">v</span><span class="o">))</span>
+                    <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(!</span><span class="n">n</span><span class="o">.</span><span class="na">casValue</span><span class="o">(</span><span class="n">v</span><span class="o">,</span> <span class="kc">null</span><span class="o">))</span>                   <span class="c1">// cas value设置为空
+</span><span class="c1"></span>                    <span class="k">break</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(!</span><span class="n">n</span><span class="o">.</span><span class="na">appendMarker</span><span class="o">(</span><span class="n">f</span><span class="o">)</span> <span class="o">||</span> <span class="o">!</span><span class="n">b</span><span class="o">.</span><span class="na">casNext</span><span class="o">(</span><span class="n">n</span><span class="o">,</span> <span class="n">f</span><span class="o">))</span> <span class="c1">// 标志删除节点，
+</span><span class="c1"></span>                    <span class="n">findNode</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>                  <span class="c1">// Retry via findNode
+</span><span class="c1"></span>                <span class="k">else</span> <span class="o">{</span>
+                    <span class="n">findPredecessor</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>           <span class="c1">// Clean index 清楚节点
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">head</span><span class="o">.</span><span class="na">right</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                        <span class="n">tryReduceLevel</span><span class="o">();</span>
+                <span class="o">}</span>
+                <span class="k">return</span> <span class="o">(</span><span class="n">V</span><span class="o">)</span><span class="n">v</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="atryreducelevel-尝试降低高度head">a.tryReduceLevel 尝试降低高度head</h4>
+<p>如果没有节点，可能会降低head层级。这种方法（很少）会出错，在这种情况下，即使它们将要包含索引节点，层级也会消失。这会影响性能，而不是正确性。
+为了最大限度地减少错误并减少滞后现象，只有最顶层的三个层次看起来是空的时，层次才会减少一个。另外，如果在CAS之后删除的级别看起来不是空的，我们会尝试在任何人注意到我们的错误之前快速更改它。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">       <span class="kd">private</span> <span class="kt">void</span> <span class="nf">tryReduceLevel</span><span class="o">()</span> <span class="o">{</span>
+           <span class="n">HeadIndex</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">h</span> <span class="o">=</span> <span class="n">head</span><span class="o">;</span>
+           <span class="n">HeadIndex</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">d</span><span class="o">;</span>
+           <span class="n">HeadIndex</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">e</span><span class="o">;</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">h</span><span class="o">.</span><span class="na">level</span> <span class="o">&gt;</span> <span class="n">3</span> <span class="o">&amp;&amp;</span>
+               <span class="o">(</span><span class="n">d</span> <span class="o">=</span> <span class="o">(</span><span class="n">HeadIndex</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;)</span><span class="n">h</span><span class="o">.</span><span class="na">down</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span>
+               <span class="o">(</span><span class="n">e</span> <span class="o">=</span> <span class="o">(</span><span class="n">HeadIndex</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;)</span><span class="n">d</span><span class="o">.</span><span class="na">down</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span>
+               <span class="n">e</span><span class="o">.</span><span class="na">right</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span>
+               <span class="n">d</span><span class="o">.</span><span class="na">right</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span>
+               <span class="n">h</span><span class="o">.</span><span class="na">right</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span>
+               <span class="n">casHead</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="n">d</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="c1">// try to set
+</span><span class="c1"></span>               <span class="n">h</span><span class="o">.</span><span class="na">right</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="c1">// recheck 再检查
+</span><span class="c1"></span>               <span class="n">casHead</span><span class="o">(</span><span class="n">d</span><span class="o">,</span> <span class="n">h</span><span class="o">);</span>   <span class="c1">// 尝试回滚操作
+</span><span class="c1"></span>       <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="四size">四，size</h2>
+<ul>
+<li>链表遍历，时间复杂度O(n)</li>
+<li>慢</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public int size() {
+       long c;
+       return ((baseHead() == null) ? 0 :
+               ((c = getAdderCount()) &gt;= Integer.MAX_VALUE) ?
+               Integer.MAX_VALUE : (int) c);
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="五总结">五、总结</h2>
+<ul>
+<li>为什么删除，先插入标记节点？
+<ul>
+<li>以避免与并发插入发生冲突；last节点为例子，last删除节点，cas是last的上个节点，问题来，
+先并发插入last后面，一个对last的上个节点操作，一个对last节点操作；这样问题导致数据丢失；</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-08-10 22:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/ConcurrentSkipListMap/">ConcurrentSkipListMap</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/collection/13.ConcurrentSkipListSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">ConcurrentSkipListSet</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/collection/10.ConcurrentLinkedQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">ConcurrentLinkedQueue</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

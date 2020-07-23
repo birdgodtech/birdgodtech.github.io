@@ -1,0 +1,2303 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ThreadPoolExecutor - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="ScheduledThreadPoolExecutor源码分析 简介 ScheduledThreadPoolExecutor是一种类似Timer" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/14.ScheduledThreadPoolExecutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/14.ScheduledThreadPoolExecutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/14.ScheduledThreadPoolExecutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="ThreadPoolExecutor" />
+<meta property="og:description" content="ScheduledThreadPoolExecutor源码分析 简介 ScheduledThreadPoolExecutor是一种类似Timer" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/14.ScheduledThreadPoolExecutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2017-04-25T19:11:08+00:00" />
+<meta property="article:modified_time" content="2017-04-25T19:11:08+00:00" />
+<meta itemprop="name" content="ThreadPoolExecutor">
+<meta itemprop="description" content="ScheduledThreadPoolExecutor源码分析 简介 ScheduledThreadPoolExecutor是一种类似Timer">
+<meta itemprop="datePublished" content="2017-04-25T19:11:08&#43;00:00" />
+<meta itemprop="dateModified" content="2017-04-25T19:11:08&#43;00:00" />
+<meta itemprop="wordCount" content="7871">
+
+
+
+<meta itemprop="keywords" content="ScheduledThreadPoolExecutor," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="ThreadPoolExecutor"/>
+<meta name="twitter:description" content="ScheduledThreadPoolExecutor源码分析 简介 ScheduledThreadPoolExecutor是一种类似Timer"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">ThreadPoolExecutor</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-04-25 19:11 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 7871 字 </span>
+      <span class="more-meta"> 预计阅读 16 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#一scheduledthreadpoolexecutor-内部结构实现">一、ScheduledThreadPoolExecutor 内部结构实现</a>
+      <ul>
+        <li><a href="#1threadpoolexecutor接口说明">1.ThreadPoolExecutor接口说明</a></li>
+        <li><a href="#2threadpoolexecutor构造">2.ThreadPoolExecutor构造</a></li>
+        <li><a href="#3workqueue-任务队列用delayedworkqueue">3.workQueue 任务队列用DelayedWorkQueue</a></li>
+      </ul>
+    </li>
+    <li><a href="#二-schedule-创建并执行一个一次性任务这个任务过了延迟时间就会被执行">二、 schedule 创建并执行一个一次性任务，这个任务过了延迟时间就会被执行。</a></li>
+    <li><a href="#三-scheduleatfixedrate">三、 scheduleAtFixedRate</a></li>
+    <li><a href="#四-scheduleatfixedrate">四、 scheduleAtFixedRate</a></li>
+    <li><a href="#五execute-执行任务">五、execute 执行任务</a></li>
+    <li><a href="#六submit-提交任务">六、submit 提交任务</a></li>
+    <li><a href="#七停止任务-shutdown和shutdownnow">七、停止任务 shutdown和shutdownNow</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-04-25T19:11:08" title="April 25, 2017">April 25, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="scheduledthreadpoolexecutor源码分析">ScheduledThreadPoolExecutor源码分析</h1>
+<h2 id="简介">简介</h2>
+<p>ScheduledThreadPoolExecutor是一种类似Timer的定时器或者说是调度器，和Timer比起来主要有几点好处：</p>
+<ul>
+<li>1.多线程的定时调度，timer是单线程的，每个timer实例只有一个工作线程。</li>
+<li>2.由于继承自ThreadPoolExecutor，更具有灵活性和伸缩性。</li>
+<li>3.没有timer那种线程泄露问题，timer调度的任务如果异常终止，那么整个timer都会被取消，无法执行其他任务</li>
+</ul>
+<h2 id="一scheduledthreadpoolexecutor-内部结构实现">一、ScheduledThreadPoolExecutor 内部结构实现</h2>
+<p>ScheduledThreadPoolExecutor实现ThreadPoolExecutor,继承ThreadPoolExecutor接口</p>
+<h3 id="1threadpoolexecutor接口说明">1.ThreadPoolExecutor接口说明</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">ScheduledExecutorService</span> <span class="kd">extends</span> <span class="n">ExecutorService</span> <span class="o">{</span>
+    <span class="cm">/**
+</span><span class="cm">     * 创建并执行一个一次性任务，这个任务过了延迟时间就会被执行。
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">ScheduledFuture</span><span class="o">&lt;?&gt;</span> <span class="n">schedule</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">command</span><span class="o">,</span>
+                    <span class="kt">long</span> <span class="n">delay</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">);</span>
+    <span class="cm">/**
+</span><span class="cm">     * 创建并执行一个一次性任务，这个任务过了延迟时间就会被执行。
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">ScheduledFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">schedule</span><span class="o">(</span><span class="n">Callable</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">callable</span><span class="o">,</span>
+                    <span class="kt">long</span> <span class="n">delay</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">);</span>
+    <span class="cm">/**
+</span><span class="cm">     * 创建并执行一个周期性任务，当任务过了给定的初始延迟时间，会第一
+</span><span class="cm">     * 次被执行，然后会以给定的周期时间执行。
+</span><span class="cm">     * 如果某次执行过程中发生了异常，那么任务就停止了(不会执行下一次任务了)。
+</span><span class="cm">     * 如果某次执行时长超过了周期时间，那么下一次任务会延迟启动，不会和当前
+</span><span class="cm">     * 任务并行执行。
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">ScheduledFuture</span><span class="o">&lt;?&gt;</span> <span class="n">scheduleAtFixedRate</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">command</span><span class="o">,</span>
+                       <span class="kt">long</span> <span class="n">initialDelay</span><span class="o">,</span>
+                       <span class="kt">long</span> <span class="n">period</span><span class="o">,</span>
+                       <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">);</span>
+    <span class="cm">/**
+</span><span class="cm">     * 创建并执行一个周期性任务，当任务过了给定的初始延迟时间，会第一
+</span><span class="cm">     * 次被执行，接下来的任务会在上次任务执行完毕后，延迟给定的时间，
+</span><span class="cm">     * 然后再继续执行。
+</span><span class="cm">     * 如果某次执行过程中发生了异常，那么任务就停止了(不会执行下一次任务了)。
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">ScheduledFuture</span><span class="o">&lt;?&gt;</span> <span class="n">scheduleWithFixedDelay</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">command</span><span class="o">,</span>
+                          <span class="kt">long</span> <span class="n">initialDelay</span><span class="o">,</span>
+                          <span class="kt">long</span> <span class="n">delay</span><span class="o">,</span>
+                          <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2threadpoolexecutor构造">2.ThreadPoolExecutor构造</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ScheduledThreadPoolExecutor</span>
+        <span class="kd">extends</span> <span class="n">ThreadPoolExecutor</span>
+        <span class="kd">implements</span> <span class="n">ScheduledExecutorService</span> <span class="o">{</span>
+
+    <span class="cm">/*
+</span><span class="cm">     * This class specializes ThreadPoolExecutor implementation by
+</span><span class="cm">     * 这个类专门用ThreadPoolExecutor实现
+</span><span class="cm">     *
+</span><span class="cm">     * 1. Using a custom task type, ScheduledFutureTask for
+</span><span class="cm">     *    tasks, even those that don&#39;t require scheduling (i.e.,
+</span><span class="cm">     *    those submitted using ExecutorService execute, not
+</span><span class="cm">     *    ScheduledExecutorService methods) which are treated as
+</span><span class="cm">     *    delayed tasks with a delay of zero.
+</span><span class="cm">     *    使用自定义任务类型ScheduledFutureTask执行任务，
+</span><span class="cm">     *    即使那些不需要调度的任务（即，使用ExecutorService执行，而不是ScheduledExecutorService方法提交的任务）被视为延迟为零的延迟任务。
+</span><span class="cm">     *
+</span><span class="cm">     * 2. Using a custom queue (DelayedWorkQueue), a variant of
+</span><span class="cm">     *    unbounded DelayQueue. The lack of capacity constraint and
+</span><span class="cm">     *    the fact that corePoolSize and maximumPoolSize are
+</span><span class="cm">     *    effectively identical simplifies some execution mechanics
+</span><span class="cm">     *    (see delayedExecute) compared to ThreadPoolExecutor.
+</span><span class="cm">     *    使用自定义队列（DelayedWorkQueue），一个无界DelayQueue的变种。
+</span><span class="cm">     *    容量约束的缺乏以及corePoolSize和maximumPoolSize实际上相同这一事实，与ThreadPoolExecutor相比，简化了一些执行机制（请参见delayedExecute）。
+</span><span class="cm">     *
+</span><span class="cm">     * 3. Supporting optional run-after-shutdown parameters, which
+</span><span class="cm">     *    leads to overrides of shutdown methods to remove and cancel
+</span><span class="cm">     *    tasks that should NOT be run after shutdown, as well as
+</span><span class="cm">     *    different recheck logic when task (re)submission overlaps
+</span><span class="cm">     *    with a shutdown.
+</span><span class="cm">     *    支持可选的运行后关闭参数，这会导致覆盖关闭方法来取消和取消不应在关闭后运行的任务，以及任务（重新）提交与关闭重叠时的不同重新检查逻辑。
+</span><span class="cm">     *
+</span><span class="cm">     * 4. Task decoration methods to allow interception and
+</span><span class="cm">     *    instrumentation, which are needed because subclasses cannot
+</span><span class="cm">     *    otherwise override submit methods to get this effect. These
+</span><span class="cm">     *    don&#39;t have any impact on pool control logic though.
+</span><span class="cm">     *    任务装饰方法允许拦截和检测，这是因为子类不能以其他方式覆盖提交方法来获得这种效果。这些对池控制逻辑没有任何影响。
+</span><span class="cm">     */</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * False if should cancel/suppress periodic tasks on shutdown.
+</span><span class="cm">     * 表示是否应该在关闭时取消或者终止周期性任务。
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kd">volatile</span> <span class="kt">boolean</span> <span class="n">continueExistingPeriodicTasksAfterShutdown</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * False if should cancel non-periodic tasks on shutdown.
+</span><span class="cm">     * 表示是否应该在关闭时取消非周期性任务。
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kd">volatile</span> <span class="kt">boolean</span> <span class="n">executeExistingDelayedTasksAfterShutdown</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * True if ScheduledFutureTask.cancel should remove from queue
+</span><span class="cm">     * 如果ScheduledFutureTask.cancel应该从队列中移除，则为真
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kd">volatile</span> <span class="kt">boolean</span> <span class="n">removeOnCancel</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Sequence number to break scheduling ties, and in turn to
+</span><span class="cm">     * guarantee FIFO order among tied entries.
+</span><span class="cm">     * 这个序列号的作用是在并列调度(延迟值一样)的情况下保证先入先出的关系。
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">AtomicLong</span> <span class="n">sequencer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AtomicLong</span><span class="o">(</span><span class="n">0</span><span class="o">);</span>
+ <span class="cm">/**
+</span><span class="cm">     * Creates a new {@code ScheduledThreadPoolExecutor} with the
+</span><span class="cm">     * given core pool size.
+</span><span class="cm">     *
+</span><span class="cm">     * @param corePoolSize the number of threads to keep in the pool, even
+</span><span class="cm">     *        if they are idle, unless {@code allowCoreThreadTimeOut} is set
+</span><span class="cm">     * @throws IllegalArgumentException if {@code corePoolSize &lt; 0}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">ScheduledThreadPoolExecutor</span><span class="o">(</span><span class="kt">int</span> <span class="n">corePoolSize</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">corePoolSize</span><span class="o">,</span> <span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">,</span>
+              <span class="k">new</span> <span class="n">DelayedWorkQueue</span><span class="o">());</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a new {@code ScheduledThreadPoolExecutor} with the
+</span><span class="cm">     * given initial parameters.
+</span><span class="cm">     *
+</span><span class="cm">     * @param corePoolSize the number of threads to keep in the pool, even
+</span><span class="cm">     *        if they are idle, unless {@code allowCoreThreadTimeOut} is set
+</span><span class="cm">     * @param threadFactory the factory to use when the executor
+</span><span class="cm">     *        creates a new thread
+</span><span class="cm">     * @throws IllegalArgumentException if {@code corePoolSize &lt; 0}
+</span><span class="cm">     * @throws NullPointerException if {@code threadFactory} is null
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">ScheduledThreadPoolExecutor</span><span class="o">(</span><span class="kt">int</span> <span class="n">corePoolSize</span><span class="o">,</span>
+                                       <span class="n">ThreadFactory</span> <span class="n">threadFactory</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">corePoolSize</span><span class="o">,</span> <span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">,</span>
+              <span class="k">new</span> <span class="n">DelayedWorkQueue</span><span class="o">(),</span> <span class="n">threadFactory</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a new ScheduledThreadPoolExecutor with the given
+</span><span class="cm">     * initial parameters.
+</span><span class="cm">     *
+</span><span class="cm">     * @param corePoolSize the number of threads to keep in the pool, even
+</span><span class="cm">     *        if they are idle, unless {@code allowCoreThreadTimeOut} is set
+</span><span class="cm">     * @param handler the handler to use when execution is blocked
+</span><span class="cm">     *        because the thread bounds and queue capacities are reached
+</span><span class="cm">     * @throws IllegalArgumentException if {@code corePoolSize &lt; 0}
+</span><span class="cm">     * @throws NullPointerException if {@code handler} is null
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">ScheduledThreadPoolExecutor</span><span class="o">(</span><span class="kt">int</span> <span class="n">corePoolSize</span><span class="o">,</span>
+                                       <span class="n">RejectedExecutionHandler</span> <span class="n">handler</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">corePoolSize</span><span class="o">,</span> <span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">,</span>
+              <span class="k">new</span> <span class="n">DelayedWorkQueue</span><span class="o">(),</span> <span class="n">handler</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a new ScheduledThreadPoolExecutor with the given
+</span><span class="cm">     * initial parameters.
+</span><span class="cm">     *
+</span><span class="cm">     * @param corePoolSize the number of threads to keep in the pool, even
+</span><span class="cm">     *        if they are idle, unless {@code allowCoreThreadTimeOut} is set
+</span><span class="cm">     * @param threadFactory the factory to use when the executor
+</span><span class="cm">     *        creates a new thread
+</span><span class="cm">     * @param handler the handler to use when execution is blocked
+</span><span class="cm">     *        because the thread bounds and queue capacities are reached
+</span><span class="cm">     * @throws IllegalArgumentException if {@code corePoolSize &lt; 0}
+</span><span class="cm">     * @throws NullPointerException if {@code threadFactory} or
+</span><span class="cm">     *         {@code handler} is null
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">ScheduledThreadPoolExecutor</span><span class="o">(</span><span class="kt">int</span> <span class="n">corePoolSize</span><span class="o">,</span>
+                                       <span class="n">ThreadFactory</span> <span class="n">threadFactory</span><span class="o">,</span>
+                                       <span class="n">RejectedExecutionHandler</span> <span class="n">handler</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">corePoolSize</span><span class="o">,</span> <span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">,</span>
+              <span class="k">new</span> <span class="n">DelayedWorkQueue</span><span class="o">(),</span> <span class="n">threadFactory</span><span class="o">,</span> <span class="n">handler</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3workqueue-任务队列用delayedworkqueue">3.workQueue 任务队列用DelayedWorkQueue</h3>
+<h4 id="1delayedworkqueue-内部实现">(1).DelayedWorkQueue 内部实现</h4>
+<p>DelayedWorkQueue实现AbstractQueue<!-- raw HTML omitted -->抽象类，继承BlockingQueue<!-- raw HTML omitted -->接口。DelayedWorkQueue只有默认构造方法</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">     <span class="cm">/**
+</span><span class="cm">       * Specialized delay queue. To mesh with TPE declarations, this
+</span><span class="cm">       * class must be declared as a BlockingQueue&lt;Runnable&gt; even though
+</span><span class="cm">       * it can only hold RunnableScheduledFutures.
+</span><span class="cm">       * 专门的延迟队列。为了与TPE声明网格化，这个类必须声明为BlockingQueue &lt;Runnable&gt;，即使它只能保存RunnableScheduledFutures。
+</span><span class="cm">       */</span>
+      <span class="kd">static</span> <span class="kd">class</span> <span class="nc">DelayedWorkQueue</span> <span class="kd">extends</span> <span class="n">AbstractQueue</span><span class="o">&lt;</span><span class="n">Runnable</span><span class="o">&gt;</span>
+          <span class="kd">implements</span> <span class="n">BlockingQueue</span><span class="o">&lt;</span><span class="n">Runnable</span><span class="o">&gt;</span> <span class="o">{</span>
+  
+          <span class="cm">/*
+</span><span class="cm">           * A DelayedWorkQueue is based on a heap-based data structure
+</span><span class="cm">           * like those in DelayQueue and PriorityQueue, except that
+</span><span class="cm">           * every ScheduledFutureTask also records its index into the
+</span><span class="cm">           * heap array. This eliminates the need to find a task upon
+</span><span class="cm">           * cancellation, greatly speeding up removal (down from O(n)
+</span><span class="cm">           * to O(log n)), and reducing garbage retention that would
+</span><span class="cm">           * otherwise occur by waiting for the element to rise to top
+</span><span class="cm">           * before clearing. But because the queue may also hold
+</span><span class="cm">           * RunnableScheduledFutures that are not ScheduledFutureTasks,
+</span><span class="cm">           * we are not guaranteed to have such indices available, in
+</span><span class="cm">           * which case we fall back to linear search. (We expect that
+</span><span class="cm">           * most tasks will not be decorated, and that the faster cases
+</span><span class="cm">           * will be much more common.)
+</span><span class="cm">           * 除了每个ScheduledFutureTask还将其索引记录到堆数组之外，
+</span><span class="cm">           * DelayedWorkQueue基于基于堆的数据结构（如DelayQueue和PriorityQueue中的数据结构）。
+</span><span class="cm">           * 这消除了取消任务时的查找任务的需要，大大加快了从O（n）到O（log n）的删除速度，
+</span><span class="cm">           * 减少了在清除之前等待元素上升到最高的垃圾留存量。
+</span><span class="cm">           * 但是因为队列也可能持有不是ScheduledFutureTasks的RunnableScheduledFutures，所以我们不能保证有这样的索引可用，
+</span><span class="cm">           * 在这种情况下，我们回到线性搜索。 （我们期望大多数任务不会被装饰，而且更快的情况会更普遍。）
+</span><span class="cm">           *
+</span><span class="cm">           * All heap operations must record index changes -- mainly
+</span><span class="cm">           * within siftUp and siftDown. Upon removal, a task&#39;s
+</span><span class="cm">           * heapIndex is set to -1. Note that ScheduledFutureTasks can
+</span><span class="cm">           * appear at most once in the queue (this need not be true for
+</span><span class="cm">           * other kinds of tasks or work queues), so are uniquely
+</span><span class="cm">           * identified by heapIndex.
+</span><span class="cm">           * 所有堆操作都必须记录索引更改 - 主要在siftUp和siftDown中。
+</span><span class="cm">           * 删除后，任务的heapIndex被设置为-1。请注意，ScheduledFutureTasks最多只能在队列中出现一次
+</span><span class="cm">           * （对于其他类型的任务或工作队列，这不一定是正确的），所以heapIndex是唯一标识的。
+</span><span class="cm">           */</span>
+  
+          <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">INITIAL_CAPACITY</span> <span class="o">=</span> <span class="n">16</span><span class="o">;</span>
+          <span class="c1">//RunnableScheduledFuture 数组保存任务
+</span><span class="c1"></span>          <span class="kd">private</span> <span class="n">RunnableScheduledFuture</span><span class="o">[]</span> <span class="n">queue</span> <span class="o">=</span>
+              <span class="k">new</span> <span class="n">RunnableScheduledFuture</span><span class="o">[</span><span class="n">INITIAL_CAPACITY</span><span class="o">];</span>
+          <span class="c1">//重入锁
+</span><span class="c1"></span>          <span class="kd">private</span> <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ReentrantLock</span><span class="o">();</span>
+          <span class="c1">//大小
+</span><span class="c1"></span>          <span class="kd">private</span> <span class="kt">int</span> <span class="n">size</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+  
+          <span class="cm">/**
+</span><span class="cm">           * Thread designated to wait for the task at the head of the
+</span><span class="cm">           * queue.  This variant of the Leader-Follower pattern
+</span><span class="cm">           * (http://www.cs.wustl.edu/~schmidt/POSA/POSA2/) serves to
+</span><span class="cm">           * minimize unnecessary timed waiting.  When a thread becomes
+</span><span class="cm">           * the leader, it waits only for the next delay to elapse, but
+</span><span class="cm">           * other threads await indefinitely.  The leader thread must
+</span><span class="cm">           * signal some other thread before returning from take() or
+</span><span class="cm">           * poll(...), unless some other thread becomes leader in the
+</span><span class="cm">           * interim.  Whenever the head of the queue is replaced with a
+</span><span class="cm">           * task with an earlier expiration time, the leader field is
+</span><span class="cm">           * invalidated by being reset to null, and some waiting
+</span><span class="cm">           * thread, but not necessarily the current leader, is
+</span><span class="cm">           * signalled.  So waiting threads must be prepared to acquire
+</span><span class="cm">           * and lose leadership while waiting.
+</span><span class="cm">           * 线程被指定为等待队列头部的任务。 Leader-Follower模式的这种变体（http://www.cs.wustl.edu/~schmidt/POSA/POSA2/）用于最小化不必要的定时等待。
+</span><span class="cm">           * 当一个线程成为领导者时，它只等待下一个延迟，但其他线程则无限期地等待。领导者线程必须在从take（）或poll（...）返回之前发出其他线程的信号，
+</span><span class="cm">           * 除非其他线程在过渡期间成为领导者。每当队列的头部被具有较早的到期时间的任务替换时，领导者字段通过被重置为空而被无效，
+</span><span class="cm">           * 并且一些等待线程（但不一定是当前领导者）被发送信号。所以等待的线程必须准备好在获得和失去领导的同时等待
+</span><span class="cm">           */</span>
+          <span class="kd">private</span> <span class="n">Thread</span> <span class="n">leader</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+  
+          <span class="cm">/**
+</span><span class="cm">           * Condition signalled when a newer task becomes available at the
+</span><span class="cm">           * head of the queue or a new thread may need to become leader.
+</span><span class="cm">           * 当一个新的任务在队列的头部变得可用或者一个新的线程可能需要成为领导者时，条件发出信号。
+</span><span class="cm">           */</span>
+          <span class="kd">private</span> <span class="kd">final</span> <span class="n">Condition</span> <span class="n">available</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">newCondition</span><span class="o">();</span>
+<span class="o">}</span>          
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2scheduledfuturetask实现runnablescheduledfuture接口实现">(2).ScheduledFutureTask实现RunnableScheduledFuture接口实现</h4>
+<p>RunnableScheduledFuture接口继承关系图如下：</p>
+<p><img src="/concurrent//RunnableScheduledFutureRe.png" alt=""></p>
+<p>ScheduledFutureTask继承FutureTask类</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span><span class="lnt">157
+</span><span class="lnt">158
+</span><span class="lnt">159
+</span><span class="lnt">160
+</span><span class="lnt">161
+</span><span class="lnt">162
+</span><span class="lnt">163
+</span><span class="lnt">164
+</span><span class="lnt">165
+</span><span class="lnt">166
+</span><span class="lnt">167
+</span><span class="lnt">168
+</span><span class="lnt">169
+</span><span class="lnt">170
+</span><span class="lnt">171
+</span><span class="lnt">172
+</span><span class="lnt">173
+</span><span class="lnt">174
+</span><span class="lnt">175
+</span><span class="lnt">176
+</span><span class="lnt">177
+</span><span class="lnt">178
+</span><span class="lnt">179
+</span><span class="lnt">180
+</span><span class="lnt">181
+</span><span class="lnt">182
+</span><span class="lnt">183
+</span><span class="lnt">184
+</span><span class="lnt">185
+</span><span class="lnt">186
+</span><span class="lnt">187
+</span><span class="lnt">188
+</span><span class="lnt">189
+</span><span class="lnt">190
+</span><span class="lnt">191
+</span><span class="lnt">192
+</span><span class="lnt">193
+</span><span class="lnt">194
+</span><span class="lnt">195
+</span><span class="lnt">196
+</span><span class="lnt">197
+</span><span class="lnt">198
+</span><span class="lnt">199
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="kd">class</span> <span class="nc">ScheduledFutureTask</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span>
+            <span class="kd">extends</span> <span class="n">FutureTask</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="kd">implements</span> <span class="n">RunnableScheduledFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="o">{</span>
+
+        <span class="cm">/** Sequence number to break ties FIFO */</span>
+        <span class="c1">//连接FIFO的序列号
+</span><span class="c1"></span>        <span class="kd">private</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">sequenceNumber</span><span class="o">;</span>
+
+        <span class="cm">/** The time the task is enabled to execute in nanoTime units */</span>
+        <span class="c1">//任务可以执行的时间，单位纳秒
+</span><span class="c1"></span>        <span class="kd">private</span> <span class="kt">long</span> <span class="n">time</span><span class="o">;</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Period in nanoseconds for repeating tasks.  A positive
+</span><span class="cm">         * value indicates fixed-rate execution.  A negative value
+</span><span class="cm">         * indicates fixed-delay execution.  A value of 0 indicates a
+</span><span class="cm">         * non-repeating task.
+</span><span class="cm">         * 
+</span><span class="cm">         *  周期性任务的周期时间，单位纳秒。
+</span><span class="cm">         * 正数表示固定频率执行，负数表示固定延迟执行，0表示一次性任务。
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">period</span><span class="o">;</span>
+
+        <span class="cm">/** The actual task to be re-enqueued by reExecutePeriodic */</span>
+        <span class="c1">//由reExecutePeriodic重新入队的实际任务
+</span><span class="c1"></span>        <span class="n">RunnableScheduledFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">outerTask</span> <span class="o">=</span> <span class="k">this</span><span class="o">;</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Index into delay queue, to support faster cancellation.
+</span><span class="cm">         */</span>
+        <span class="c1">//索引进入延迟队列，支持更快的取消。
+</span><span class="c1"></span>        <span class="kt">int</span> <span class="n">heapIndex</span><span class="o">;</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Creates a one-shot action with given nanoTime-based trigger time.
+</span><span class="cm">         * 使用给定的基于nanoTime的触发时间创建一次性操作。
+</span><span class="cm">         */</span>
+        <span class="n">ScheduledFutureTask</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">r</span><span class="o">,</span> <span class="n">V</span> <span class="n">result</span><span class="o">,</span> <span class="kt">long</span> <span class="n">ns</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kd">super</span><span class="o">(</span><span class="n">r</span><span class="o">,</span> <span class="n">result</span><span class="o">);</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">time</span> <span class="o">=</span> <span class="n">ns</span><span class="o">;</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">period</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">sequenceNumber</span> <span class="o">=</span> <span class="n">sequencer</span><span class="o">.</span><span class="na">getAndIncrement</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Creates a periodic action with given nano time and period.
+</span><span class="cm">         * 用给定的纳秒时间和周期创建一个周期性的动作。
+</span><span class="cm">         */</span>
+        <span class="n">ScheduledFutureTask</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">r</span><span class="o">,</span> <span class="n">V</span> <span class="n">result</span><span class="o">,</span> <span class="kt">long</span> <span class="n">ns</span><span class="o">,</span> <span class="kt">long</span> <span class="n">period</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kd">super</span><span class="o">(</span><span class="n">r</span><span class="o">,</span> <span class="n">result</span><span class="o">);</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">time</span> <span class="o">=</span> <span class="n">ns</span><span class="o">;</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">period</span> <span class="o">=</span> <span class="n">period</span><span class="o">;</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">sequenceNumber</span> <span class="o">=</span> <span class="n">sequencer</span><span class="o">.</span><span class="na">getAndIncrement</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Creates a one-shot action with given nanoTime-based trigger.
+</span><span class="cm">         * 使用给定的基于nanoTime的触发器创建一次性操作。
+</span><span class="cm">         */</span>
+        <span class="n">ScheduledFutureTask</span><span class="o">(</span><span class="n">Callable</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">callable</span><span class="o">,</span> <span class="kt">long</span> <span class="n">ns</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kd">super</span><span class="o">(</span><span class="n">callable</span><span class="o">);</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">time</span> <span class="o">=</span> <span class="n">ns</span><span class="o">;</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">period</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">sequenceNumber</span> <span class="o">=</span> <span class="n">sequencer</span><span class="o">.</span><span class="na">getAndIncrement</span><span class="o">();</span>
+        <span class="o">}</span>
+        
+        <span class="c1">//延期时间
+</span><span class="c1"></span>        <span class="kd">public</span> <span class="kt">long</span> <span class="nf">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">unit</span><span class="o">.</span><span class="na">convert</span><span class="o">(</span><span class="n">time</span> <span class="o">-</span> <span class="n">now</span><span class="o">(),</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">);</span>
+        <span class="o">}</span>
+        
+        <span class="c1">//比较
+</span><span class="c1"></span>        <span class="kd">public</span> <span class="kt">int</span> <span class="nf">compareTo</span><span class="o">(</span><span class="n">Delayed</span> <span class="n">other</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">other</span> <span class="o">==</span> <span class="k">this</span><span class="o">)</span> <span class="c1">// compare zero ONLY if same object
+</span><span class="c1"></span>                <span class="k">return</span> <span class="n">0</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">other</span> <span class="k">instanceof</span> <span class="n">ScheduledFutureTask</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">ScheduledFutureTask</span><span class="o">&lt;?&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="o">(</span><span class="n">ScheduledFutureTask</span><span class="o">&lt;?&gt;)</span><span class="n">other</span><span class="o">;</span>
+                <span class="kt">long</span> <span class="n">diff</span> <span class="o">=</span> <span class="n">time</span> <span class="o">-</span> <span class="n">x</span><span class="o">.</span><span class="na">time</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">diff</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>
+                <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">diff</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="n">1</span><span class="o">;</span>
+                <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">sequenceNumber</span> <span class="o">&lt;</span> <span class="n">x</span><span class="o">.</span><span class="na">sequenceNumber</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>
+                <span class="k">else</span>
+                    <span class="k">return</span> <span class="n">1</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="kt">long</span> <span class="n">d</span> <span class="o">=</span> <span class="o">(</span><span class="n">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">)</span> <span class="o">-</span>
+                      <span class="n">other</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">));</span>
+            <span class="k">return</span> <span class="o">(</span><span class="n">d</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">?</span> <span class="n">0</span> <span class="o">:</span> <span class="o">((</span><span class="n">d</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">?</span> <span class="o">-</span><span class="n">1</span> <span class="o">:</span> <span class="n">1</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Returns true if this is a periodic (not a one-shot) action.
+</span><span class="cm">         * 如果这是一个周期性（而不是一次性）操作，则返回true。
+</span><span class="cm">         * @return true if periodic
+</span><span class="cm">         */</span>
+        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isPeriodic</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">period</span> <span class="o">!=</span> <span class="n">0</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Sets the next time to run for a periodic task.
+</span><span class="cm">         * 设置下一次运行周期性任务。
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">setNextRunTime</span><span class="o">()</span> <span class="o">{</span>
+            <span class="kt">long</span> <span class="n">p</span> <span class="o">=</span> <span class="n">period</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">p</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span>
+                <span class="n">time</span> <span class="o">+=</span> <span class="n">p</span><span class="o">;</span>
+            <span class="k">else</span>
+                <span class="n">time</span> <span class="o">=</span> <span class="n">triggerTime</span><span class="o">(-</span><span class="n">p</span><span class="o">);</span><span class="c1">//延迟动作的触发时间
+</span><span class="c1"></span>        <span class="o">}</span>
+
+        <span class="c1">//取消
+</span><span class="c1"></span>        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">cancel</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">mayInterruptIfRunning</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kt">boolean</span> <span class="n">cancelled</span> <span class="o">=</span> <span class="kd">super</span><span class="o">.</span><span class="na">cancel</span><span class="o">(</span><span class="n">mayInterruptIfRunning</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">cancelled</span> <span class="o">&amp;&amp;</span> <span class="n">removeOnCancel</span> <span class="o">&amp;&amp;</span> <span class="n">heapIndex</span> <span class="o">&gt;=</span> <span class="n">0</span><span class="o">)</span>
+                <span class="n">remove</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+            <span class="k">return</span> <span class="n">cancelled</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Overrides FutureTask version so as to reset/requeue if periodic.
+</span><span class="cm">         * 覆盖FutureTask版本，以便定期重置/重新排序。
+</span><span class="cm">         */</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+            <span class="kt">boolean</span> <span class="n">periodic</span> <span class="o">=</span> <span class="n">isPeriodic</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">canRunInCurrentRunState</span><span class="o">(</span><span class="n">periodic</span><span class="o">))</span>
+                <span class="n">cancel</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="o">(!</span><span class="n">periodic</span><span class="o">)</span>
+                <span class="n">ScheduledFutureTask</span><span class="o">.</span><span class="na">super</span><span class="o">.</span><span class="na">run</span><span class="o">();</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">ScheduledFutureTask</span><span class="o">.</span><span class="na">super</span><span class="o">.</span><span class="na">runAndReset</span><span class="o">())</span> <span class="o">{</span>
+                <span class="n">setNextRunTime</span><span class="o">();</span>
+                <span class="n">reExecutePeriodic</span><span class="o">(</span><span class="n">outerTask</span><span class="o">);</span> 
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+   <span class="cm">/**
+</span><span class="cm">     * Requeues a periodic task unless current run state precludes it.
+</span><span class="cm">     * Same idea as delayedExecute except drops task rather than rejecting.
+</span><span class="cm">     *  除非当前运行状态排除它，否则重新执行一个周期性任务。
+</span><span class="cm">     *  与delayedExecute相同的想法，除了放弃任务而不是拒绝。
+</span><span class="cm">     * @param task the task
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">reExecutePeriodic</span><span class="o">(</span><span class="n">RunnableScheduledFuture</span><span class="o">&lt;?&gt;</span> <span class="n">task</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">canRunInCurrentRunState</span><span class="o">(</span><span class="kc">true</span><span class="o">))</span> <span class="o">{</span>
+            <span class="kd">super</span><span class="o">.</span><span class="na">getQueue</span><span class="o">().</span><span class="na">add</span><span class="o">(</span><span class="n">task</span><span class="o">);</span><span class="c1">//重新添加新任务
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(!</span><span class="n">canRunInCurrentRunState</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="n">remove</span><span class="o">(</span><span class="n">task</span><span class="o">))</span>
+                <span class="n">task</span><span class="o">.</span><span class="na">cancel</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+            <span class="k">else</span>
+                <span class="n">ensurePrestart</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * Returns true if can run a task given current run state
+</span><span class="cm">     * and run-after-shutdown parameters.
+</span><span class="cm">     * 如果可以运行给定当前运行状态和run-after-shutdown参数的任务，则返回true。
+</span><span class="cm">     * @param periodic true if this task periodic, false if delayed
+</span><span class="cm">     */</span>
+    <span class="kt">boolean</span> <span class="nf">canRunInCurrentRunState</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">periodic</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">isRunningOrShutdown</span><span class="o">(</span><span class="n">periodic</span> <span class="o">?</span>
+                                   <span class="n">continueExistingPeriodicTasksAfterShutdown</span> <span class="o">:</span>
+                                   <span class="n">executeExistingDelayedTasksAfterShutdown</span><span class="o">);</span>
+    <span class="o">}</span>    
+   <span class="cm">/**
+</span><span class="cm">     * Returns the trigger time of a delayed action.
+</span><span class="cm">     * 返回延迟动作的触发时间。
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kt">long</span> <span class="nf">triggerTime</span><span class="o">(</span><span class="kt">long</span> <span class="n">delay</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">triggerTime</span><span class="o">(</span><span class="n">unit</span><span class="o">.</span><span class="na">toNanos</span><span class="o">((</span><span class="n">delay</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">?</span> <span class="n">0</span> <span class="o">:</span> <span class="n">delay</span><span class="o">));</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Returns the trigger time of a delayed action.
+</span><span class="cm">     * 返回延迟动作的触发时间。
+</span><span class="cm">     */</span>
+    <span class="kt">long</span> <span class="nf">triggerTime</span><span class="o">(</span><span class="kt">long</span> <span class="n">delay</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">now</span><span class="o">()</span> <span class="o">+</span>
+            <span class="o">((</span><span class="n">delay</span> <span class="o">&lt;</span> <span class="o">(</span><span class="n">Long</span><span class="o">.</span><span class="na">MAX_VALUE</span> <span class="o">&gt;&gt;</span> <span class="n">1</span><span class="o">))</span> <span class="o">?</span> <span class="n">delay</span> <span class="o">:</span> <span class="n">overflowFree</span><span class="o">(</span><span class="n">delay</span><span class="o">));</span>
+    <span class="o">}</span>
+  <span class="cm">/**
+</span><span class="cm">     * Constrains the values of all delays in the queue to be within
+</span><span class="cm">     * Long.MAX_VALUE of each other, to avoid overflow in compareTo.
+</span><span class="cm">     * This may occur if a task is eligible to be dequeued, but has
+</span><span class="cm">     * not yet been, while some other task is added with a delay of
+</span><span class="cm">     * Long.MAX_VALUE.
+</span><span class="cm">     * 将队列中所有延迟的值限制在对方的Long.MAX_VALUE范围内，
+</span><span class="cm">     * 以避免compareTo溢出。如果某个任务有资格离队，
+</span><span class="cm">     * 但尚未完成，而其他任务的延迟时间为Long.MAX_VALUE，则可能会发生这种情况
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kt">long</span> <span class="nf">overflowFree</span><span class="o">(</span><span class="kt">long</span> <span class="n">delay</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">Delayed</span> <span class="n">head</span> <span class="o">=</span> <span class="o">(</span><span class="n">Delayed</span><span class="o">)</span> <span class="kd">super</span><span class="o">.</span><span class="na">getQueue</span><span class="o">().</span><span class="na">peek</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">head</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kt">long</span> <span class="n">headDelay</span> <span class="o">=</span> <span class="n">head</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">headDelay</span> <span class="o">&lt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">delay</span> <span class="o">-</span> <span class="n">headDelay</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">))</span>
+                <span class="n">delay</span> <span class="o">=</span> <span class="n">Long</span><span class="o">.</span><span class="na">MAX_VALUE</span> <span class="o">+</span> <span class="n">headDelay</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">delay</span><span class="o">;</span>
+    <span class="o">}</span>    
+ 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="3入队">(3).入队</h4>
+<ul>
+<li>offer(Runnable x)</li>
+<li>offer(Runnable x, long timeout, TimeUnit unit) 不支持等待时间</li>
+<li>put(Runnable e) 调用offer 不支持等待</li>
+<li>add(Runnable e) 调用offer</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">         <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">offer</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">x</span><span class="o">)</span> <span class="o">{</span>
+              <span class="k">if</span> <span class="o">(</span><span class="n">x</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                  <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+              <span class="n">RunnableScheduledFuture</span> <span class="n">e</span> <span class="o">=</span> <span class="o">(</span><span class="n">RunnableScheduledFuture</span><span class="o">)</span><span class="n">x</span><span class="o">;</span>
+              <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+              <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+              <span class="k">try</span> <span class="o">{</span>
+                  <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">size</span><span class="o">;</span>
+                  <span class="k">if</span> <span class="o">(</span><span class="n">i</span> <span class="o">&gt;=</span> <span class="n">queue</span><span class="o">.</span><span class="na">length</span><span class="o">)</span>
+                      <span class="n">grow</span><span class="o">();</span>
+                  <span class="n">size</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">1</span><span class="o">;</span>
+                  <span class="k">if</span> <span class="o">(</span><span class="n">i</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                      <span class="n">queue</span><span class="o">[</span><span class="n">0</span><span class="o">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">;</span>
+                      <span class="n">setIndex</span><span class="o">(</span><span class="n">e</span><span class="o">,</span> <span class="n">0</span><span class="o">);</span>
+                  <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                      <span class="n">siftUp</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+                  <span class="o">}</span>
+                  <span class="k">if</span> <span class="o">(</span><span class="n">queue</span><span class="o">[</span><span class="n">0</span><span class="o">]</span> <span class="o">==</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                      <span class="n">leader</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                      <span class="n">available</span><span class="o">.</span><span class="na">signal</span><span class="o">();</span>
+                  <span class="o">}</span>
+              <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                  <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+              <span class="o">}</span>
+              <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+          <span class="o">}</span>
+         <span class="cm">/**
+</span><span class="cm">           * Resize the heap array.  Call only when holding lock.
+</span><span class="cm">           * 扩容
+</span><span class="cm">           */</span>
+          <span class="kd">private</span> <span class="kt">void</span> <span class="nf">grow</span><span class="o">()</span> <span class="o">{</span>
+              <span class="kt">int</span> <span class="n">oldCapacity</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+              <span class="kt">int</span> <span class="n">newCapacity</span> <span class="o">=</span> <span class="n">oldCapacity</span> <span class="o">+</span> <span class="o">(</span><span class="n">oldCapacity</span> <span class="o">&gt;&gt;</span> <span class="n">1</span><span class="o">);</span> <span class="c1">// grow 50%
+</span><span class="c1"></span>              <span class="k">if</span> <span class="o">(</span><span class="n">newCapacity</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span> <span class="c1">// overflow
+</span><span class="c1"></span>                  <span class="n">newCapacity</span> <span class="o">=</span> <span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">;</span>
+              <span class="n">queue</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">copyOf</span><span class="o">(</span><span class="n">queue</span><span class="o">,</span> <span class="n">newCapacity</span><span class="o">);</span>
+          <span class="o">}</span>
+       <span class="cm">/**
+</span><span class="cm">         * Set f&#39;s heapIndex if it is a ScheduledFutureTask.
+</span><span class="cm">         * 如果它是一个ScheduledFutureTask，则设置f的heapIndex。
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">setIndex</span><span class="o">(</span><span class="n">RunnableScheduledFuture</span> <span class="n">f</span><span class="o">,</span> <span class="kt">int</span> <span class="n">idx</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">f</span> <span class="k">instanceof</span> <span class="n">ScheduledFutureTask</span><span class="o">)</span>
+                <span class="o">((</span><span class="n">ScheduledFutureTask</span><span class="o">)</span><span class="n">f</span><span class="o">).</span><span class="na">heapIndex</span> <span class="o">=</span> <span class="n">idx</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Sift element added at bottom up to its heap-ordered spot.
+</span><span class="cm">         * Call only when holding lock.
+</span><span class="cm">         * 在底部添加筛选元素，直到堆排序的位置。只有在保持锁定时才能call
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">siftUp</span><span class="o">(</span><span class="kt">int</span> <span class="n">k</span><span class="o">,</span> <span class="n">RunnableScheduledFuture</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">while</span> <span class="o">(</span><span class="n">k</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kt">int</span> <span class="n">parent</span> <span class="o">=</span> <span class="o">(</span><span class="n">k</span> <span class="o">-</span> <span class="n">1</span><span class="o">)</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">1</span><span class="o">;</span>
+                <span class="n">RunnableScheduledFuture</span> <span class="n">e</span> <span class="o">=</span> <span class="n">queue</span><span class="o">[</span><span class="n">parent</span><span class="o">];</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">key</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">e</span><span class="o">)</span> <span class="o">&gt;=</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="k">break</span><span class="o">;</span>
+                <span class="n">queue</span><span class="o">[</span><span class="n">k</span><span class="o">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">;</span>
+                <span class="n">setIndex</span><span class="o">(</span><span class="n">e</span><span class="o">,</span> <span class="n">k</span><span class="o">);</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">parent</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="n">queue</span><span class="o">[</span><span class="n">k</span><span class="o">]</span> <span class="o">=</span> <span class="n">key</span><span class="o">;</span>
+            <span class="n">setIndex</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">k</span><span class="o">);</span>
+        <span class="o">}</span>
+       
+  
+          <span class="kd">public</span> <span class="kt">void</span> <span class="nf">put</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+              <span class="n">offer</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+          <span class="o">}</span>
+  
+          <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">add</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+              <span class="k">return</span> <span class="n">offer</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+          <span class="o">}</span>
+  
+          <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">offer</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">e</span><span class="o">,</span> <span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span> <span class="o">{</span>
+              <span class="k">return</span> <span class="n">offer</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+          <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="3出队">(3).出队</h4>
+<ol>
+<li>
+<p>take</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">          <span class="kd">public</span> <span class="n">RunnableScheduledFuture</span> <span class="nf">take</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+              <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+              <span class="n">lock</span><span class="o">.</span><span class="na">lockInterruptibly</span><span class="o">();</span>
+              <span class="k">try</span> <span class="o">{</span>
+                  <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                      <span class="n">RunnableScheduledFuture</span> <span class="n">first</span> <span class="o">=</span> <span class="n">queue</span><span class="o">[</span><span class="n">0</span><span class="o">];</span>
+                      <span class="k">if</span> <span class="o">(</span><span class="n">first</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                          <span class="n">available</span><span class="o">.</span><span class="na">await</span><span class="o">();</span>  <span class="c1">//等待
+</span><span class="c1"></span>                      <span class="k">else</span> <span class="o">{</span>
+                          <span class="kt">long</span> <span class="n">delay</span> <span class="o">=</span> <span class="n">first</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">);</span>
+                          <span class="k">if</span> <span class="o">(</span><span class="n">delay</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>
+                              <span class="k">return</span> <span class="n">finishPoll</span><span class="o">(</span><span class="n">first</span><span class="o">);</span>
+                          <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">leader</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                              <span class="n">available</span><span class="o">.</span><span class="na">await</span><span class="o">();</span>
+                          <span class="k">else</span> <span class="o">{</span>
+                              <span class="n">Thread</span> <span class="n">thisThread</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+                              <span class="n">leader</span> <span class="o">=</span> <span class="n">thisThread</span><span class="o">;</span>
+                              <span class="k">try</span> <span class="o">{</span>
+                                  <span class="n">available</span><span class="o">.</span><span class="na">awaitNanos</span><span class="o">(</span><span class="n">delay</span><span class="o">);</span>
+                              <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                                  <span class="k">if</span> <span class="o">(</span><span class="n">leader</span> <span class="o">==</span> <span class="n">thisThread</span><span class="o">)</span>
+                                      <span class="n">leader</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                              <span class="o">}</span>
+                          <span class="o">}</span>
+                      <span class="o">}</span>
+                  <span class="o">}</span>
+              <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                  <span class="k">if</span> <span class="o">(</span><span class="n">leader</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">queue</span><span class="o">[</span><span class="n">0</span><span class="o">]</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                      <span class="n">available</span><span class="o">.</span><span class="na">signal</span><span class="o">();</span>
+                  <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+              <span class="o">}</span>
+          <span class="o">}</span>
+        <span class="cm">/**
+</span><span class="cm">         * Performs common bookkeeping for poll and take: Replaces
+</span><span class="cm">         * first element with last and sifts it down.  Call only when
+</span><span class="cm">         * holding lock.
+</span><span class="cm">         * @param f the task to remove and return
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="n">RunnableScheduledFuture</span> <span class="nf">finishPoll</span><span class="o">(</span><span class="n">RunnableScheduledFuture</span> <span class="n">f</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kt">int</span> <span class="n">s</span> <span class="o">=</span> <span class="o">--</span><span class="n">size</span><span class="o">;</span>
+            <span class="n">RunnableScheduledFuture</span> <span class="n">x</span> <span class="o">=</span> <span class="n">queue</span><span class="o">[</span><span class="n">s</span><span class="o">];</span>
+            <span class="n">queue</span><span class="o">[</span><span class="n">s</span><span class="o">]</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">!=</span> <span class="n">0</span><span class="o">)</span>
+                <span class="n">siftDown</span><span class="o">(</span><span class="n">0</span><span class="o">,</span> <span class="n">x</span><span class="o">);</span>
+            <span class="n">setIndex</span><span class="o">(</span><span class="n">f</span><span class="o">,</span> <span class="o">-</span><span class="n">1</span><span class="o">);</span>
+            <span class="k">return</span> <span class="n">f</span><span class="o">;</span>
+        <span class="o">}</span>
+       <span class="cm">/**
+</span><span class="cm">         * Sift element added at top down to its heap-ordered spot.
+</span><span class="cm">         * Call only when holding lock.
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">siftDown</span><span class="o">(</span><span class="kt">int</span> <span class="n">k</span><span class="o">,</span> <span class="n">RunnableScheduledFuture</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kt">int</span> <span class="n">half</span> <span class="o">=</span> <span class="n">size</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">1</span><span class="o">;</span>
+            <span class="k">while</span> <span class="o">(</span><span class="n">k</span> <span class="o">&lt;</span> <span class="n">half</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kt">int</span> <span class="n">child</span> <span class="o">=</span> <span class="o">(</span><span class="n">k</span> <span class="o">&lt;&lt;</span> <span class="n">1</span><span class="o">)</span> <span class="o">+</span> <span class="n">1</span><span class="o">;</span><span class="c1">// left
+</span><span class="c1"></span>                <span class="n">RunnableScheduledFuture</span> <span class="n">c</span> <span class="o">=</span> <span class="n">queue</span><span class="o">[</span><span class="n">child</span><span class="o">];</span>
+                <span class="kt">int</span> <span class="n">right</span> <span class="o">=</span> <span class="n">child</span> <span class="o">+</span> <span class="n">1</span><span class="o">;</span>   <span class="c1">//right
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">right</span> <span class="o">&lt;</span> <span class="n">size</span> <span class="o">&amp;&amp;</span> <span class="n">c</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">queue</span><span class="o">[</span><span class="n">right</span><span class="o">])</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="n">c</span> <span class="o">=</span> <span class="n">queue</span><span class="o">[</span><span class="n">child</span> <span class="o">=</span> <span class="n">right</span><span class="o">];</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">key</span><span class="o">.</span><span class="na">compareTo</span><span class="o">(</span><span class="n">c</span><span class="o">)</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="k">break</span><span class="o">;</span>
+                <span class="n">queue</span><span class="o">[</span><span class="n">k</span><span class="o">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">;</span>
+                <span class="n">setIndex</span><span class="o">(</span><span class="n">c</span><span class="o">,</span> <span class="n">k</span><span class="o">);</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">child</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="n">queue</span><span class="o">[</span><span class="n">k</span><span class="o">]</span> <span class="o">=</span> <span class="n">key</span><span class="o">;</span>
+            <span class="n">setIndex</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">k</span><span class="o">);</span>
+        <span class="o">}</span>        
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p>poll</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">        <span class="kd">public</span> <span class="n">RunnableScheduledFuture</span> <span class="nf">poll</span><span class="o">()</span> <span class="o">{</span>
+            <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">RunnableScheduledFuture</span> <span class="n">first</span> <span class="o">=</span> <span class="n">queue</span><span class="o">[</span><span class="n">0</span><span class="o">];</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">first</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">first</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">)</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="k">else</span>
+                    <span class="k">return</span> <span class="n">finishPoll</span><span class="o">(</span><span class="n">first</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="kd">public</span> <span class="n">RunnableScheduledFuture</span> <span class="nf">poll</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+            <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+            <span class="kt">long</span> <span class="n">nanos</span> <span class="o">=</span> <span class="n">unit</span><span class="o">.</span><span class="na">toNanos</span><span class="o">(</span><span class="n">timeout</span><span class="o">);</span>
+            <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">lockInterruptibly</span><span class="o">();</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                    <span class="n">RunnableScheduledFuture</span> <span class="n">first</span> <span class="o">=</span> <span class="n">queue</span><span class="o">[</span><span class="n">0</span><span class="o">];</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">first</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>
+                            <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                        <span class="k">else</span>
+                            <span class="n">nanos</span> <span class="o">=</span> <span class="n">available</span><span class="o">.</span><span class="na">awaitNanos</span><span class="o">(</span><span class="n">nanos</span><span class="o">);</span>
+                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                        <span class="kt">long</span> <span class="n">delay</span> <span class="o">=</span> <span class="n">first</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">);</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">delay</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="c1">//延期
+</span><span class="c1"></span>                            <span class="k">return</span> <span class="n">finishPoll</span><span class="o">(</span><span class="n">first</span><span class="o">);</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>
+                            <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&lt;</span> <span class="n">delay</span> <span class="o">||</span> <span class="n">leader</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                            <span class="n">nanos</span> <span class="o">=</span> <span class="n">available</span><span class="o">.</span><span class="na">awaitNanos</span><span class="o">(</span><span class="n">nanos</span><span class="o">);</span>
+                        <span class="k">else</span> <span class="o">{</span>
+                            <span class="n">Thread</span> <span class="n">thisThread</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+                            <span class="n">leader</span> <span class="o">=</span> <span class="n">thisThread</span><span class="o">;</span>
+                            <span class="k">try</span> <span class="o">{</span>
+                                <span class="kt">long</span> <span class="n">timeLeft</span> <span class="o">=</span> <span class="n">available</span><span class="o">.</span><span class="na">awaitNanos</span><span class="o">(</span><span class="n">delay</span><span class="o">);</span>
+                                <span class="n">nanos</span> <span class="o">-=</span> <span class="n">delay</span> <span class="o">-</span> <span class="n">timeLeft</span><span class="o">;</span>
+                            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                                <span class="k">if</span> <span class="o">(</span><span class="n">leader</span> <span class="o">==</span> <span class="n">thisThread</span><span class="o">)</span>
+                                    <span class="n">leader</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                            <span class="o">}</span>
+                        <span class="o">}</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">leader</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">queue</span><span class="o">[</span><span class="n">0</span><span class="o">]</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                    <span class="n">available</span><span class="o">.</span><span class="na">signal</span><span class="o">();</span>
+                <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>        
+</code></pre></td></tr></table>
+</div>
+</div></li>
+</ol>
+<h4 id="3移除">(3).移除</h4>
+<ol start="3">
+<li>
+<p>remove</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">               <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">remove</span><span class="o">(</span><span class="n">Object</span> <span class="n">x</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+                   <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+                   <span class="k">try</span> <span class="o">{</span>
+                       <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">indexOf</span><span class="o">(</span><span class="n">x</span><span class="o">);</span>
+                       <span class="k">if</span> <span class="o">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span>
+                           <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+          
+                       <span class="n">setIndex</span><span class="o">(</span><span class="n">queue</span><span class="o">[</span><span class="n">i</span><span class="o">],</span> <span class="o">-</span><span class="n">1</span><span class="o">);</span>
+                       <span class="kt">int</span> <span class="n">s</span> <span class="o">=</span> <span class="o">--</span><span class="n">size</span><span class="o">;</span>
+                       <span class="n">RunnableScheduledFuture</span> <span class="n">replacement</span> <span class="o">=</span> <span class="n">queue</span><span class="o">[</span><span class="n">s</span><span class="o">];</span>
+                       <span class="n">queue</span><span class="o">[</span><span class="n">s</span><span class="o">]</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                       <span class="k">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">!=</span> <span class="n">i</span><span class="o">)</span> <span class="o">{</span>
+                           <span class="n">siftDown</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="n">replacement</span><span class="o">);</span> <span class="c1">//往下 重组堆结构
+</span><span class="c1"></span>                           <span class="k">if</span> <span class="o">(</span><span class="n">queue</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">==</span> <span class="n">replacement</span><span class="o">)</span>
+                               <span class="n">siftUp</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="n">replacement</span><span class="o">);</span> <span class="c1">//往上 重组堆结构
+</span><span class="c1"></span>                       <span class="o">}</span>
+                       <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+                   <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                       <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+                   <span class="o">}</span>
+               <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">         * Find index of given object, or -1 if absent
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kt">int</span> <span class="nf">indexOf</span><span class="o">(</span><span class="n">Object</span> <span class="n">x</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">x</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">x</span> <span class="k">instanceof</span> <span class="n">ScheduledFutureTask</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="o">((</span><span class="n">ScheduledFutureTask</span><span class="o">)</span> <span class="n">x</span><span class="o">).</span><span class="na">heapIndex</span><span class="o">;</span> <span class="c1">//heapIndex 快速定位，删除
+</span><span class="c1"></span>                    <span class="c1">// Sanity check; x could conceivably be a
+</span><span class="c1"></span>                    <span class="c1">// ScheduledFutureTask from some other pool.
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">i</span> <span class="o">&gt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">size</span> <span class="o">&amp;&amp;</span> <span class="n">queue</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">==</span> <span class="n">x</span><span class="o">)</span>
+                        <span class="k">return</span> <span class="n">i</span><span class="o">;</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                    <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">size</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">x</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">queue</span><span class="o">[</span><span class="n">i</span><span class="o">]))</span>
+                            <span class="k">return</span> <span class="n">i</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>
+        <span class="o">}</span>               
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p>drainTo</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">      <span class="cm">/**
+</span><span class="cm">         * Return and remove first element only if it is expired.
+</span><span class="cm">         * Used only by drainTo.  Call only when holding lock.
+</span><span class="cm">         * 只有在第一个元素过期时才返回并移除。仅由drainTo使用。只有在保持锁定时才能call
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="n">RunnableScheduledFuture</span> <span class="nf">pollExpired</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">RunnableScheduledFuture</span> <span class="n">first</span> <span class="o">=</span> <span class="n">queue</span><span class="o">[</span><span class="n">0</span><span class="o">];</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">first</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">first</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">)</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span>
+                <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="k">return</span> <span class="n">finishPoll</span><span class="o">(</span><span class="n">first</span><span class="o">);</span>
+        <span class="o">}</span>
+   
+        <span class="kd">public</span> <span class="kt">int</span> <span class="nf">drainTo</span><span class="o">(</span><span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">Runnable</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="k">this</span><span class="o">)</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">();</span>
+            <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">RunnableScheduledFuture</span> <span class="n">first</span><span class="o">;</span>
+                <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+                <span class="k">while</span> <span class="o">((</span><span class="n">first</span> <span class="o">=</span> <span class="n">pollExpired</span><span class="o">())</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">c</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">first</span><span class="o">);</span>
+                    <span class="o">++</span><span class="n">n</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">return</span> <span class="n">n</span><span class="o">;</span>
+            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+  <span class="kd">public</span> <span class="kt">int</span> <span class="nf">drainTo</span><span class="o">(</span><span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">Runnable</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">,</span> <span class="kt">int</span> <span class="n">maxElements</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="k">this</span><span class="o">)</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">maxElements</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>
+                <span class="k">return</span> <span class="n">0</span><span class="o">;</span>
+            <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">RunnableScheduledFuture</span> <span class="n">first</span><span class="o">;</span>
+                <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+                <span class="k">while</span> <span class="o">(</span><span class="n">n</span> <span class="o">&lt;</span> <span class="n">maxElements</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">first</span> <span class="o">=</span> <span class="n">pollExpired</span><span class="o">())</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">c</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">first</span><span class="o">);</span>
+                    <span class="o">++</span><span class="n">n</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">return</span> <span class="n">n</span><span class="o">;</span>
+            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>        
+</code></pre></td></tr></table>
+</div>
+</div></li>
+</ol>
+<h4 id="4-iterator-迭代器实现">(4). Iterator 迭代器实现</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">         * Snapshot iterator that works off copy of underlying q array.
+</span><span class="cm">         */</span>
+        <span class="kd">private</span> <span class="kd">class</span> <span class="nc">Itr</span> <span class="kd">implements</span> <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">Runnable</span><span class="o">&gt;</span> <span class="o">{</span>
+            <span class="kd">final</span> <span class="n">RunnableScheduledFuture</span><span class="o">[]</span> <span class="n">array</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">cursor</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>     <span class="c1">// index of next element to return
+</span><span class="c1"></span>            <span class="kt">int</span> <span class="n">lastRet</span> <span class="o">=</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>   <span class="c1">// index of last element, or -1 if no such
+</span><span class="c1"></span>
+            <span class="n">Itr</span><span class="o">(</span><span class="n">RunnableScheduledFuture</span><span class="o">[]</span> <span class="n">array</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">this</span><span class="o">.</span><span class="na">array</span> <span class="o">=</span> <span class="n">array</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">hasNext</span><span class="o">()</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="n">cursor</span> <span class="o">&lt;</span> <span class="n">array</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="kd">public</span> <span class="n">Runnable</span> <span class="nf">next</span><span class="o">()</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">cursor</span> <span class="o">&gt;=</span> <span class="n">array</span><span class="o">.</span><span class="na">length</span><span class="o">)</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="n">NoSuchElementException</span><span class="o">();</span>
+                <span class="n">lastRet</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">;</span>
+                <span class="k">return</span> <span class="n">array</span><span class="o">[</span><span class="n">cursor</span><span class="o">++];</span>
+            <span class="o">}</span>
+
+            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">remove</span><span class="o">()</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">lastRet</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">();</span>
+                <span class="n">DelayedWorkQueue</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">array</span><span class="o">[</span><span class="n">lastRet</span><span class="o">]);</span>
+                <span class="n">lastRet</span> <span class="o">=</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二-schedule-创建并执行一个一次性任务这个任务过了延迟时间就会被执行">二、 schedule 创建并执行一个一次性任务，这个任务过了延迟时间就会被执行。</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">        * @throws RejectedExecutionException {@inheritDoc}
+</span><span class="cm">        * @throws NullPointerException       {@inheritDoc}
+</span><span class="cm">        */</span>
+       <span class="kd">public</span> <span class="n">ScheduledFuture</span><span class="o">&lt;?&gt;</span> <span class="n">schedule</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">command</span><span class="o">,</span>
+                                          <span class="kt">long</span> <span class="n">delay</span><span class="o">,</span>
+                                          <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">command</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">unit</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+               <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+           <span class="n">RunnableScheduledFuture</span><span class="o">&lt;?&gt;</span> <span class="n">t</span> <span class="o">=</span> <span class="n">decorateTask</span><span class="o">(</span><span class="n">command</span><span class="o">,</span>
+               <span class="k">new</span> <span class="n">ScheduledFutureTask</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">&gt;(</span><span class="n">command</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span>
+                                             <span class="n">triggerTime</span><span class="o">(</span><span class="n">delay</span><span class="o">,</span> <span class="n">unit</span><span class="o">)));</span>
+           <span class="n">delayedExecute</span><span class="o">(</span><span class="n">t</span><span class="o">);</span>
+           <span class="k">return</span> <span class="n">t</span><span class="o">;</span>
+       <span class="o">}</span>
+      <span class="cm">/**
+</span><span class="cm">        * Modifies or replaces the task used to execute a runnable.
+</span><span class="cm">        * This method can be used to override the concrete
+</span><span class="cm">        * class used for managing internal tasks.
+</span><span class="cm">        * The default implementation simply returns the given task.
+</span><span class="cm">        *
+</span><span class="cm">        * @param runnable the submitted Runnable
+</span><span class="cm">        * @param task the task created to execute the runnable
+</span><span class="cm">        * @return a task that can execute the runnable
+</span><span class="cm">        * @since 1.6
+</span><span class="cm">        */</span>
+       <span class="kd">protected</span> <span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">RunnableScheduledFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">decorateTask</span><span class="o">(</span>
+           <span class="n">Runnable</span> <span class="n">runnable</span><span class="o">,</span> <span class="n">RunnableScheduledFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">task</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">return</span> <span class="n">task</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="cm">/**
+</span><span class="cm">        * Main execution method for delayed or periodic tasks.  If pool
+</span><span class="cm">        * is shut down, rejects the task. Otherwise adds task to queue
+</span><span class="cm">        * and starts a thread, if necessary, to run it.  (We cannot
+</span><span class="cm">        * prestart the thread to run the task because the task (probably)
+</span><span class="cm">        * shouldn&#39;t be run yet,) If the pool is shut down while the task
+</span><span class="cm">        * is being added, cancel and remove it if required by state and
+</span><span class="cm">        * run-after-shutdown parameters.
+</span><span class="cm">        * 执行延迟或定期任务的主要方法。
+</span><span class="cm">        * 如果池被关闭，拒绝任务。
+</span><span class="cm">        * 否则，将任务添加到队列中，并在必要时启动一个线程来运行它。 
+</span><span class="cm">        * （我们不能预先启动线程来运行任务，因为任务（可能）不应该运行）。
+</span><span class="cm">        * 如果在添加任务时关闭了池，请取消并在需要时按状态进行删除并执行run-after-关闭参数。
+</span><span class="cm">        *
+</span><span class="cm">        * @param task the task
+</span><span class="cm">        */</span>
+       <span class="kd">private</span> <span class="kt">void</span> <span class="nf">delayedExecute</span><span class="o">(</span><span class="n">RunnableScheduledFuture</span><span class="o">&lt;?&gt;</span> <span class="n">task</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">isShutdown</span><span class="o">())</span>
+               <span class="n">reject</span><span class="o">(</span><span class="n">task</span><span class="o">);</span>
+           <span class="k">else</span> <span class="o">{</span>
+               <span class="kd">super</span><span class="o">.</span><span class="na">getQueue</span><span class="o">().</span><span class="na">add</span><span class="o">(</span><span class="n">task</span><span class="o">);</span>
+               <span class="k">if</span> <span class="o">(</span><span class="n">isShutdown</span><span class="o">()</span> <span class="o">&amp;&amp;</span>
+                   <span class="o">!</span><span class="n">canRunInCurrentRunState</span><span class="o">(</span><span class="n">task</span><span class="o">.</span><span class="na">isPeriodic</span><span class="o">())</span> <span class="o">&amp;&amp;</span>
+                   <span class="n">remove</span><span class="o">(</span><span class="n">task</span><span class="o">))</span>
+                   <span class="n">task</span><span class="o">.</span><span class="na">cancel</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+               <span class="k">else</span>
+                   <span class="n">ensurePrestart</span><span class="o">();</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+       <span class="cm">/**
+</span><span class="cm">        * Same as prestartCoreThread except arranges that at least one
+</span><span class="cm">        * thread is started even if corePoolSize is 0.
+</span><span class="cm">        */</span>
+       <span class="kt">void</span> <span class="nf">ensurePrestart</span><span class="o">()</span> <span class="o">{</span>
+           <span class="kt">int</span> <span class="n">wc</span> <span class="o">=</span> <span class="n">workerCountOf</span><span class="o">(</span><span class="n">ctl</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">wc</span> <span class="o">&lt;</span> <span class="n">corePoolSize</span><span class="o">)</span>
+               <span class="n">addWorker</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+           <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">wc</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span>
+               <span class="n">addWorker</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+       <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="三-scheduleatfixedrate">三、 scheduleAtFixedRate</h2>
+<p>　　创建并执行一个周期性任务，当任务过了给定的初始延迟时间，会第一次被执行，然后会以给定的周期时间执行。
+如果某次执行过程中发生了异常，那么任务就停止了(不会执行下一次任务了)。如果某次执行时长超过了周期时间，
+那么下一次任务会延迟启动，不会和当前 任务并行执行。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * @throws RejectedExecutionException {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException       {@inheritDoc}
+</span><span class="cm">     * @throws IllegalArgumentException   {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">ScheduledFuture</span><span class="o">&lt;?&gt;</span> <span class="n">scheduleAtFixedRate</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">command</span><span class="o">,</span>
+                                                  <span class="kt">long</span> <span class="n">initialDelay</span><span class="o">,</span>
+                                                  <span class="kt">long</span> <span class="n">period</span><span class="o">,</span>
+                                                  <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">command</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">unit</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">period</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">();</span>
+        <span class="n">ScheduledFutureTask</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">&gt;</span> <span class="n">sft</span> <span class="o">=</span>
+            <span class="k">new</span> <span class="n">ScheduledFutureTask</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">&gt;(</span><span class="n">command</span><span class="o">,</span>
+                                          <span class="kc">null</span><span class="o">,</span>
+                                          <span class="n">triggerTime</span><span class="o">(</span><span class="n">initialDelay</span><span class="o">,</span> <span class="n">unit</span><span class="o">),</span>
+                                          <span class="n">unit</span><span class="o">.</span><span class="na">toNanos</span><span class="o">(</span><span class="n">period</span><span class="o">));</span>
+        <span class="n">RunnableScheduledFuture</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">&gt;</span> <span class="n">t</span> <span class="o">=</span> <span class="n">decorateTask</span><span class="o">(</span><span class="n">command</span><span class="o">,</span> <span class="n">sft</span><span class="o">);</span>
+        <span class="n">sft</span><span class="o">.</span><span class="na">outerTask</span> <span class="o">=</span> <span class="n">t</span><span class="o">;</span>
+        <span class="n">delayedExecute</span><span class="o">(</span><span class="n">t</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">t</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="四-scheduleatfixedrate">四、 scheduleAtFixedRate</h2>
+<p>　　创建并执行一个周期性任务，当任务过了给定的初始延迟时间，会第一次被执行，接下来的任务会在上次任务执行完毕后，延迟给定的时间，
+然后再继续执行。如果某次执行过程中发生了异常，那么任务就停止了(不会执行下一次任务了)。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">     * @throws RejectedExecutionException {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException       {@inheritDoc}
+</span><span class="cm">     * @throws IllegalArgumentException   {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">ScheduledFuture</span><span class="o">&lt;?&gt;</span> <span class="n">scheduleWithFixedDelay</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">command</span><span class="o">,</span>
+                                                     <span class="kt">long</span> <span class="n">initialDelay</span><span class="o">,</span>
+                                                     <span class="kt">long</span> <span class="n">delay</span><span class="o">,</span>
+                                                     <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">command</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">unit</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">delay</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">();</span>
+        <span class="n">ScheduledFutureTask</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">&gt;</span> <span class="n">sft</span> <span class="o">=</span>
+            <span class="k">new</span> <span class="n">ScheduledFutureTask</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">&gt;(</span><span class="n">command</span><span class="o">,</span>
+                                          <span class="kc">null</span><span class="o">,</span>
+                                          <span class="n">triggerTime</span><span class="o">(</span><span class="n">initialDelay</span><span class="o">,</span> <span class="n">unit</span><span class="o">),</span>
+                                          <span class="n">unit</span><span class="o">.</span><span class="na">toNanos</span><span class="o">(-</span><span class="n">delay</span><span class="o">));</span>
+        <span class="n">RunnableScheduledFuture</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">&gt;</span> <span class="n">t</span> <span class="o">=</span> <span class="n">decorateTask</span><span class="o">(</span><span class="n">command</span><span class="o">,</span> <span class="n">sft</span><span class="o">);</span>
+        <span class="n">sft</span><span class="o">.</span><span class="na">outerTask</span> <span class="o">=</span> <span class="n">t</span><span class="o">;</span>
+        <span class="n">delayedExecute</span><span class="o">(</span><span class="n">t</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">t</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="五execute-执行任务">五、execute 执行任务</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * Executes {@code command} with zero required delay.
+</span><span class="cm">     * This has effect equivalent to
+</span><span class="cm">     * {@link #schedule(Runnable,long,TimeUnit) schedule(command, 0, anyUnit)}.
+</span><span class="cm">     * Note that inspections of the queue and of the list returned by
+</span><span class="cm">     * {@code shutdownNow} will access the zero-delayed
+</span><span class="cm">     * {@link ScheduledFuture}, not the {@code command} itself.
+</span><span class="cm">     *
+</span><span class="cm">     * &lt;p&gt;A consequence of the use of {@code ScheduledFuture} objects is
+</span><span class="cm">     * that {@link ThreadPoolExecutor#afterExecute afterExecute} is always
+</span><span class="cm">     * called with a null second {@code Throwable} argument, even if the
+</span><span class="cm">     * {@code command} terminated abruptly.  Instead, the {@code Throwable}
+</span><span class="cm">     * thrown by such a task can be obtained via {@link Future#get}.
+</span><span class="cm">     *
+</span><span class="cm">     * @throws RejectedExecutionException at discretion of
+</span><span class="cm">     *         {@code RejectedExecutionHandler}, if the task
+</span><span class="cm">     *         cannot be accepted for execution because the
+</span><span class="cm">     *         executor has been shut down
+</span><span class="cm">     * @throws NullPointerException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">command</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">schedule</span><span class="o">(</span><span class="n">command</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">);</span>
+    <span class="o">}</span>
+  
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="六submit-提交任务">六、submit 提交任务</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * @throws RejectedExecutionException {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException       {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">Future</span><span class="o">&lt;?&gt;</span> <span class="n">submit</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">task</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">schedule</span><span class="o">(</span><span class="n">task</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @throws RejectedExecutionException {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException       {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Future</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">submit</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">task</span><span class="o">,</span> <span class="n">T</span> <span class="n">result</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">schedule</span><span class="o">(</span><span class="n">Executors</span><span class="o">.</span><span class="na">callable</span><span class="o">(</span><span class="n">task</span><span class="o">,</span> <span class="n">result</span><span class="o">),</span>
+                        <span class="n">0</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @throws RejectedExecutionException {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException       {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Future</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">submit</span><span class="o">(</span><span class="n">Callable</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">task</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">schedule</span><span class="o">(</span><span class="n">task</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="七停止任务-shutdown和shutdownnow">七、停止任务 shutdown和shutdownNow</h2>
+<p>调用ThreadPoolExecutor</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-04-25 19:11
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/ScheduledThreadPoolExecutor/">ScheduledThreadPoolExecutor</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/15.ForkJoin%E6%A8%A1%E5%BC%8F%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">ForkJoin</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/13.ThreadPoolExecutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">ThreadPoolExecutor</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

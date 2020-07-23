@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Future和Promise - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="一、io.netty.util.concurrent.Future Future的UML图 io.netty.util.concurrent.F" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/netty/08.Future%E5%92%8CPromise/" />
+<link href="/post/netty/08.Future%E5%92%8CPromise/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/netty/08.Future%E5%92%8CPromise/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="Future和Promise" />
+<meta property="og:description" content="一、io.netty.util.concurrent.Future Future的UML图 io.netty.util.concurrent.F" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/netty/08.Future%E5%92%8CPromise/" />
+<meta property="article:published_time" content="2019-04-10T21:08:08+00:00" />
+<meta property="article:modified_time" content="2019-04-10T21:08:08+00:00" />
+<meta itemprop="name" content="Future和Promise">
+<meta itemprop="description" content="一、io.netty.util.concurrent.Future Future的UML图 io.netty.util.concurrent.F">
+<meta itemprop="datePublished" content="2019-04-10T21:08:08&#43;00:00" />
+<meta itemprop="dateModified" content="2019-04-10T21:08:08&#43;00:00" />
+<meta itemprop="wordCount" content="4369">
+
+
+
+<meta itemprop="keywords" content="netty," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Future和Promise"/>
+<meta name="twitter:description" content="一、io.netty.util.concurrent.Future Future的UML图 io.netty.util.concurrent.F"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">Future和Promise</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2019-04-10 21:08 </span>
+      <div class="post-category">
+        <a href="/categories/netty/"> netty </a>
+        </div>
+      <span class="more-meta"> 约 4369 字 </span>
+      <span class="more-meta"> 预计阅读 9 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1channelfuture-继承ionettyutilconcurrentfuture">1.ChannelFuture 继承io.netty.util.concurrent.Future</a></li>
+    <li><a href="#2abstractfuture-源码分析">2.AbstractFuture 源码分析</a></li>
+    <li><a href="#3completefuture抽象类-源码分析">3.CompleteFuture抽象类 源码分析</a>
+      <ul>
+        <li><a href="#1构造">1).构造</a></li>
+        <li><a href="#1addlistener-添加监听">1).addListener 添加监听</a></li>
+        <li><a href="#2removelistener-移除监听">2).removeListener 移除监听</a></li>
+        <li><a href="#3await-已完成不用等待">3).await 已完成，不用等待；</a></li>
+        <li><a href="#4状态修改">4).状态修改</a></li>
+      </ul>
+    </li>
+    <li><a href="#4completechannelfuture抽象类-源码分析">4.CompleteChannelFuture抽象类 源码分析</a>
+      <ul>
+        <li><a href="#1构造-1">1).构造</a></li>
+        <li><a href="#2getnow">2).getNow</a></li>
+      </ul>
+    </li>
+    <li><a href="#5succeededchannelfuture-源码简单">5.SucceededChannelFuture 源码简单</a></li>
+    <li><a href="#6failedchannelfuture-源码简单">6.FailedChannelFuture 源码简单</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1defaultpromise">1.DefaultPromise</a>
+      <ul>
+        <li><a href="#1属性">1).属性</a></li>
+        <li><a href="#2构造">2).构造</a></li>
+        <li><a href="#3setsuccess-设置成功">3).setSuccess 设置成功</a></li>
+        <li><a href="#4setfailure-设置失败">4).setFailure 设置失败</a></li>
+        <li><a href="#5setuncancellable-设置不可能被取消">5).setUncancellable 设置不可能被取消。</a></li>
+        <li><a href="#6-addlistener-添加监听事件">6). addListener 添加监听事件</a></li>
+        <li><a href="#7-removelistener-移除监听事件">7). removeListener 移除监听事件</a></li>
+        <li><a href="#8notifylisteners-通知监听事件">8).notifyListeners 通知监听事件</a></li>
+        <li><a href="#9await">9).await</a></li>
+        <li><a href="#10sync">10).sync</a></li>
+        <li><a href="#11awaitlong-timeoutmillis">11).await(long timeoutMillis)</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2019-04-10T21:08:08" title="April 10, 2019">April 10, 2019</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="一ionettyutilconcurrentfuture">一、io.netty.util.concurrent.Future</h1>
+<p>Future的UML图</p>
+<p><img src="images/Future01.png" alt=""></p>
+<p>io.netty.util.concurrent.Future继承JDK Future</p>
+<h2 id="1channelfuture-继承ionettyutilconcurrentfuture">1.ChannelFuture 继承io.netty.util.concurrent.Future</h2>
+<p>异步channel的I/O操作的结果。</p>
+<p>Netty中的所有I/O操作都是异步的。这意味着任何I/O调用将立即返回，不保证在请求结束时请求的I/O操作已经完成。
+相反，您将返回一个ChannelFuture实例，为您提供有关I/O操作结果或状态的信息。</p>
+<p>ChannelFuture要么是未完成的，要么是完成的。当I/O操作开始时，将创建一个新的future对象。新的未来一开始就没有完成——它既没有成功，也没有失败，也没有被取消，
+因为I/O操作还没有完成。如果I/O操作成功地完成，失败或取消，那么未来将被标记为已完成的更具体的信息，例如失败的原因。请注意，即使是失败和取消也属于完成状态。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-text" data-lang="text"> *                                      +---------------------------+
+ *                                      | Completed successfully    |
+ *                                      +---------------------------+
+ *                                 +----&gt;      isDone() = true      |
+ * +--------------------------+    |    |   isSuccess() = true      |
+ * |        Uncompleted       |    |    +===========================+
+ * +--------------------------+    |    | Completed with failure    |
+ * |      isDone() = false    |    |    +---------------------------+
+ * |   isSuccess() = false    |----+----&gt;      isDone() = true      |
+ * | isCancelled() = false    |    |    |       cause() = non-null  |
+ * |       cause() = null     |    |    +===========================+
+ * +--------------------------+    |    | Completed by cancellation |
+ *                                 |    +---------------------------+
+ *                                 +----&gt;      isDone() = true      |
+ *                                      | isCancelled() = true      |
+ *                                      +---------------------------+
+
+</code></pre></td></tr></table>
+</div>
+</div><p>提供了各种方法让您检查I/O操作是否已完成，等待完成，并检索I/O操作的结果。它还允许您添加ChannelFutureListeners，以便在I/O操作完成时得到通知。</p>
+<p><strong>首选 addListener(GenericFutureListener) 而不是 await()</strong></p>
+<p>建议优先使用addListener（GenericFutureListener）在I/O操作完成时尽可能通知await()并执行后续任务。</p>
+<p>addListener（GenericFutureListener）是非阻塞的。它只是将指定的ChannelFutureListener添加到ChannelFuture，并且I/O线程将在与未来相关的I/O操作完成时
+通知监听器。ChannelFutureListener产生最好的性能和资源利用率，因为它根本不会阻塞，但是如果你不习惯于事件驱动的编程，那么实现一个顺序逻辑可能会很棘手</p>
+<p>相反，await（）是一个阻塞操作。一旦被调用，调用者线程将阻塞，直到操作完成。用await（）实现一个顺序逻辑比较容易，但是调用者线程不必要的阻塞，直到I/O操作完成，
+并且线程间通知的代价相对较高。而且，在特定的情况下有可能会死锁。</p>
+<p>ChannelFuture的uml图</p>
+<p><img src="images/Future02.png" alt=""></p>
+<h2 id="2abstractfuture-源码分析">2.AbstractFuture 源码分析</h2>
+<ul>
+<li>get 堵塞获取值</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">AbstractFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="kd">implements</span> <span class="n">Future</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="o">{</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">V</span> <span class="nf">get</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">,</span> <span class="n">ExecutionException</span> <span class="o">{</span>
+        <span class="n">await</span><span class="o">();</span><span class="c1">//等待获取值
+</span><span class="c1"></span>
+        <span class="n">Throwable</span> <span class="n">cause</span> <span class="o">=</span> <span class="n">cause</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">cause</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">getNow</span><span class="o">();</span><span class="c1">//返回成功值
+</span><span class="c1"></span>        <span class="o">}</span>
+        <span class="c1">//异常处理
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">cause</span> <span class="k">instanceof</span> <span class="n">CancellationException</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="o">(</span><span class="n">CancellationException</span><span class="o">)</span> <span class="n">cause</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">ExecutionException</span><span class="o">(</span><span class="n">cause</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">V</span> <span class="nf">get</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">,</span> <span class="n">ExecutionException</span><span class="o">,</span> <span class="n">TimeoutException</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">await</span><span class="o">(</span><span class="n">timeout</span><span class="o">,</span> <span class="n">unit</span><span class="o">))</span> <span class="o">{</span><span class="c1">//指定时间等待结果值
+</span><span class="c1"></span>            <span class="n">Throwable</span> <span class="n">cause</span> <span class="o">=</span> <span class="n">cause</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">cause</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="n">getNow</span><span class="o">();</span>
+            <span class="o">}</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">cause</span> <span class="k">instanceof</span> <span class="n">CancellationException</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">throw</span> <span class="o">(</span><span class="n">CancellationException</span><span class="o">)</span> <span class="n">cause</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">ExecutionException</span><span class="o">(</span><span class="n">cause</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">TimeoutException</span><span class="o">();</span><span class="c1">//超时异常
+</span><span class="c1"></span>    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3completefuture抽象类-源码分析">3.CompleteFuture抽象类 源码分析</h2>
+<p>Complete表示操作已完成，所以CompleteFuture表示一个异步操作已完成的结果;</p>
+<h3 id="1构造">1).构造</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">CompleteFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">AbstractFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="c1">//执行器，执行Listener中定义的操作
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">EventExecutor</span> <span class="n">executor</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * Creates a new instance.
+</span><span class="cm">     *
+</span><span class="cm">     * @param executor the {@link EventExecutor} associated with this future
+</span><span class="cm">     */</span>
+    <span class="kd">protected</span> <span class="nf">CompleteFuture</span><span class="o">(</span><span class="n">EventExecutor</span> <span class="n">executor</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">executor</span> <span class="o">=</span> <span class="n">executor</span><span class="o">;</span>
+    <span class="o">}</span>
+  
+    <span class="cm">/**
+</span><span class="cm">     * Return the {@link EventExecutor} which is used by this {@link CompleteFuture}.
+</span><span class="cm">     */</span>
+    <span class="kd">protected</span> <span class="n">EventExecutor</span> <span class="nf">executor</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">executor</span><span class="o">;</span>
+    <span class="o">}</span>      
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1addlistener-添加监听">1).addListener 添加监听</h3>
+<p>DefaultPromise.notifyListener通知监听事件</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="n">Future</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">addListener</span><span class="o">(</span><span class="n">GenericFutureListener</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Future</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">V</span><span class="o">&gt;&gt;</span> <span class="n">listener</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">listener</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">(</span><span class="s">&#34;listener&#34;</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="n">DefaultPromise</span><span class="o">.</span><span class="na">notifyListener</span><span class="o">(</span><span class="n">executor</span><span class="o">(),</span> <span class="k">this</span><span class="o">,</span> <span class="n">listener</span><span class="o">);</span>
+       <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+   <span class="o">}</span>
+
+   <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="n">Future</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">addListeners</span><span class="o">(</span><span class="n">GenericFutureListener</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Future</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">V</span><span class="o">&gt;&gt;...</span> <span class="n">listeners</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">listeners</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">(</span><span class="s">&#34;listeners&#34;</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="k">for</span> <span class="o">(</span><span class="n">GenericFutureListener</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Future</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">V</span><span class="o">&gt;&gt;</span> <span class="n">l</span><span class="o">:</span> <span class="n">listeners</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">l</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+               <span class="k">break</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="n">DefaultPromise</span><span class="o">.</span><span class="na">notifyListener</span><span class="o">(</span><span class="n">executor</span><span class="o">(),</span> <span class="k">this</span><span class="o">,</span> <span class="n">l</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+   <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2removelistener-移除监听">2).removeListener 移除监听</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Future</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">removeListener</span><span class="o">(</span><span class="n">GenericFutureListener</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Future</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">V</span><span class="o">&gt;&gt;</span> <span class="n">listener</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// NOOP 已完成，监听正在通知或者已通知，不能删除监听
+</span><span class="c1"></span>        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Future</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">removeListeners</span><span class="o">(</span><span class="n">GenericFutureListener</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Future</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">V</span><span class="o">&gt;&gt;...</span> <span class="n">listeners</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// NOOP
+</span><span class="c1"></span>        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3await-已完成不用等待">3).await 已完成，不用等待；</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="n">Future</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">await</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">interrupted</span><span class="o">())</span> <span class="o">{</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">InterruptedException</span><span class="o">();</span>
+       <span class="o">}</span>
+       <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+   <span class="o">}</span>
+
+   <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">await</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">interrupted</span><span class="o">())</span> <span class="o">{</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">InterruptedException</span><span class="o">();</span>
+       <span class="o">}</span>
+       <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4状态修改">4).状态修改</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isDone</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isCancellable</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isCancelled</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">cancel</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">mayInterruptIfRunning</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4completechannelfuture抽象类-源码分析">4.CompleteChannelFuture抽象类 源码分析</h2>
+<p>无结果返回channel完成操作</p>
+<h3 id="1构造-1">1).构造</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">CompleteChannelFuture</span> <span class="kd">extends</span> <span class="n">CompleteFuture</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">&gt;</span> <span class="kd">implements</span> <span class="n">ChannelFuture</span> <span class="o">{</span>
+    
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Channel</span> <span class="n">channel</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a new instance.
+</span><span class="cm">     *
+</span><span class="cm">     * @param channel the {@link Channel} associated with this future
+</span><span class="cm">     */</span>
+    <span class="kd">protected</span> <span class="nf">CompleteChannelFuture</span><span class="o">(</span><span class="n">Channel</span> <span class="n">channel</span><span class="o">,</span> <span class="n">EventExecutor</span> <span class="n">executor</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">channel</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">(</span><span class="s">&#34;channel&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">channel</span> <span class="o">=</span> <span class="n">channel</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="n">EventExecutor</span> <span class="nf">executor</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">EventExecutor</span> <span class="n">e</span> <span class="o">=</span> <span class="kd">super</span><span class="o">.</span><span class="na">executor</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">channel</span><span class="o">().</span><span class="na">eventLoop</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">e</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2getnow">2).getNow</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="n">Void</span> <span class="nf">getNow</span><span class="o">()</span> <span class="o">{</span>
+       <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="5succeededchannelfuture-源码简单">5.SucceededChannelFuture 源码简单</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">final</span> <span class="kd">class</span> <span class="nc">SucceededChannelFuture</span> <span class="kd">extends</span> <span class="n">CompleteChannelFuture</span> <span class="o">{</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a new instance.
+</span><span class="cm">     *
+</span><span class="cm">     * @param channel the {@link Channel} associated with this future
+</span><span class="cm">     */</span>
+    <span class="n">SucceededChannelFuture</span><span class="o">(</span><span class="n">Channel</span> <span class="n">channel</span><span class="o">,</span> <span class="n">EventExecutor</span> <span class="n">executor</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">channel</span><span class="o">,</span> <span class="n">executor</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Throwable</span> <span class="nf">cause</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isSuccess</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="6failedchannelfuture-源码简单">6.FailedChannelFuture 源码简单</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">final</span> <span class="kd">class</span> <span class="nc">FailedChannelFuture</span> <span class="kd">extends</span> <span class="n">CompleteChannelFuture</span> <span class="o">{</span>
+    
+   <span class="c1">//异常属性
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Throwable</span> <span class="n">cause</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a new instance.
+</span><span class="cm">     *
+</span><span class="cm">     * @param channel the {@link Channel} associated with this future
+</span><span class="cm">     * @param cause   the cause of failure
+</span><span class="cm">     */</span>
+    <span class="n">FailedChannelFuture</span><span class="o">(</span><span class="n">Channel</span> <span class="n">channel</span><span class="o">,</span> <span class="n">EventExecutor</span> <span class="n">executor</span><span class="o">,</span> <span class="n">Throwable</span> <span class="n">cause</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">channel</span><span class="o">,</span> <span class="n">executor</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">cause</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">(</span><span class="s">&#34;cause&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">cause</span> <span class="o">=</span> <span class="n">cause</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Throwable</span> <span class="nf">cause</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">cause</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isSuccess</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ChannelFuture</span> <span class="nf">sync</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">PlatformDependent</span><span class="o">.</span><span class="na">throwException</span><span class="o">(</span><span class="n">cause</span><span class="o">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ChannelFuture</span> <span class="nf">syncUninterruptibly</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">PlatformDependent</span><span class="o">.</span><span class="na">throwException</span><span class="o">(</span><span class="n">cause</span><span class="o">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="二promise">二、Promise</h1>
+<p>Promise的UML图</p>
+<p><img src="images/Future03.png" alt=""></p>
+<h2 id="1defaultpromise">1.DefaultPromise</h2>
+<h3 id="1属性">1).属性</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">DefaultPromise</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">AbstractFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="kd">implements</span> <span class="n">Promise</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">InternalLogger</span> <span class="n">logger</span> <span class="o">=</span> <span class="n">InternalLoggerFactory</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="n">DefaultPromise</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">InternalLogger</span> <span class="n">rejectedExecutionLogger</span> <span class="o">=</span>
+            <span class="n">InternalLoggerFactory</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="n">DefaultPromise</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getName</span><span class="o">()</span> <span class="o">+</span> <span class="s">&#34;.rejectedExecution&#34;</span><span class="o">);</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">MAX_LISTENER_STACK_DEPTH</span> <span class="o">=</span> <span class="n">Math</span><span class="o">.</span><span class="na">min</span><span class="o">(</span><span class="n">8</span><span class="o">,</span>
+            <span class="n">SystemPropertyUtil</span><span class="o">.</span><span class="na">getInt</span><span class="o">(</span><span class="s">&#34;io.netty.defaultPromise.maxListenerStackDepth&#34;</span><span class="o">,</span> <span class="n">8</span><span class="o">));</span>
+    <span class="nd">@SuppressWarnings</span><span class="o">(</span><span class="s">&#34;rawtypes&#34;</span><span class="o">)</span>
+    <span class="c1">//CAS 修改result
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">AtomicReferenceFieldUpdater</span><span class="o">&lt;</span><span class="n">DefaultPromise</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;</span> <span class="n">RESULT_UPDATER</span> <span class="o">=</span>
+            <span class="n">AtomicReferenceFieldUpdater</span><span class="o">.</span><span class="na">newUpdater</span><span class="o">(</span><span class="n">DefaultPromise</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">Object</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="s">&#34;result&#34;</span><span class="o">);</span>
+    <span class="c1">//Signal 代表一个状态，成功时，返回结果为空，CAS修改result等于SUCCESS；
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Signal</span> <span class="n">SUCCESS</span> <span class="o">=</span> <span class="n">Signal</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">DefaultPromise</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="s">&#34;SUCCESS&#34;</span><span class="o">);</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Signal</span> <span class="n">UNCANCELLABLE</span> <span class="o">=</span> <span class="n">Signal</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">DefaultPromise</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="s">&#34;UNCANCELLABLE&#34;</span><span class="o">);</span>
+    <span class="c1">//取消
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">CauseHolder</span> <span class="n">CANCELLATION_CAUSE_HOLDER</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CauseHolder</span><span class="o">(</span><span class="n">ThrowableUtil</span><span class="o">.</span><span class="na">unknownStackTrace</span><span class="o">(</span>
+            <span class="k">new</span> <span class="n">CancellationException</span><span class="o">(),</span> <span class="n">DefaultPromise</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="s">&#34;cancel(...)&#34;</span><span class="o">));</span>
+    <span class="c1">//返回结构 
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">volatile</span> <span class="n">Object</span> <span class="n">result</span><span class="o">;</span>
+    <span class="c1">//执行listener操作的执行器
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">EventExecutor</span> <span class="n">executor</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * One or more listeners. Can be a {@link GenericFutureListener} or a {@link DefaultFutureListeners}.
+</span><span class="cm">     * If {@code null}, it means either 1) no listeners were added yet or 2) all listeners were notified.
+</span><span class="cm">     * 一个或多个listeners。可以是GenericFutureListener或DefaultFutureListeners。如果代码为null，则表示1）没有添加监听器，或2）所有监听器都被通知。
+</span><span class="cm">     * Threading - synchronized(this). We must support adding listeners when there is no EventExecutor.
+</span><span class="cm">     * 线程化 - synchronized(this)。当没有EventExecutor时，我们必须支持添加监听器。
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="n">Object</span> <span class="n">listeners</span><span class="o">;</span>
+    <span class="cm">/**
+</span><span class="cm">     * Threading - synchronized(this). We are required to hold the monitor to use Java&#39;s underlying wait()/notifyAll().
+</span><span class="cm">     * 线程化 - synchronized(this)。我们需要让监视器使用Java的底层wait（）/ notifyAll（）。
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kt">short</span> <span class="n">waiters</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Threading - synchronized(this). We must prevent concurrent notification and FIFO listener notification if the
+</span><span class="cm">     * executor changes.
+</span><span class="cm">     * 线程化 - synchronized(this)。如果执行程序改变，我们必须防止并发通知和FIFO监听程序通知。
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">notifyingListeners</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2构造">2).构造</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * Creates a new instance.
+</span><span class="cm">     *
+</span><span class="cm">     * It is preferable to use {@link EventExecutor#newPromise()} to create a new promise
+</span><span class="cm">     *
+</span><span class="cm">     * @param executor
+</span><span class="cm">     *        the {@link EventExecutor} which is used to notify the promise once it is complete.
+</span><span class="cm">     *        It is assumed this executor will protect against {@link StackOverflowError} exceptions.
+</span><span class="cm">     *        The executor may be used to avoid {@link StackOverflowError} by executing a {@link Runnable} if the stack
+</span><span class="cm">     *        depth exceeds a threshold.
+</span><span class="cm">     *
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">DefaultPromise</span><span class="o">(</span><span class="n">EventExecutor</span> <span class="n">executor</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">executor</span> <span class="o">=</span> <span class="n">checkNotNull</span><span class="o">(</span><span class="n">executor</span><span class="o">,</span> <span class="s">&#34;executor&#34;</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * See {@link #executor()} for expectations of the executor.
+</span><span class="cm">     */</span>
+    <span class="kd">protected</span> <span class="nf">DefaultPromise</span><span class="o">()</span> <span class="o">{</span>
+        <span class="c1">// only for subclasses
+</span><span class="c1"></span>        <span class="n">executor</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3setsuccess-设置成功">3).setSuccess 设置成功</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="n">Promise</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">setSuccess</span><span class="o">(</span><span class="n">V</span> <span class="n">result</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">setSuccess0</span><span class="o">(</span><span class="n">result</span><span class="o">))</span> <span class="o">{</span>
+           <span class="n">notifyListeners</span><span class="o">();</span> <span class="c1">//通知监听事件
+</span><span class="c1"></span>           <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">&#34;complete already: &#34;</span> <span class="o">+</span> <span class="k">this</span><span class="o">);</span>
+   <span class="o">}</span>
+   <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">setSuccess0</span><span class="o">(</span><span class="n">V</span> <span class="n">result</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">return</span> <span class="n">setValue0</span><span class="o">(</span><span class="n">result</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">?</span> <span class="n">SUCCESS</span> <span class="o">:</span> <span class="n">result</span><span class="o">);</span>
+   <span class="o">}</span>
+   <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">setValue0</span><span class="o">(</span><span class="n">Object</span> <span class="n">objResult</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">RESULT_UPDATER</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">objResult</span><span class="o">)</span> <span class="o">||</span>
+           <span class="n">RESULT_UPDATER</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">UNCANCELLABLE</span><span class="o">,</span> <span class="n">objResult</span><span class="o">))</span> <span class="o">{</span>
+           <span class="n">checkNotifyWaiters</span><span class="o">();</span> <span class="c1">//唤醒等待线程
+</span><span class="c1"></span>           <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+   <span class="o">}</span> 
+   <span class="kd">private</span> <span class="kd">synchronized</span> <span class="kt">void</span> <span class="nf">checkNotifyWaiters</span><span class="o">()</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">waiters</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">notifyAll</span><span class="o">();</span>
+       <span class="o">}</span>
+   <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4setfailure-设置失败">4).setFailure 设置失败</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Promise</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">setFailure</span><span class="o">(</span><span class="n">Throwable</span> <span class="n">cause</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">setFailure0</span><span class="o">(</span><span class="n">cause</span><span class="o">))</span> <span class="o">{</span>
+            <span class="n">notifyListeners</span><span class="o">();</span>
+            <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">&#34;complete already: &#34;</span> <span class="o">+</span> <span class="k">this</span><span class="o">,</span> <span class="n">cause</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="c1">//把异常信息封装CauseHolder对象，CAS赋值result属性
+</span><span class="c1"></span> <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">setFailure0</span><span class="o">(</span><span class="n">Throwable</span> <span class="n">cause</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">setValue0</span><span class="o">(</span><span class="k">new</span> <span class="n">CauseHolder</span><span class="o">(</span><span class="n">checkNotNull</span><span class="o">(</span><span class="n">cause</span><span class="o">,</span> <span class="s">&#34;cause&#34;</span><span class="o">)));</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="5setuncancellable-设置不可能被取消">5).setUncancellable 设置不可能被取消。</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">setUncancellable</span><span class="o">()</span> <span class="o">{</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">RESULT_UPDATER</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">UNCANCELLABLE</span><span class="o">))</span> <span class="o">{</span>
+          <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+      <span class="o">}</span>
+      <span class="n">Object</span> <span class="n">result</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">result</span><span class="o">;</span>
+      <span class="k">return</span> <span class="o">!</span><span class="n">isDone0</span><span class="o">(</span><span class="n">result</span><span class="o">)</span> <span class="o">||</span> <span class="o">!</span><span class="n">isCancelled0</span><span class="o">(</span><span class="n">result</span><span class="o">);</span>
+  <span class="o">}</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kt">boolean</span> <span class="nf">isCancelled0</span><span class="o">(</span><span class="n">Object</span> <span class="n">result</span><span class="o">)</span> <span class="o">{</span><span class="c1">//判断取消
+</span><span class="c1"></span>        <span class="k">return</span> <span class="n">result</span> <span class="k">instanceof</span> <span class="n">CauseHolder</span> <span class="o">&amp;&amp;</span> <span class="o">((</span><span class="n">CauseHolder</span><span class="o">)</span> <span class="n">result</span><span class="o">).</span><span class="na">cause</span> <span class="k">instanceof</span> <span class="n">CancellationException</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kt">boolean</span> <span class="nf">isDone0</span><span class="o">(</span><span class="n">Object</span> <span class="n">result</span><span class="o">)</span> <span class="o">{</span> <span class="c1">//判断是否操作完成
+</span><span class="c1"></span>        <span class="k">return</span> <span class="n">result</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">result</span> <span class="o">!=</span> <span class="n">UNCANCELLABLE</span><span class="o">;</span>
+    <span class="o">}</span>  
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="6-addlistener-添加监听事件">6). addListener 添加监听事件</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Promise</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">addListener</span><span class="o">(</span><span class="n">GenericFutureListener</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Future</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">V</span><span class="o">&gt;&gt;</span> <span class="n">listener</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">checkNotNull</span><span class="o">(</span><span class="n">listener</span><span class="o">,</span> <span class="s">&#34;listener&#34;</span><span class="o">);</span>
+
+        <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">addListener0</span><span class="o">(</span><span class="n">listener</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">isDone</span><span class="o">())</span> <span class="o">{</span>
+            <span class="n">notifyListeners</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+   <span class="kd">private</span> <span class="kt">void</span> <span class="nf">addListener0</span><span class="o">(</span><span class="n">GenericFutureListener</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Future</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">V</span><span class="o">&gt;&gt;</span> <span class="n">listener</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">listeners</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">listeners</span> <span class="o">=</span> <span class="n">listener</span><span class="o">;</span>
+       <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">listeners</span> <span class="k">instanceof</span> <span class="n">DefaultFutureListeners</span><span class="o">)</span> <span class="o">{</span>
+           <span class="o">((</span><span class="n">DefaultFutureListeners</span><span class="o">)</span> <span class="n">listeners</span><span class="o">).</span><span class="na">add</span><span class="o">(</span><span class="n">listener</span><span class="o">);</span>
+       <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+           <span class="n">listeners</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DefaultFutureListeners</span><span class="o">((</span><span class="n">GenericFutureListener</span><span class="o">&lt;?&gt;)</span> <span class="n">listeners</span><span class="o">,</span> <span class="n">listener</span><span class="o">);</span>
+       <span class="o">}</span>
+   <span class="o">}</span>     
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="adefaultfuturelisteners-原理">a.DefaultFutureListeners 原理</h4>
+<p>DefaultFutureListeners原理就是管理数组GenericFutureListener，初始化大小2，2倍扩容数组元素大小；有add和remove方法；具体不做分析</p>
+<h3 id="7-removelistener-移除监听事件">7). removeListener 移除监听事件</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Promise</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">removeListener</span><span class="o">(</span><span class="kd">final</span> <span class="n">GenericFutureListener</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Future</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">V</span><span class="o">&gt;&gt;</span> <span class="n">listener</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">checkNotNull</span><span class="o">(</span><span class="n">listener</span><span class="o">,</span> <span class="s">&#34;listener&#34;</span><span class="o">);</span>
+
+        <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">removeListener0</span><span class="o">(</span><span class="n">listener</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+    
+   <span class="kd">private</span> <span class="kt">void</span> <span class="nf">removeListener0</span><span class="o">(</span><span class="n">GenericFutureListener</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Future</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">V</span><span class="o">&gt;&gt;</span> <span class="n">listener</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">listeners</span> <span class="k">instanceof</span> <span class="n">DefaultFutureListeners</span><span class="o">)</span> <span class="o">{</span>
+            <span class="o">((</span><span class="n">DefaultFutureListeners</span><span class="o">)</span> <span class="n">listeners</span><span class="o">).</span><span class="na">remove</span><span class="o">(</span><span class="n">listener</span><span class="o">);</span><span class="c1">//DefaultFutureListeners集合移除
+</span><span class="c1"></span>        <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">listeners</span> <span class="o">==</span> <span class="n">listener</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">listeners</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="8notifylisteners-通知监听事件">8).notifyListeners 通知监听事件</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-JAVA" data-lang="JAVA">
+  <span class="kd">private</span> <span class="kt">void</span> <span class="nf">notifyListeners</span><span class="o">()</span> <span class="o">{</span>
+      <span class="n">EventExecutor</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">executor</span><span class="o">();</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">executor</span><span class="o">.</span><span class="na">inEventLoop</span><span class="o">())</span> <span class="o">{</span>
+          <span class="kd">final</span> <span class="n">InternalThreadLocalMap</span> <span class="n">threadLocals</span> <span class="o">=</span> <span class="n">InternalThreadLocalMap</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+          <span class="kd">final</span> <span class="kt">int</span> <span class="n">stackDepth</span> <span class="o">=</span> <span class="n">threadLocals</span><span class="o">.</span><span class="na">futureListenerStackDepth</span><span class="o">();</span><span class="c1">//没搞懂？？？
+</span><span class="c1"></span>          <span class="k">if</span> <span class="o">(</span><span class="n">stackDepth</span> <span class="o">&lt;</span> <span class="n">MAX_LISTENER_STACK_DEPTH</span><span class="o">)</span> <span class="o">{</span>
+              <span class="n">threadLocals</span><span class="o">.</span><span class="na">setFutureListenerStackDepth</span><span class="o">(</span><span class="n">stackDepth</span> <span class="o">+</span> <span class="n">1</span><span class="o">);</span>
+              <span class="k">try</span> <span class="o">{</span>
+                  <span class="n">notifyListenersNow</span><span class="o">();</span>
+              <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                  <span class="n">threadLocals</span><span class="o">.</span><span class="na">setFutureListenerStackDepth</span><span class="o">(</span><span class="n">stackDepth</span><span class="o">);</span>
+              <span class="o">}</span>
+              <span class="k">return</span><span class="o">;</span>
+          <span class="o">}</span>
+      <span class="o">}</span>
+
+      <span class="n">safeExecute</span><span class="o">(</span><span class="n">executor</span><span class="o">,</span> <span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+          <span class="nd">@Override</span>
+          <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+              <span class="n">notifyListenersNow</span><span class="o">();</span>
+          <span class="o">}</span>
+      <span class="o">});</span>
+  <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="anotifylistenersnow">a.notifyListenersNow</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="kd">private</span> <span class="kt">void</span> <span class="nf">notifyListenersNow</span><span class="o">()</span> <span class="o">{</span>
+       <span class="n">Object</span> <span class="n">listeners</span><span class="o">;</span>
+       <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
+           <span class="c1">// Only proceed if there are listeners to notify and we are not already notifying listeners.
+</span><span class="c1"></span>           <span class="c1">//只有在有监听器通知的情况下才进行，我们还没有通知侦听器。
+</span><span class="c1"></span>           <span class="k">if</span> <span class="o">(</span><span class="n">notifyingListeners</span> <span class="o">||</span> <span class="k">this</span><span class="o">.</span><span class="na">listeners</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+               <span class="k">return</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="n">notifyingListeners</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+           <span class="n">listeners</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">listeners</span><span class="o">;</span>
+           <span class="k">this</span><span class="o">.</span><span class="na">listeners</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">listeners</span> <span class="k">instanceof</span> <span class="n">DefaultFutureListeners</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">notifyListeners0</span><span class="o">((</span><span class="n">DefaultFutureListeners</span><span class="o">)</span> <span class="n">listeners</span><span class="o">);</span>
+           <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+               <span class="n">notifyListener0</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="o">(</span><span class="n">GenericFutureListener</span><span class="o">&lt;?&gt;)</span> <span class="n">listeners</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
+               <span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">listeners</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="c1">// Nothing can throw from within this method, so setting notifyingListeners back to false does not
+</span><span class="c1"></span>                   <span class="c1">// need to be in a finally block.
+</span><span class="c1"></span>                   <span class="n">notifyingListeners</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                   <span class="k">return</span><span class="o">;</span>
+               <span class="o">}</span>
+               <span class="n">listeners</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">listeners</span><span class="o">;</span>
+               <span class="k">this</span><span class="o">.</span><span class="na">listeners</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+
+   <span class="kd">private</span> <span class="kt">void</span> <span class="nf">notifyListeners0</span><span class="o">(</span><span class="n">DefaultFutureListeners</span> <span class="n">listeners</span><span class="o">)</span> <span class="o">{</span>
+       <span class="n">GenericFutureListener</span><span class="o">&lt;?&gt;[]</span> <span class="n">a</span> <span class="o">=</span> <span class="n">listeners</span><span class="o">.</span><span class="na">listeners</span><span class="o">();</span>
+       <span class="kt">int</span> <span class="n">size</span> <span class="o">=</span> <span class="n">listeners</span><span class="o">.</span><span class="na">size</span><span class="o">();</span>
+       <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">size</span><span class="o">;</span> <span class="n">i</span> <span class="o">++)</span> <span class="o">{</span>
+           <span class="n">notifyListener0</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">a</span><span class="o">[</span><span class="n">i</span><span class="o">]);</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+
+   <span class="nd">@SuppressWarnings</span><span class="o">({</span> <span class="s">&#34;unchecked&#34;</span><span class="o">,</span> <span class="s">&#34;rawtypes&#34;</span> <span class="o">})</span>
+   <span class="kd">private</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">notifyListener0</span><span class="o">(</span><span class="n">Future</span> <span class="n">future</span><span class="o">,</span> <span class="n">GenericFutureListener</span> <span class="n">l</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">try</span> <span class="o">{</span>
+           <span class="n">l</span><span class="o">.</span><span class="na">operationComplete</span><span class="o">(</span><span class="n">future</span><span class="o">);</span>
+       <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">logger</span><span class="o">.</span><span class="na">warn</span><span class="o">(</span><span class="s">&#34;An exception was thrown by &#34;</span> <span class="o">+</span> <span class="n">l</span><span class="o">.</span><span class="na">getClass</span><span class="o">().</span><span class="na">getName</span><span class="o">()</span> <span class="o">+</span> <span class="s">&#34;.operationComplete()&#34;</span><span class="o">,</span> <span class="n">t</span><span class="o">);</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="9await">9).await</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Promise</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">await</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">isDone</span><span class="o">())</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">interrupted</span><span class="o">())</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">InterruptedException</span><span class="o">(</span><span class="n">toString</span><span class="o">());</span>
+        <span class="o">}</span>
+
+        <span class="n">checkDeadLock</span><span class="o">();</span>
+
+        <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">while</span> <span class="o">(!</span><span class="n">isDone</span><span class="o">())</span> <span class="o">{</span>
+                <span class="n">incWaiters</span><span class="o">();</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="n">wait</span><span class="o">();</span>
+                <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                    <span class="n">decWaiters</span><span class="o">();</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Promise</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">awaitUninterruptibly</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">isDone</span><span class="o">())</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="n">checkDeadLock</span><span class="o">();</span>
+
+        <span class="kt">boolean</span> <span class="n">interrupted</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">while</span> <span class="o">(!</span><span class="n">isDone</span><span class="o">())</span> <span class="o">{</span>
+                <span class="n">incWaiters</span><span class="o">();</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="n">wait</span><span class="o">();</span>
+                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="c1">// Interrupted while waiting.
+</span><span class="c1"></span>                    <span class="n">interrupted</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                    <span class="n">decWaiters</span><span class="o">();</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">interrupted</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">interrupt</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="acheckdeadlock">a.checkDeadLock</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">checkDeadLock</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">EventExecutor</span> <span class="n">e</span> <span class="o">=</span> <span class="n">executor</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">e</span><span class="o">.</span><span class="na">inEventLoop</span><span class="o">())</span> <span class="o">{</span> <span class="c1">//验证EventLoop线程不能等待
+</span><span class="c1"></span>            <span class="k">throw</span> <span class="k">new</span> <span class="n">BlockingOperationException</span><span class="o">(</span><span class="n">toString</span><span class="o">());</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bincwaiters">b.incWaiters</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">incWaiters</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">waiters</span> <span class="o">==</span> <span class="n">Short</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">&#34;too many waiters: &#34;</span> <span class="o">+</span> <span class="k">this</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="o">++</span><span class="n">waiters</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="cdecwaiters">c.decWaiters</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">private</span> <span class="kt">void</span> <span class="nf">decWaiters</span><span class="o">()</span> <span class="o">{</span>
+        <span class="o">--</span><span class="n">waiters</span><span class="o">;</span>
+    <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="10sync">10).sync</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Promise</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">sync</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="n">await</span><span class="o">();</span>
+        <span class="n">rethrowIfFailed</span><span class="o">();</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Promise</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">syncUninterruptibly</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">awaitUninterruptibly</span><span class="o">();</span>
+        <span class="n">rethrowIfFailed</span><span class="o">();</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+
+   <span class="kd">private</span> <span class="kt">void</span> <span class="nf">rethrowIfFailed</span><span class="o">()</span> <span class="o">{</span>
+       <span class="n">Throwable</span> <span class="n">cause</span> <span class="o">=</span> <span class="n">cause</span><span class="o">();</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">cause</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">return</span><span class="o">;</span>
+       <span class="o">}</span>
+
+       <span class="n">PlatformDependent</span><span class="o">.</span><span class="na">throwException</span><span class="o">(</span><span class="n">cause</span><span class="o">);</span>
+   <span class="o">}</span>     
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="11awaitlong-timeoutmillis">11).await(long timeoutMillis)</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">await</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeoutMillis</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">await0</span><span class="o">(</span><span class="n">MILLISECONDS</span><span class="o">.</span><span class="na">toNanos</span><span class="o">(</span><span class="n">timeoutMillis</span><span class="o">),</span> <span class="kc">true</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">await0</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeoutNanos</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">interruptable</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">isDone</span><span class="o">())</span> <span class="o">{</span>
+           <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+       <span class="o">}</span>
+
+       <span class="k">if</span> <span class="o">(</span><span class="n">timeoutNanos</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">return</span> <span class="n">isDone</span><span class="o">();</span>
+       <span class="o">}</span>
+
+       <span class="k">if</span> <span class="o">(</span><span class="n">interruptable</span> <span class="o">&amp;&amp;</span> <span class="n">Thread</span><span class="o">.</span><span class="na">interrupted</span><span class="o">())</span> <span class="o">{</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">InterruptedException</span><span class="o">(</span><span class="n">toString</span><span class="o">());</span>
+       <span class="o">}</span>
+
+       <span class="n">checkDeadLock</span><span class="o">();</span>
+
+       <span class="kt">long</span> <span class="n">startTime</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">();</span>
+       <span class="kt">long</span> <span class="n">waitTime</span> <span class="o">=</span> <span class="n">timeoutNanos</span><span class="o">;</span>
+       <span class="kt">boolean</span> <span class="n">interrupted</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+       <span class="k">try</span> <span class="o">{</span>
+           <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+               <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">isDone</span><span class="o">())</span> <span class="o">{</span>
+                       <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+                   <span class="o">}</span>
+                   <span class="n">incWaiters</span><span class="o">();</span>
+                   <span class="k">try</span> <span class="o">{</span>
+                       <span class="n">wait</span><span class="o">(</span><span class="n">waitTime</span> <span class="o">/</span> <span class="n">1000000</span><span class="o">,</span> <span class="o">(</span><span class="kt">int</span><span class="o">)</span> <span class="o">(</span><span class="n">waitTime</span> <span class="o">%</span> <span class="n">1000000</span><span class="o">));</span><span class="c1">//时间等待
+</span><span class="c1"></span>                   <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                       <span class="k">if</span> <span class="o">(</span><span class="n">interruptable</span><span class="o">)</span> <span class="o">{</span>
+                           <span class="k">throw</span> <span class="n">e</span><span class="o">;</span>
+                       <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                           <span class="n">interrupted</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                       <span class="o">}</span>
+                   <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                       <span class="n">decWaiters</span><span class="o">();</span>
+                   <span class="o">}</span>
+               <span class="o">}</span>
+               <span class="k">if</span> <span class="o">(</span><span class="n">isDone</span><span class="o">())</span> <span class="o">{</span>
+                   <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+               <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                   <span class="n">waitTime</span> <span class="o">=</span> <span class="n">timeoutNanos</span> <span class="o">-</span> <span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">()</span> <span class="o">-</span> <span class="n">startTime</span><span class="o">);</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">waitTime</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                       <span class="k">return</span> <span class="n">isDone</span><span class="o">();</span>
+                   <span class="o">}</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+       <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">interrupted</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">interrupt</span><span class="o">();</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+    
+</code></pre></td></tr></table>
+</div>
+</div><p>DefaultChannelPromise、VoidChannelPromise实现都很简单，不具体分析；</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-04-10 21:08
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/netty/">netty</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/netty/09.FastThreadLocal/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">FastThreadLocal</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/netty/07.Bootstrap/">
+        <span class="next-text nav-default">Bootstrap</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

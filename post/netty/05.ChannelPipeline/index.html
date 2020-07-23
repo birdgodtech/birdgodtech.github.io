@@ -1,0 +1,2897 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Channelpipeline - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="一、介绍 Channelpipeline是 Channelhandler的容器,它负责 Channelhandler的管理和事件拦截与调度。 事件如" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/netty/05.ChannelPipeline/" />
+<link href="/post/netty/05.ChannelPipeline/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/netty/05.ChannelPipeline/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="Channelpipeline" />
+<meta property="og:description" content="一、介绍 Channelpipeline是 Channelhandler的容器,它负责 Channelhandler的管理和事件拦截与调度。 事件如" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/netty/05.ChannelPipeline/" />
+<meta property="article:published_time" content="2019-03-23T23:08:08+00:00" />
+<meta property="article:modified_time" content="2019-03-23T23:08:08+00:00" />
+<meta itemprop="name" content="Channelpipeline">
+<meta itemprop="description" content="一、介绍 Channelpipeline是 Channelhandler的容器,它负责 Channelhandler的管理和事件拦截与调度。 事件如">
+<meta itemprop="datePublished" content="2019-03-23T23:08:08&#43;00:00" />
+<meta itemprop="dateModified" content="2019-03-23T23:08:08&#43;00:00" />
+<meta itemprop="wordCount" content="12444">
+
+
+
+<meta itemprop="keywords" content="netty," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Channelpipeline"/>
+<meta name="twitter:description" content="一、介绍 Channelpipeline是 Channelhandler的容器,它负责 Channelhandler的管理和事件拦截与调度。 事件如"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">Channelpipeline</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2019-03-23 23:08 </span>
+      <div class="post-category">
+        <a href="/categories/netty/"> netty </a>
+        </div>
+      <span class="more-meta"> 约 12444 字 </span>
+      <span class="more-meta"> 预计阅读 25 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1数据结构">1.数据结构</a></li>
+    <li><a href="#2构造">2.构造</a></li>
+    <li><a href="#3addfirst-添加channelhandler">3.addFirst 添加ChannelHandler</a>
+      <ul>
+        <li><a href="#1checkmultiplicity-验证sharable注解未被sharable注解时指定channelhandler对象channelpipeline只能添加一次被sharable注解时可以添加多次">(1).checkMultiplicity 验证@Sharable注解，未被@Sharable注解时，指定ChannelHandler对象ChannelPipeline只能添加一次；被@Sharable注解时，可以添加多次；</a></li>
+        <li><a href="#2filtername-name为空自动生成名称name不为空验证名称是否重复">(2).filterName name为空自动生成名称，name不为空，验证名称是否重复</a></li>
+        <li><a href="#3newcontext-创建abstractchannelhandlercontext这个类在后面具体分析">(3).newContext 创建AbstractChannelHandlerContext，这个类在后面具体分析；</a></li>
+        <li><a href="#4addfirst0-拼接到head后面">(4).addFirst0 拼接到head后面</a></li>
+        <li><a href="#5callhandlercallbacklater-registered为false把回调任务添加到pendinghandlercallbackhead链表中">(5).callHandlerCallbackLater registered为false，把回调任务添加到pendingHandlerCallbackHead链表中；</a></li>
+        <li><a href="#6callhandleradded0-通知添加完成处理两个方法channelhandlerhandleradded和abstractchannelhandlercontextsetaddcomplete">(6).callHandlerAdded0 通知添加完成处理两个方法ChannelHandler.handlerAdded和AbstractChannelHandlerContext.setAddComplete</a></li>
+        <li><a href="#7callhandlerremoved0-删除完成通知">(7).callHandlerRemoved0 删除完成通知</a></li>
+      </ul>
+    </li>
+    <li><a href="#4addlastaddbefore都类同双链表操作">4.addLast,addBefore都类同，双链表操作</a></li>
+    <li><a href="#5remove-删除指定abstractchannelhandlercontext">5.remove 删除指定AbstractChannelHandlerContext</a></li>
+    <li><a href="#6replace-替换指定abstractchannelhandlercontext">6.replace 替换指定AbstractChannelHandlerContext</a></li>
+    <li><a href="#6destroy-pipeline中的所有节点销毁顺序由尾部向头部并触发handlerremoved">6.destroy pipeline中的所有节点销毁，顺序由尾部向头部并触发handlerRemoved（）</a></li>
+    <li><a href="#7inbound-事件方法">7.Inbound 事件方法</a></li>
+    <li><a href="#8outbound-事件方法">8.Outbound 事件方法</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1数据结构-1">1.数据结构</a></li>
+    <li><a href="#2构造-1">2.构造</a></li>
+    <li><a href="#3executor-获取事件执行器就是个线程">3.executor 获取事件执行器(就是个线程)</a></li>
+    <li><a href="#4findcontextinbound-查找inbound事件的channelhandlercontext">4.findContextInbound 查找Inbound事件的ChannelHandlerContext</a></li>
+    <li><a href="#5inbound事件">5.Inbound事件</a>
+      <ul>
+        <li><a href="#1firechannelregistered--触发next的注册事件">(1).fireChannelRegistered()  触发next的注册事件</a></li>
+        <li><a href="#2firechannelactive---触发next的channel激活tcp链路建立成功事件">(2).fireChannelActive()   触发next的Channel激活(TCP链路建立成功)事件;</a></li>
+        <li><a href="#3firechannelreadobject----触发next的读事件">(3).fireChannelRead(Object)    触发next的读事件</a></li>
+        <li><a href="#4firechannelreadcomplete--触发next的读操作完成通知事件">(4).fireChannelReadComplete()  触发next的读操作完成通知事件;</a></li>
+        <li><a href="#5fireusereventtriggeredobject-用户自定义事件">(5).fireUserEventTriggered(Object) 用户自定义事件</a></li>
+        <li><a href="#6firechannelwritabilitychanged-channel的可写状态变化通知事件">(6).fireChannelWritabilityChanged() Channel的可写状态变化通知事件;</a></li>
+        <li><a href="#7firechannelinactive--tcp连接关闭链路不可用通知事件">(7).fireChannelInactive()  TCP连接关闭,链路不可用通知事件。</a></li>
+        <li><a href="#8firechannelunregistered-注销事件">(8).fireChannelUnregistered() 注销事件</a></li>
+        <li><a href="#9fireexceptioncaughtthrowable-异常通知事件">(9).fireExceptionCaught(Throwable) 异常通知事件;</a></li>
+      </ul>
+    </li>
+    <li><a href="#6outbound事件">6.Outbound事件</a>
+      <ul>
+        <li><a href="#1bindsocketaddress-channelpromise-绑定">(1).bind(SocketAddress, ChannelPromise) 绑定</a></li>
+        <li><a href="#2connectsocketaddress-socketaddress-channelpromise">(2).connect(SocketAddress, SocketAddress, ChannelPromise)</a></li>
+        <li><a href="#3write">(3).write</a></li>
+        <li><a href="#4writeandflushobject-channelpromise">(4).writeAndFlush(Object, ChannelPromise)</a></li>
+        <li><a href="#5flush">(5).flush()</a></li>
+        <li><a href="#6read">(6).read()</a></li>
+        <li><a href="#7disconnectchannelpromise">(7).disconnect(ChannelPromise)</a></li>
+        <li><a href="#8closechannelpromise">(8).close(ChannelPromise)</a></li>
+        <li><a href="#9deregisterchannelpromise">(9).deregister(ChannelPromise)</a></li>
+      </ul>
+    </li>
+    <li><a href="#4状态修改cas修改">4.状态修改，CAS修改</a></li>
+    <li><a href="#5defaultchannelhandlercontext源码分析">5.DefaultChannelHandlerContext源码分析</a></li>
+    <li><a href="#6headcontext源码分析">6.HeadContext源码分析</a></li>
+    <li><a href="#7tailcontext源码分析">7.TailContext源码分析</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1channelhandler接口源码分析">1.ChannelHandler接口源码分析</a></li>
+    <li><a href="#2channelhandleradapter抽象类源码分析">2.ChannelHandlerAdapter抽象类源码分析</a>
+      <ul>
+        <li><a href="#1属性">(1).属性</a></li>
+        <li><a href="#2issharable-判断类注解sharable">(2).isSharable 判断类注解@Sharable</a></li>
+      </ul>
+    </li>
+    <li><a href="#3channeloutboundhandleradapter类源码分析">3.ChannelOutboundHandlerAdapter类源码分析</a></li>
+    <li><a href="#4channelinboundhandleradapter类源码分析">4.ChannelInboundHandlerAdapter类源码分析</a></li>
+    <li><a href="#5simplechannelinboundhandler-允许显式只处理特定类型的消息">5.SimpleChannelInboundHandler 允许显式只处理特定类型的消息</a>
+      <ul>
+        <li><a href="#1属性-1">(1).属性</a></li>
+        <li><a href="#2channelread">(2).channelRead</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#1channelpipeline是线程安全">1.Channelpipeline是线程安全?</a></li>
+    <li><a href="#2channelpipeline执行流程">2.Channelpipeline执行流程</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2019-03-23T23:08:08" title="March 23, 2019">March 23, 2019</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="一介绍">一、介绍</h1>
+<p>Channelpipeline是 Channelhandler的容器,它负责 Channelhandler的管理和事件拦截与调度。</p>
+<p>事件如何在流水线中流动如图下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-text" data-lang="text">
+*                                                 I/O Request
+*                                            via {@link Channel} or
+*                                        {@link ChannelHandlerContext}
+*                                                      |
+*  +---------------------------------------------------+---------------+
+*  |                           ChannelPipeline         |               |
+*  |                                                  \|/              |
+*  |    +---------------------+            +-----------+----------+    |
+*  |    | Inbound Handler  N  |            | Outbound Handler  1  |    |
+*  |    +----------+----------+            +-----------+----------+    |
+*  |              /|\                                  |               |
+*  |               |                                  \|/              |
+*  |    +----------+----------+            +-----------+----------+    |
+*  |    | Inbound Handler N-1 |            | Outbound Handler  2  |    |
+*  |    +----------+----------+            +-----------+----------+    |
+*  |              /|\                                  .               |
+*  |               .                                   .               |
+*  | ChannelHandlerContext.fireIN_EVT() ChannelHandlerContext.OUT_EVT()|
+*  |        [ method call]                       [method call]         |
+*  |               .                                   .               |
+*  |               .                                  \|/              |
+*  |    +----------+----------+            +-----------+----------+    |
+*  |    | Inbound Handler  2  |            | Outbound Handler M-1 |    |
+*  |    +----------+----------+            +-----------+----------+    |
+*  |              /|\                                  |               |
+*  |               |                                  \|/              |
+*  |    +----------+----------+            +-----------+----------+    |
+*  |    | Inbound Handler  1  |            | Outbound Handler  M  |    |
+*  |    +----------+----------+            +-----------+----------+    |
+*  |              /|\                                  |               |
+*  +---------------+-----------------------------------+---------------+
+*                  |                                  \|/
+*  +---------------+-----------------------------------+---------------+
+*  |               |                                   |               |
+*  |       [ Socket.read() ]                    [ Socket.write() ]     |
+*  |                                                                   |
+*  |  Netty Internal I/O Threads (Transport Implementation)            |
+*  +-------------------------------------------------------------------+
+* 
+</code></pre></td></tr></table>
+</div>
+</div><p>消息的读取和发送处理全流程描述如下:</p>
+<ul>
+<li>
+<p>1)底层的Socket.read()方法读取ByteBuf,触发Channelread事件,由IO线程 Nioeventloop调用 Channelpipeline的fireChannelread(Object msg)方法,将消息
+(ByteBuf)传输到 Channelpipeline中,将消息依次被  Inbound Handler  1、  Inbound Handler  2、 Inbound Handler N拦截和处理,在这个过程中,
+任何Channelhandler都可以中断当前的流程,结束消息的传递。</p>
+</li>
+<li>
+<p>2)调用ChannelHandlerContext的wrte方法发送消息,将消息依次被Outbound Handler  1,Outbound Handler  2 ,Outbound Handler  M 拦截和处理,最终交给Socket.write()发送消息；</p>
+</li>
+</ul>
+<p>将事件转发给下一个处理程序</p>
+<p>正如上图所看到的那样，处理程序必须调用ChannelHandlerContext中的事件传播方法才能将事件转发到其下一个处理程序。这些方法包括：</p>
+<ul>
+<li>
+<p>Inbound 事件传播方法:</p>
+</li>
+<li>
+<p>ChannelHandlerContext.fireChannelRegistered()  Channel注册事件</p>
+</li>
+<li>
+<p>ChannelHandlerContext.fireChannelActive()      TCP链路建立成功, Channel激活事件;</p>
+</li>
+<li>
+<p>ChannelHandlerContext.fireChannelRead(Object)      读事件</p>
+</li>
+<li>
+<p>ChannelHandlerContext.fireChannelReadComplete()    读操作完成通知事件;</p>
+</li>
+<li>
+<p>ChannelHandlerContext.fireExceptionCaught(Throwable) 异常通知事件;</p>
+</li>
+<li>
+<p>ChannelHandlerContext.fireUserEventTriggered(Object) 用户自定义事件</p>
+</li>
+<li>
+<p>ChannelHandlerContext.fireChannelWritabilityChanged() Channel的可写状态变化通知事件;</p>
+</li>
+<li>
+<p>ChannelHandlerContext.fireChannelInactive()           TCP连接关闭,链路不可用通知事件。</p>
+</li>
+<li>
+<p>ChannelHandlerContext.fireChannelUnregistered()       Channel从EventLoop中注销</p>
+</li>
+<li>
+<p>Outbound 事件传播方法:</p>
+</li>
+<li>
+<p>ChannelOutboundInvoker.bind(SocketAddress, ChannelPromise)</p>
+</li>
+<li>
+<p>ChannelOutboundInvoker.connect(SocketAddress, SocketAddress, ChannelPromise)</p>
+</li>
+<li>
+<p>ChannelOutboundInvoker.write(Object, ChannelPromise)</p>
+</li>
+<li>
+<p>ChannelHandlerContext.flush()</p>
+</li>
+<li>
+<p>ChannelHandlerContext.read()</p>
+</li>
+<li>
+<p>ChannelOutboundInvoker.disconnect(ChannelPromise)</p>
+</li>
+<li>
+<p>ChannelOutboundInvoker.close(ChannelPromise)</p>
+</li>
+<li>
+<p>ChannelOutboundInvoker.deregister(ChannelPromise)</p>
+</li>
+</ul>
+<p>线程安全：</p>
+<p>Channelpipeline是线程安全的,这意味着N个业务线程可以并发地操作Channelpipeline而不存在多线程并发问题。但是, Channelhandler却不是线程安全的,这意味着尽管
+Channelpipeline是线程安全的,但是用户仍然需要自己保证Channelhandler的线程安全，ChannelHandler可以随时添加或删除；</p>
+<p>uml关系如图下：</p>
+<p><img src="/netty/ChannelPipeline01.png" alt=""></p>
+<h1 id="二-defaultchannelpipeline源码分析">二、 DefaultChannelPipeline源码分析</h1>
+<h2 id="1数据结构">1.数据结构</h2>
+<ul>
+<li>以双链表保存ChannelHandler的数据</li>
+<li>head和tail变量，控制往下处理或者往上处理</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">DefaultChannelPipeline</span> <span class="kd">implements</span> <span class="n">ChannelPipeline</span> <span class="o">{</span>
+
+
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">HEAD_NAME</span> <span class="o">=</span> <span class="n">generateName0</span><span class="o">(</span><span class="n">HeadContext</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TAIL_NAME</span> <span class="o">=</span> <span class="n">generateName0</span><span class="o">(</span><span class="n">TailContext</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">FastThreadLocal</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">Class</span><span class="o">&lt;?&gt;,</span> <span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">nameCaches</span> <span class="o">=</span>  
+            <span class="k">new</span> <span class="n">FastThreadLocal</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">Class</span><span class="o">&lt;?&gt;,</span> <span class="n">String</span><span class="o">&gt;&gt;()</span> <span class="o">{</span>
+        <span class="nd">@Override</span>
+        <span class="kd">protected</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">Class</span><span class="o">&lt;?&gt;,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="nf">initialValue</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="k">new</span> <span class="n">WeakHashMap</span><span class="o">&lt;</span><span class="n">Class</span><span class="o">&lt;?&gt;,</span> <span class="n">String</span><span class="o">&gt;();</span>
+        <span class="o">}</span>
+    <span class="o">};</span>
+
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">AtomicReferenceFieldUpdater</span><span class="o">&lt;</span><span class="n">DefaultChannelPipeline</span><span class="o">,</span> <span class="n">MessageSizeEstimator</span><span class="o">.</span><span class="na">Handle</span><span class="o">&gt;</span> <span class="n">ESTIMATOR</span> <span class="o">=</span>
+            <span class="n">AtomicReferenceFieldUpdater</span><span class="o">.</span><span class="na">newUpdater</span><span class="o">(</span>
+                    <span class="n">DefaultChannelPipeline</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">MessageSizeEstimator</span><span class="o">.</span><span class="na">Handle</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="s">&#34;estimatorHandle&#34;</span><span class="o">);</span>
+    <span class="c1">//AbstractChannelHandlerContext中有prev,next属性形成双链表；Inbound和Outbound事件都在在这个抽象类实现；
+</span><span class="c1"></span>    <span class="kd">final</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">head</span><span class="o">;</span>  <span class="c1">//头节点，
+</span><span class="c1"></span>    <span class="kd">final</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">tail</span><span class="o">;</span>  <span class="c1">//尾节点 
+</span><span class="c1"></span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Channel</span> <span class="n">channel</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">ChannelFuture</span> <span class="n">succeededFuture</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">VoidChannelPromise</span> <span class="n">voidPromise</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">touch</span> <span class="o">=</span> <span class="n">ResourceLeakDetector</span><span class="o">.</span><span class="na">isEnabled</span><span class="o">();</span>
+    <span class="c1">//线程池中的线程映射，记住这个映射是为了保证执行任务时使用同一个线程
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">EventExecutorGroup</span><span class="o">,</span> <span class="n">EventExecutor</span><span class="o">&gt;</span> <span class="n">childExecutors</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">volatile</span> <span class="n">MessageSizeEstimator</span><span class="o">.</span><span class="na">Handle</span> <span class="n">estimatorHandle</span><span class="o">;</span> <span class="c1">//负责估计消息的大小
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">firstRegistration</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span><span class="c1">//对应Channel首次注册到EventLoop 
+</span><span class="c1"></span>    <span class="c1">//未注册，添加或者删除ChannelHandler预备存放地方，单链表存储
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="n">PendingHandlerCallback</span> <span class="n">pendingHandlerCallbackHead</span><span class="o">;</span>
+    <span class="c1">//Channel被注册，就设置为true。一旦设置为true，值将不会改变。
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">registered</span><span class="o">;</span>
+<span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2构造">2.构造</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">protected</span> <span class="nf">DefaultChannelPipeline</span><span class="o">(</span><span class="n">Channel</span> <span class="n">channel</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">channel</span> <span class="o">=</span> <span class="n">ObjectUtil</span><span class="o">.</span><span class="na">checkNotNull</span><span class="o">(</span><span class="n">channel</span><span class="o">,</span> <span class="s">&#34;channel&#34;</span><span class="o">);</span>
+        <span class="n">succeededFuture</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SucceededChannelFuture</span><span class="o">(</span><span class="n">channel</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+        <span class="n">voidPromise</span> <span class="o">=</span>  <span class="k">new</span> <span class="n">VoidChannelPromise</span><span class="o">(</span><span class="n">channel</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+
+        <span class="n">tail</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TailContext</span><span class="o">(</span><span class="k">this</span><span class="o">);</span><span class="c1">//头节点 
+</span><span class="c1"></span>        <span class="n">head</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HeadContext</span><span class="o">(</span><span class="k">this</span><span class="o">);</span><span class="c1">//尾节点 
+</span><span class="c1"></span>        <span class="c1">//头节点和尾节点相互链接
+</span><span class="c1"></span>        <span class="n">head</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">tail</span><span class="o">;</span>
+        <span class="n">tail</span><span class="o">.</span><span class="na">prev</span> <span class="o">=</span> <span class="n">head</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3addfirst-添加channelhandler">3.addFirst 添加ChannelHandler</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kd">final</span> <span class="n">ChannelPipeline</span> <span class="nf">addFirst</span><span class="o">(</span><span class="n">EventExecutorGroup</span> <span class="n">group</span><span class="o">,</span> <span class="n">String</span> <span class="n">name</span><span class="o">,</span> <span class="n">ChannelHandler</span> <span class="n">handler</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">newCtx</span><span class="o">;</span>
+        <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// 1.验证未被@Sharable注解时,一个实例是否重复使用
+</span><span class="c1"></span>            <span class="n">checkMultiplicity</span><span class="o">(</span><span class="n">handler</span><span class="o">);</span>
+            <span class="c1">// 2.名称重复样子，以及name为空，自动生成名字，生成名字规则按类名
+</span><span class="c1"></span>            <span class="n">name</span> <span class="o">=</span> <span class="n">filterName</span><span class="o">(</span><span class="n">name</span><span class="o">,</span> <span class="n">handler</span><span class="o">);</span>
+            <span class="c1">// 3.创建AbstractChannelHandlerContext
+</span><span class="c1"></span>            <span class="n">newCtx</span> <span class="o">=</span> <span class="n">newContext</span><span class="o">(</span><span class="n">group</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">handler</span><span class="o">);</span>
+            <span class="c1">// 4.添加双链表中
+</span><span class="c1"></span>            <span class="n">addFirst0</span><span class="o">(</span><span class="n">newCtx</span><span class="o">);</span>
+
+            <span class="c1">// 5.未注册，PendingHandlerCallback任务添加到pendingHandlerCallbackHead链表中；
+</span><span class="c1"></span>            <span class="c1">//   分添加(PendingHandlerCallback)或者删除任务(PendingHandlerRemovedTask)
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(!</span><span class="n">registered</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">newCtx</span><span class="o">.</span><span class="na">setAddPending</span><span class="o">();</span>  <span class="c1">//设置AbstractChannelHandlerContext中状态，INIT改成ADD_PENDING
+</span><span class="c1"></span>                <span class="n">callHandlerCallbackLater</span><span class="o">(</span><span class="n">newCtx</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+                <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="c1">// 6.当前线程不是EventLoop线程，是直接callHandlerAdded0；不是添加任务执行callHandlerAdded0
+</span><span class="c1"></span>            <span class="n">EventExecutor</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">newCtx</span><span class="o">.</span><span class="na">executor</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">executor</span><span class="o">.</span><span class="na">inEventLoop</span><span class="o">())</span> <span class="o">{</span> <span class="c1">//当前线程不是EventLoop线程
+</span><span class="c1"></span>                <span class="n">newCtx</span><span class="o">.</span><span class="na">setAddPending</span><span class="o">();</span>
+                <span class="n">executor</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+                    <span class="nd">@Override</span>
+                    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+                        <span class="n">callHandlerAdded0</span><span class="o">(</span><span class="n">newCtx</span><span class="o">);</span>
+                    <span class="o">}</span>
+                <span class="o">});</span>
+                <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="n">callHandlerAdded0</span><span class="o">(</span><span class="n">newCtx</span><span class="o">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1checkmultiplicity-验证sharable注解未被sharable注解时指定channelhandler对象channelpipeline只能添加一次被sharable注解时可以添加多次">(1).checkMultiplicity 验证@Sharable注解，未被@Sharable注解时，指定ChannelHandler对象ChannelPipeline只能添加一次；被@Sharable注解时，可以添加多次；</h3>
+<ul>
+<li>handler继承ChannelHandlerAdapter,才能做下面判断
+<ul>
+<li>类注解@Sharable，一个实例添加多次添加</li>
+<li>没有类注解@Sharable,一个实例只能添加一次，以added做验证</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="kd">private</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">checkMultiplicity</span><span class="o">(</span><span class="n">ChannelHandler</span> <span class="n">handler</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">handler</span> <span class="k">instanceof</span> <span class="n">ChannelHandlerAdapter</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">ChannelHandlerAdapter</span> <span class="n">h</span> <span class="o">=</span> <span class="o">(</span><span class="n">ChannelHandlerAdapter</span><span class="o">)</span> <span class="n">handler</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">h</span><span class="o">.</span><span class="na">isSharable</span><span class="o">()</span> <span class="o">&amp;&amp;</span> <span class="n">h</span><span class="o">.</span><span class="na">added</span><span class="o">)</span> <span class="o">{</span> <span class="c1">//验证ChannelHandler对象未被@Sharable注解时，ChannelPipeline只能添加一次；
+</span><span class="c1"></span>                <span class="k">throw</span> <span class="k">new</span> <span class="n">ChannelPipelineException</span><span class="o">(...);</span>
+            <span class="o">}</span>
+            <span class="n">h</span><span class="o">.</span><span class="na">added</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2filtername-name为空自动生成名称name不为空验证名称是否重复">(2).filterName name为空自动生成名称，name不为空，验证名称是否重复</h3>
+<ul>
+<li>参数name为NULL,自动生成名字
+<ul>
+<li>按类名称自动生成名称，有相同名字后面添加#1</li>
+</ul>
+</li>
+<li>检查重复名称</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">private</span> <span class="n">String</span> <span class="nf">filterName</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">,</span> <span class="n">ChannelHandler</span> <span class="n">handler</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">name</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>  <span class="c1">//名称为空，自动生成名称，
+</span><span class="c1"></span>            <span class="k">return</span> <span class="n">generateName</span><span class="o">(</span><span class="n">handler</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="n">checkDuplicateName</span><span class="o">(</span><span class="n">name</span><span class="o">);</span> <span class="c1">//检查重复名称
+</span><span class="c1"></span>        <span class="k">return</span> <span class="n">name</span><span class="o">;</span>
+    <span class="o">}</span>
+    
+    <span class="c1">//按handler类自动生成名字
+</span><span class="c1"></span>     <span class="kd">private</span> <span class="n">String</span> <span class="nf">generateName</span><span class="o">(</span><span class="n">ChannelHandler</span> <span class="n">handler</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">Map</span><span class="o">&lt;</span><span class="n">Class</span><span class="o">&lt;?&gt;,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">cache</span> <span class="o">=</span> <span class="n">nameCaches</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+          <span class="n">Class</span><span class="o">&lt;?&gt;</span> <span class="n">handlerType</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="na">getClass</span><span class="o">();</span>
+          <span class="n">String</span> <span class="n">name</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">handlerType</span><span class="o">);/</span><span class="n">先从缓存中获取名称</span>
+          <span class="nf">if</span> <span class="o">(</span><span class="n">name</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+              <span class="n">name</span> <span class="o">=</span> <span class="n">generateName0</span><span class="o">(</span><span class="n">handlerType</span><span class="o">);</span> <span class="c1">//按类名称自动生成名称
+</span><span class="c1"></span>              <span class="n">cache</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">handlerType</span><span class="o">,</span> <span class="n">name</span><span class="o">);</span>      <span class="c1">//保存在缓存中
+</span><span class="c1"></span>          <span class="o">}</span>
+          <span class="c1">//用户不太可能放置多个相同类型的处理程序，但要确保避免任何名称冲突。请注意，我们不会缓存这里生成的名称。
+</span><span class="c1"></span>          <span class="k">if</span> <span class="o">(</span><span class="n">context0</span><span class="o">(</span><span class="n">name</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+              <span class="n">String</span> <span class="n">baseName</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="na">substring</span><span class="o">(</span><span class="n">0</span><span class="o">,</span> <span class="n">name</span><span class="o">.</span><span class="na">length</span><span class="o">()</span> <span class="o">-</span> <span class="n">1</span><span class="o">);</span> <span class="c1">// Strip the trailing &#39;0&#39;.
+</span><span class="c1"></span>              <span class="c1">//有相同名称，baseName把后面#0的0累加生成新名称；
+</span><span class="c1"></span>              <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">1</span><span class="o">;;</span> <span class="n">i</span> <span class="o">++)</span> <span class="o">{</span>
+                  <span class="n">String</span> <span class="n">newName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="n">i</span><span class="o">;</span>
+                  <span class="k">if</span> <span class="o">(</span><span class="n">context0</span><span class="o">(</span><span class="n">newName</span><span class="o">)</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                      <span class="n">name</span> <span class="o">=</span> <span class="n">newName</span><span class="o">;</span>   
+                      <span class="k">break</span><span class="o">;</span>
+                  <span class="o">}</span>
+              <span class="o">}</span>
+          <span class="o">}</span>
+          <span class="k">return</span> <span class="n">name</span><span class="o">;</span>
+      <span class="o">}</span>  
+      <span class="c1">//生成名称规则 handlerType=com.zp.HelloChannelHandler 形成名称=HelloChannelHandler#0
+</span><span class="c1"></span>      <span class="kd">private</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">generateName0</span><span class="o">(</span><span class="n">Class</span><span class="o">&lt;?&gt;</span> <span class="n">handlerType</span><span class="o">)</span> <span class="o">{</span>
+          <span class="k">return</span> <span class="n">StringUtil</span><span class="o">.</span><span class="na">simpleClassName</span><span class="o">(</span><span class="n">handlerType</span><span class="o">)</span> <span class="o">+</span> <span class="s">&#34;#0&#34;</span><span class="o">;</span>
+      <span class="o">}</span> 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3newcontext-创建abstractchannelhandlercontext这个类在后面具体分析">(3).newContext 创建AbstractChannelHandlerContext，这个类在后面具体分析；</h3>
+<ul>
+<li>ChannelHandler包装成ChannelHandlerContext;</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="n">AbstractChannelHandlerContext</span> <span class="nf">newContext</span><span class="o">(</span><span class="n">EventExecutorGroup</span> <span class="n">group</span><span class="o">,</span> <span class="n">String</span> <span class="n">name</span><span class="o">,</span> <span class="n">ChannelHandler</span> <span class="n">handler</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">DefaultChannelHandlerContext</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">childExecutor</span><span class="o">(</span><span class="n">group</span><span class="o">),</span> <span class="n">name</span><span class="o">,</span> <span class="n">handler</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="achildexecutorgroup">a.childExecutor(group)</h4>
+<ul>
+<li>根据ChannelOption.SINGLE_EVENTEXECUTOR_PER_GROUP配置，按线程组是否公用相同的线程</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private EventExecutor childExecutor(EventExecutorGroup group) {
+       if (group == null) {
+           return null;
+       }
+       //单独执行任务
+       Boolean pinEventExecutor = channel.config().getOption(ChannelOption.SINGLE_EVENTEXECUTOR_PER_GROUP);
+       if (pinEventExecutor != null &amp;&amp; !pinEventExecutor) {
+           return group.next();
+       }
+       Map&lt;EventExecutorGroup, EventExecutor&gt; childExecutors = this.childExecutors;
+       if (childExecutors == null) {
+           childExecutors = this.childExecutors = new IdentityHashMap&lt;EventExecutorGroup, EventExecutor&gt;(4);
+       }
+       EventExecutor childExecutor = childExecutors.get(group);
+       if (childExecutor == null) {
+           childExecutor = group.next();
+           childExecutors.put(group, childExecutor);
+       }
+       return childExecutor;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4addfirst0-拼接到head后面">(4).addFirst0 拼接到head后面</h3>
+<p>链表添加</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="kd">private</span> <span class="kt">void</span> <span class="nf">addFirst0</span><span class="o">(</span><span class="n">AbstractChannelHandlerContext</span> <span class="n">newCtx</span><span class="o">)</span> <span class="o">{</span>
+         <span class="n">AbstractChannelHandlerContext</span> <span class="n">nextCtx</span> <span class="o">=</span> <span class="n">head</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+         <span class="n">newCtx</span><span class="o">.</span><span class="na">prev</span> <span class="o">=</span> <span class="n">head</span><span class="o">;</span>
+         <span class="n">newCtx</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">nextCtx</span><span class="o">;</span>
+         <span class="n">head</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">newCtx</span><span class="o">;</span>
+         <span class="n">nextCtx</span><span class="o">.</span><span class="na">prev</span> <span class="o">=</span> <span class="n">newCtx</span><span class="o">;</span>
+     <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="5callhandlercallbacklater-registered为false把回调任务添加到pendinghandlercallbackhead链表中">(5).callHandlerCallbackLater registered为false，把回调任务添加到pendingHandlerCallbackHead链表中；</h3>
+<ul>
+<li>pendingHandlerCallbackHead添加任务，单链表结构</li>
+<li>分两种类型PendingHandlerCallbackPendingHandlerCallback和PendingHandlerRemovedTask
+<ul>
+<li>调用callHandlerAdded0方法以及callHandlerAdded0</li>
+</ul>
+</li>
+<li>Channel注册调用channelRegistered方法，处理回调任务链表集合；处理方法invokeHandlerAddedIfNeeded</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">callHandlerCallbackLater</span><span class="o">(</span><span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">added</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">assert</span> <span class="o">!</span><span class="n">registered</span><span class="o">;</span>
+
+        <span class="n">PendingHandlerCallback</span> <span class="n">task</span> <span class="o">=</span> <span class="n">added</span> <span class="o">?</span> <span class="k">new</span> <span class="n">PendingHandlerCallbackPendingHandlerCallback</span><span class="o">(</span><span class="n">ctx</span><span class="o">)</span> <span class="o">:</span> <span class="k">new</span> <span class="n">PendingHandlerRemovedTask</span><span class="o">(</span><span class="n">ctx</span><span class="o">);</span>
+        <span class="n">PendingHandlerCallback</span> <span class="n">pending</span> <span class="o">=</span> <span class="n">pendingHandlerCallbackHead</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">pending</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">pendingHandlerCallbackHead</span> <span class="o">=</span> <span class="n">task</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="c1">// Find the tail of the linked-list.
+</span><span class="c1"></span>            <span class="k">while</span> <span class="o">(</span><span class="n">pending</span><span class="o">.</span><span class="na">next</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">pending</span> <span class="o">=</span> <span class="n">pending</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="n">pending</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">task</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="apendinghandleraddedtask-和pendinghandlerremovedtask源码分析">a.PendingHandlerAddedTask 和PendingHandlerRemovedTask源码分析</h4>
+<p>PendingHandlerCallback抽象类是PendingHandlerAddedTask 和PendingHandlerRemovedTask父类；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">private</span> <span class="kd">abstract</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">PendingHandlerCallback</span> <span class="kd">implements</span> <span class="n">Runnable</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">;</span>
+        <span class="n">PendingHandlerCallback</span> <span class="n">next</span><span class="o">;</span> <span class="c1">//单链表实现；保存集合
+</span><span class="c1"></span>
+        <span class="n">PendingHandlerCallback</span><span class="o">(</span><span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">ctx</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">abstract</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">();</span>
+    <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>PendingHandlerAddedTask 等待添加任务</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="kd">private</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">PendingHandlerAddedTask</span> <span class="kd">extends</span> <span class="n">PendingHandlerCallback</span> <span class="o">{</span>
+
+        <span class="n">PendingHandlerAddedTask</span><span class="o">(</span><span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kd">super</span><span class="o">(</span><span class="n">ctx</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">callHandlerAdded0</span><span class="o">(</span><span class="n">ctx</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="nd">@Override</span>
+        <span class="kt">void</span> <span class="nf">execute</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">EventExecutor</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="na">executor</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">executor</span><span class="o">.</span><span class="na">inEventLoop</span><span class="o">())</span> <span class="o">{</span>
+                <span class="n">callHandlerAdded0</span><span class="o">(</span><span class="n">ctx</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="n">executor</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">RejectedExecutionException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="o">...</span>
+                    <span class="n">remove0</span><span class="o">(</span><span class="n">ctx</span><span class="o">);</span>
+                    <span class="n">ctx</span><span class="o">.</span><span class="na">setRemoved</span><span class="o">();</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>PendingHandlerRemovedTask 等待删除任务</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">PendingHandlerRemovedTask</span> <span class="kd">extends</span> <span class="n">PendingHandlerCallback</span> <span class="o">{</span>
+
+        <span class="n">PendingHandlerRemovedTask</span><span class="o">(</span><span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kd">super</span><span class="o">(</span><span class="n">ctx</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">callHandlerRemoved0</span><span class="o">(</span><span class="n">ctx</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="nd">@Override</span>
+        <span class="kt">void</span> <span class="nf">execute</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">EventExecutor</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="na">executor</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">executor</span><span class="o">.</span><span class="na">inEventLoop</span><span class="o">())</span> <span class="o">{</span>
+                <span class="n">callHandlerRemoved0</span><span class="o">(</span><span class="n">ctx</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="n">executor</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">RejectedExecutionException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="o">...</span>
+                    <span class="n">ctx</span><span class="o">.</span><span class="na">setRemoved</span><span class="o">();</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="binvokehandleraddedifneeded-处理理回调任务链表pendinghandlercallbackhead集合">b.invokeHandlerAddedIfNeeded 处理理回调任务链表pendingHandlerCallbackHead集合</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">invokeHandlerAddedIfNeeded</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">assert</span> <span class="n">channel</span><span class="o">.</span><span class="na">eventLoop</span><span class="o">().</span><span class="na">inEventLoop</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">firstRegistration</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">firstRegistration</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+            <span class="c1">//我们现在注册到EventLoop。现在是时候调用ChannelHandlers的回调了，这是在注册完成之前添加的。
+</span><span class="c1"></span>            <span class="n">callHandlerAddedForAllHandlers</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">callHandlerAddedForAllHandlers</span><span class="o">()</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">PendingHandlerCallback</span> <span class="n">pendingHandlerCallbackHead</span><span class="o">;</span>
+        <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">assert</span> <span class="o">!</span><span class="n">registered</span><span class="o">;</span>
+
+            <span class="c1">// This Channel itself was registered.
+</span><span class="c1"></span>            <span class="n">registered</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+
+            <span class="n">pendingHandlerCallbackHead</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">pendingHandlerCallbackHead</span><span class="o">;</span>
+            <span class="c1">// Null out so it can be GC&#39;ed.
+</span><span class="c1"></span>            <span class="k">this</span><span class="o">.</span><span class="na">pendingHandlerCallbackHead</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="n">PendingHandlerCallback</span> <span class="n">task</span> <span class="o">=</span> <span class="n">pendingHandlerCallbackHead</span><span class="o">;</span>
+        <span class="k">while</span> <span class="o">(</span><span class="n">task</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">task</span><span class="o">.</span><span class="na">execute</span><span class="o">();</span> <span class="c1">//执行任务
+</span><span class="c1"></span>            <span class="n">task</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="6callhandleradded0-通知添加完成处理两个方法channelhandlerhandleradded和abstractchannelhandlercontextsetaddcomplete">(6).callHandlerAdded0 通知添加完成处理两个方法ChannelHandler.handlerAdded和AbstractChannelHandlerContext.setAddComplete</h3>
+<ul>
+<li>通知ChannelHandler.handlerAdded方法</li>
+<li>通知AbstractChannelHandlerContext.setAddComplete方法，ADD_COMPLETE</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">callHandlerAdded0</span><span class="o">(</span><span class="kd">final</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="na">handler</span><span class="o">().</span><span class="na">handlerAdded</span><span class="o">(</span><span class="n">ctx</span><span class="o">);</span> <span class="c1">//通知ChannelHandler.handlerAdded方法
+</span><span class="c1"></span>            <span class="n">ctx</span><span class="o">.</span><span class="na">setAddComplete</span><span class="o">();</span>            <span class="c1">//通知AbstractChannelHandlerContext.setAddComplete方法，ADD_COMPLETE
+</span><span class="c1"></span>        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span> <span class="c1">//通知异常处理
+</span><span class="c1"></span>            <span class="kt">boolean</span> <span class="n">removed</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">remove0</span><span class="o">(</span><span class="n">ctx</span><span class="o">);</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="n">ctx</span><span class="o">.</span><span class="na">handler</span><span class="o">().</span><span class="na">handlerRemoved</span><span class="o">(</span><span class="n">ctx</span><span class="o">);</span><span class="c1">//通知ChannelHandler.handlerRemoved方法
+</span><span class="c1"></span>                <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                    <span class="n">ctx</span><span class="o">.</span><span class="na">setRemoved</span><span class="o">();</span>                  <span class="c1">//通知ChannelHandler.setRemoved方法 REMOVE_COMPLETE
+</span><span class="c1"></span>                <span class="o">}</span>
+                <span class="n">removed</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">t2</span><span class="o">)</span> <span class="o">{</span>
+                <span class="o">...</span>
+            <span class="o">}</span>
+
+            <span class="k">if</span> <span class="o">(</span><span class="n">removed</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">fireExceptionCaught</span><span class="o">(</span><span class="k">new</span> <span class="n">ChannelPipelineException</span><span class="o">(...));</span><span class="c1">//异常通知事件
+</span><span class="c1"></span>            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="n">fireExceptionCaught</span><span class="o">(</span><span class="k">new</span> <span class="n">ChannelPipelineException</span><span class="o">(...));</span><span class="c1">//异常通知事件
+</span><span class="c1"></span>            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="aremove0--移除abstractchannelhandlercontext链表中">a.remove0  移除AbstractChannelHandlerContext链表中</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">remove0</span><span class="o">(</span><span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">AbstractChannelHandlerContext</span> <span class="n">prev</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="na">prev</span><span class="o">;</span>
+        <span class="n">AbstractChannelHandlerContext</span> <span class="n">next</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+        <span class="n">prev</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">next</span><span class="o">;</span>
+        <span class="n">next</span><span class="o">.</span><span class="na">prev</span> <span class="o">=</span> <span class="n">prev</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="7callhandlerremoved0-删除完成通知">(7).callHandlerRemoved0 删除完成通知</h3>
+<ul>
+<li>remove调用方法</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kt">void</span> <span class="nf">callHandlerRemoved0</span><span class="o">(</span><span class="kd">final</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
+       <span class="c1">// Notify the complete removal.
+</span><span class="c1"></span>       <span class="k">try</span> <span class="o">{</span>
+           <span class="k">try</span> <span class="o">{</span>
+               <span class="n">ctx</span><span class="o">.</span><span class="na">handler</span><span class="o">().</span><span class="na">handlerRemoved</span><span class="o">(</span><span class="n">ctx</span><span class="o">);</span><span class="c1">//通知ChannelHandler.handlerRemoved方法
+</span><span class="c1"></span>           <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+               <span class="n">ctx</span><span class="o">.</span><span class="na">setRemoved</span><span class="o">();</span>                 <span class="c1">//通知ChannelHandler.setRemoved方法
+</span><span class="c1"></span>           <span class="o">}</span>
+       <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">fireExceptionCaught</span><span class="o">(</span><span class="k">new</span> <span class="n">ChannelPipelineException</span><span class="o">(...));</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4addlastaddbefore都类同双链表操作">4.addLast,addBefore都类同，双链表操作</h2>
+<h2 id="5remove-删除指定abstractchannelhandlercontext">5.remove 删除指定AbstractChannelHandlerContext</h2>
+<h2 id="6replace-替换指定abstractchannelhandlercontext">6.replace 替换指定AbstractChannelHandlerContext</h2>
+<h2 id="6destroy-pipeline中的所有节点销毁顺序由尾部向头部并触发handlerremoved">6.destroy pipeline中的所有节点销毁，顺序由尾部向头部并触发handlerRemoved（）</h2>
+<h2 id="7inbound-事件方法">7.Inbound 事件方法</h2>
+<ul>
+<li>head触发，判断事件执行器是否当前线程，是立即执行head的事件，不是，提交任务执行；</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kd">final</span> <span class="n">ChannelPipeline</span> <span class="nf">fireChannelRegistered</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">AbstractChannelHandlerContext</span><span class="o">.</span><span class="na">invokeChannelRegistered</span><span class="o">(</span><span class="n">head</span><span class="o">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kd">final</span> <span class="n">ChannelPipeline</span> <span class="nf">fireChannelUnregistered</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">AbstractChannelHandlerContext</span><span class="o">.</span><span class="na">invokeChannelUnregistered</span><span class="o">(</span><span class="n">head</span><span class="o">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="8outbound-事件方法">8.Outbound 事件方法</h2>
+<p>tail执行,tail是Inbound事件；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kd">final</span> <span class="n">ChannelFuture</span> <span class="nf">bind</span><span class="o">(</span><span class="n">SocketAddress</span> <span class="n">localAddress</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">tail</span><span class="o">.</span><span class="na">bind</span><span class="o">(</span><span class="n">localAddress</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kd">final</span> <span class="n">ChannelFuture</span> <span class="nf">connect</span><span class="o">(</span><span class="n">SocketAddress</span> <span class="n">remoteAddress</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">tail</span><span class="o">.</span><span class="na">connect</span><span class="o">(</span><span class="n">remoteAddress</span><span class="o">);</span>
+    <span class="o">}</span>
+
+ 
+</code></pre></td></tr></table>
+</div>
+</div><p>tail就是TailContext对象，TailContext实现AbstractChannelHandlerContext抽象类；具有AbstractChannelHandlerContext特性；</p>
+<h1 id="三-abstractchannelhandlercontext源码分析">三、 AbstractChannelHandlerContext源码分析</h1>
+<p>AbstractChannelHandlerContext抽象类继承ChannelHandlerContext，具有ChannelHandlerContext.Inbound和ChannelHandlerContext.Outbound事件特性；</p>
+<p>AbstractChannelHandlerContext的UML图</p>
+<p><img src="/netty/ChannelPipeline02.png" alt=""></p>
+<h2 id="1数据结构-1">1.数据结构</h2>
+<ul>
+<li>双链表结构</li>
+<li>handlerState 状态控制是否执行</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">AbstractChannelHandlerContext</span> <span class="kd">extends</span> <span class="n">DefaultAttributeMap</span>
+        <span class="kd">implements</span> <span class="n">ChannelHandlerContext</span><span class="o">,</span> <span class="n">ResourceLeakHint</span> <span class="o">{</span>
+
+    <span class="c1">//双向链表
+</span><span class="c1"></span>    <span class="kd">volatile</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">next</span><span class="o">;</span><span class="c1">//下节点
+</span><span class="c1"></span>    <span class="kd">volatile</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">prev</span><span class="o">;</span><span class="c1">//前节点
+</span><span class="c1"></span>    <span class="c1">//CAS 修改handlerState属性
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">AtomicIntegerFieldUpdater</span><span class="o">&lt;</span><span class="n">AbstractChannelHandlerContext</span><span class="o">&gt;</span> <span class="n">HANDLER_STATE_UPDATER</span> <span class="o">=</span>
+            <span class="n">AtomicIntegerFieldUpdater</span><span class="o">.</span><span class="na">newUpdater</span><span class="o">(</span><span class="n">AbstractChannelHandlerContext</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="s">&#34;handlerState&#34;</span><span class="o">);</span>
+
+    <span class="c1">//handlerState 几个状态标示
+</span><span class="c1"></span>
+    <span class="c1">//等待添加状态
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">ADD_PENDING</span> <span class="o">=</span> <span class="n">1</span><span class="o">;</span>
+
+    <span class="c1">//添加状态
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">ADD_COMPLETE</span> <span class="o">=</span> <span class="n">2</span><span class="o">;</span>
+
+    <span class="c1">//删除状态
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">REMOVE_COMPLETE</span> <span class="o">=</span> <span class="n">3</span><span class="o">;</span>
+
+    <span class="c1">//初始化状态
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">INIT</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+
+    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">inbound</span><span class="o">;</span><span class="c1">//inbound事件状态
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">outbound</span><span class="o">;</span><span class="c1">//outbound事件状态
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">DefaultChannelPipeline</span> <span class="n">pipeline</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">name</span><span class="o">;</span>  <span class="c1">//ChannelHandler名称
+</span><span class="c1"></span>    <span class="c1">//如果由EventLoop或给定的EventExecutor的是OrderedEventExecutor的实例，则它是有序的。
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">ordered</span><span class="o">;</span>
+    
+    <span class="c1">//如果不使用子执行程序，将被设置为null，否则将被设置为子执行程序。
+</span><span class="c1"></span>    <span class="kd">final</span> <span class="n">EventExecutor</span> <span class="n">executor</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">ChannelFuture</span> <span class="n">succeededFuture</span><span class="o">;</span>
+    
+    <span class="c1">//状态，初始化 INIT
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">handlerState</span> <span class="o">=</span> <span class="n">INIT</span><span class="o">;</span>
+<span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2构造-1">2.构造</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="n">AbstractChannelHandlerContext</span><span class="o">(</span><span class="n">DefaultChannelPipeline</span> <span class="n">pipeline</span><span class="o">,</span> <span class="n">EventExecutor</span> <span class="n">executor</span><span class="o">,</span> <span class="n">String</span> <span class="n">name</span><span class="o">,</span>
+                                  <span class="kt">boolean</span> <span class="n">inbound</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">outbound</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">name</span> <span class="o">=</span> <span class="n">ObjectUtil</span><span class="o">.</span><span class="na">checkNotNull</span><span class="o">(</span><span class="n">name</span><span class="o">,</span> <span class="s">&#34;name&#34;</span><span class="o">);</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">pipeline</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">executor</span> <span class="o">=</span> <span class="n">executor</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">inbound</span> <span class="o">=</span> <span class="n">inbound</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">outbound</span> <span class="o">=</span> <span class="n">outbound</span><span class="o">;</span>
+        <span class="c1">//如果由EventLoop或给定的EventExecutor的是OrderedEventExecutor的实例，则它是有序的。
+</span><span class="c1"></span>        <span class="n">ordered</span> <span class="o">=</span> <span class="n">executor</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">executor</span> <span class="k">instanceof</span> <span class="n">OrderedEventExecutor</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3executor-获取事件执行器就是个线程">3.executor 获取事件执行器(就是个线程)</h2>
+<p>没有指定事件执行器就用Channel的事件执行去</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   @Override
+   public EventExecutor executor() {
+       if (executor == null) {
+           return channel().eventLoop();
+       } else {
+           return executor;
+       }
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4findcontextinbound-查找inbound事件的channelhandlercontext">4.findContextInbound 查找Inbound事件的ChannelHandlerContext</h2>
+<p>往下个节点查询，inbound为true的ChannelHandlerContext；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private AbstractChannelHandlerContext findContextInbound() {
+       AbstractChannelHandlerContext ctx = this;
+       do {
+           ctx = ctx.next;
+       } while (!ctx.inbound);
+       return ctx;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="5inbound事件">5.Inbound事件</h2>
+<h3 id="1firechannelregistered--触发next的注册事件">(1).fireChannelRegistered()  触发next的注册事件</h3>
+<p>分三个步骤执行：</p>
+<ul>
+<li>查找next的ChannelHandlerContext</li>
+<li>调用next个ChannelHandlerContext#invokeChannelRegistered方法</li>
+<li>执行ChannelInboundHandler#channelRegistered</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> @Override
+ public ChannelHandlerContext fireChannelRegistered() {
+     invokeChannelRegistered(findContextInbound());
+     return this;
+ } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="afindcontextinbound-查找next的channelhandlercontext">a.findContextInbound 查找next的ChannelHandlerContext</h4>
+<p>往下个节点查询，inbound为true的ChannelHandlerContext；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private AbstractChannelHandlerContext findContextInbound() {
+       AbstractChannelHandlerContext ctx = this;
+       do {
+           ctx = ctx.next;
+       } while (!ctx.inbound);
+       return ctx;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="binvokechannelregistered-调用next个channelhandlercontextinvokechannelregistered方法">b.invokeChannelRegistered 调用next个ChannelHandlerContext#invokeChannelRegistered方法</h4>
+<ul>
+<li>获取next的事件执行器，是相同线程就立即执行invokeChannelRegistered，不是提交任务执行;</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    static void invokeChannelRegistered(final AbstractChannelHandlerContext next) {
+        //获取next的事件执行器，是相同线程就立即执行invokeChannelRegistered，不是提交任务执行;
+        EventExecutor executor = next.executor();
+        if (executor.inEventLoop()) {
+            next.invokeChannelRegistered();
+        } else {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    next.invokeChannelRegistered();
+                }
+            });
+        }
+    } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="cinvokechannelregistered执行channelinboundhandlerchannelregistered">c.invokeChannelRegistered执行ChannelInboundHandler#channelRegistered</h4>
+<ul>
+<li>验证当前状态，完成或者等待添加执，执行ChannelInboundHandler#channelRegistered
+<ul>
+<li>发送异常，判断异常栈中没有方法名称等于exceptionCaught，就要调用ChannelInboundHandler.exceptionCaught
+<ul>
+<li>等于exceptionCaught，就是异常处理发送异常，不做处理</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>否，则往next查找执行</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    private void invokeChannelRegistered() {
+        // 验证当前状态，完成或者等待添加执，执行ChannelInboundHandler#channelRegistered
+        // handlerState == ADD_COMPLETE || (!ordered &amp;&amp; handlerState == ADD_PENDING);
+        if (invokeHandler()) {
+            try {
+                ((ChannelInboundHandler) handler()).channelRegistered(this);//调用ChannelInboundHandler.channelRegistered
+            } catch (Throwable t) {
+                //判断异常栈中没有发现方法名称等于exceptionCaught，就要调用ChannelInboundHandler.exceptionCaught
+                notifyHandlerException(t);
+            }
+        } else {
+            fireChannelRegistered();//往下查找
+        }
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2firechannelactive---触发next的channel激活tcp链路建立成功事件">(2).fireChannelActive()   触发next的Channel激活(TCP链路建立成功)事件;</h3>
+<p>处理步骤跟findContextInbound一样，只是调用方法不同</p>
+<h3 id="3firechannelreadobject----触发next的读事件">(3).fireChannelRead(Object)    触发next的读事件</h3>
+<p>处理步骤跟findContextInbound一样，只是调用方法不同；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> static void invokeChannelRead(final AbstractChannelHandlerContext next, Object msg) {
+     //用于对象泄露,以及msg对null验证
+     final Object m = next.pipeline.touch(ObjectUtil.checkNotNull(msg, &#34;msg&#34;), next);
+     ...
+ }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4firechannelreadcomplete--触发next的读操作完成通知事件">(4).fireChannelReadComplete()  触发next的读操作完成通知事件;</h3>
+<p>处理步骤跟findContextInbound一样，只是调用方法不同；</p>
+<h3 id="5fireusereventtriggeredobject-用户自定义事件">(5).fireUserEventTriggered(Object) 用户自定义事件</h3>
+<p>处理步骤跟findContextInbound一样，只是调用方法不同；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">static</span> <span class="kt">void</span> <span class="nf">invokeUserEventTriggered</span><span class="o">(</span><span class="kd">final</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">next</span><span class="o">,</span> <span class="kd">final</span> <span class="n">Object</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+       <span class="c1">//验证事件内容不能为NULL
+</span><span class="c1"></span>       <span class="n">ObjectUtil</span><span class="o">.</span><span class="na">checkNotNull</span><span class="o">(</span><span class="n">event</span><span class="o">,</span> <span class="s">&#34;event&#34;</span><span class="o">);</span>
+       <span class="o">...</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="6firechannelwritabilitychanged-channel的可写状态变化通知事件">(6).fireChannelWritabilityChanged() Channel的可写状态变化通知事件;</h3>
+<p>处理步骤跟findContextInbound一样，只是调用方法不同；</p>
+<h3 id="7firechannelinactive--tcp连接关闭链路不可用通知事件">(7).fireChannelInactive()  TCP连接关闭,链路不可用通知事件。</h3>
+<p>处理步骤跟findContextInbound一样，只是调用方法不同；</p>
+<h3 id="8firechannelunregistered-注销事件">(8).fireChannelUnregistered() 注销事件</h3>
+<p>处理步骤跟findContextInbound一样，只是调用方法不同；</p>
+<h3 id="9fireexceptioncaughtthrowable-异常通知事件">(9).fireExceptionCaught(Throwable) 异常通知事件;</h3>
+<pre><code>处理步骤跟findContextInbound一样，只是调用方法不同；
+</code></pre>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ChannelHandlerContext</span> <span class="nf">fireExceptionCaught</span><span class="o">(</span><span class="kd">final</span> <span class="n">Throwable</span> <span class="n">cause</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">invokeExceptionCaught</span><span class="o">(</span><span class="n">next</span><span class="o">,</span> <span class="n">cause</span><span class="o">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">static</span> <span class="kt">void</span> <span class="nf">invokeExceptionCaught</span><span class="o">(</span><span class="kd">final</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">next</span><span class="o">,</span> <span class="kd">final</span> <span class="n">Throwable</span> <span class="n">cause</span><span class="o">)</span> <span class="o">{</span>
+      <span class="c1">//验证异常内容不能为NULL
+</span><span class="c1"></span>       <span class="n">ObjectUtil</span><span class="o">.</span><span class="na">checkNotNull</span><span class="o">(</span><span class="n">cause</span><span class="o">,</span> <span class="s">&#34;cause&#34;</span><span class="o">);</span>
+        <span class="o">...</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="6outbound事件">6.Outbound事件</h2>
+<p>除flush和read方法，参数都有ChannelPromise,因为实现异步，所以类似回调方式,就引用ChannelPromise；
+调用到Channel#Unsafe,成功或者失败都是异步处理ChannelPromise类；</p>
+<h3 id="1bindsocketaddress-channelpromise-绑定">(1).bind(SocketAddress, ChannelPromise) 绑定</h3>
+<p>执行步骤</p>
+<ul>
+<li>验证ChannelPromise是否有效</li>
+<li>往上查找Outbound事件的ChannelHandlerContext</li>
+<li>获取事件执行器，是当前线程立即执行invokeBind，否，往事件执行器提交任务执行invokeBind；</li>
+<li>invokeBind方法就是调用ChannelOutboundHandler#bind</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ChannelFuture</span> <span class="nf">bind</span><span class="o">(</span><span class="kd">final</span> <span class="n">SocketAddress</span> <span class="n">localAddress</span><span class="o">,</span> <span class="kd">final</span> <span class="n">ChannelPromise</span> <span class="n">promise</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">localAddress</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">(</span><span class="s">&#34;localAddress&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="c1">//验证ChannelPromise
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">isNotValidPromise</span><span class="o">(</span><span class="n">promise</span><span class="o">,</span> <span class="kc">false</span><span class="o">))</span> <span class="o">{</span><span class="c1">//验证promise
+</span><span class="c1"></span>            <span class="c1">// cancelled
+</span><span class="c1"></span>            <span class="k">return</span> <span class="n">promise</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="c1">//往上查找Outbound事件
+</span><span class="c1"></span>        <span class="kd">final</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">next</span> <span class="o">=</span> <span class="n">findContextOutbound</span><span class="o">();</span>
+        <span class="c1">//获取事件执行器，是当前线程立即执行invokeBind，否，往事件执行器提交任务执行invokeBind；
+</span><span class="c1"></span>        <span class="n">EventExecutor</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">next</span><span class="o">.</span><span class="na">executor</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">executor</span><span class="o">.</span><span class="na">inEventLoop</span><span class="o">())</span> <span class="o">{</span>
+            <span class="n">next</span><span class="o">.</span><span class="na">invokeBind</span><span class="o">(</span><span class="n">localAddress</span><span class="o">,</span> <span class="n">promise</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="n">safeExecute</span><span class="o">(</span><span class="n">executor</span><span class="o">,</span> <span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+                <span class="nd">@Override</span>
+                <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+                    <span class="n">next</span><span class="o">.</span><span class="na">invokeBind</span><span class="o">(</span><span class="n">localAddress</span><span class="o">,</span> <span class="n">promise</span><span class="o">);</span>
+                <span class="o">}</span>
+            <span class="o">},</span> <span class="n">promise</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">promise</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="aisnotvalidpromise-验证channelpromise是否有效">a.isNotValidPromise 验证ChannelPromise是否有效</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">isNotValidPromise</span><span class="o">(</span><span class="n">ChannelPromise</span> <span class="n">promise</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">allowVoidPromise</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">promise</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">(</span><span class="s">&#34;promise&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">promise</span><span class="o">.</span><span class="na">isDone</span><span class="o">())</span> <span class="o">{</span>
+            <span class="c1">// 检查promise是否已取消，如果已取消，则表明不应执行该操作的处理。
+</span><span class="c1"></span>            <span class="c1">//
+</span><span class="c1"></span>            <span class="c1">// See https://github.com/netty/netty/issues/2349
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(</span><span class="n">promise</span><span class="o">.</span><span class="na">isCancelled</span><span class="o">())</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span><span class="s">&#34;promise already done: &#34;</span> <span class="o">+</span> <span class="n">promise</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">promise</span><span class="o">.</span><span class="na">channel</span><span class="o">()</span> <span class="o">!=</span> <span class="n">channel</span><span class="o">())</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span><span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span>
+                    <span class="s">&#34;promise.channel does not match: %s (expected: %s)&#34;</span><span class="o">,</span> <span class="n">promise</span><span class="o">.</span><span class="na">channel</span><span class="o">(),</span> <span class="n">channel</span><span class="o">()));</span>
+        <span class="o">}</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">promise</span><span class="o">.</span><span class="na">getClass</span><span class="o">()</span> <span class="o">==</span> <span class="n">DefaultChannelPromise</span><span class="o">.</span><span class="na">class</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="k">if</span> <span class="o">(!</span><span class="n">allowVoidPromise</span> <span class="o">&amp;&amp;</span> <span class="n">promise</span> <span class="k">instanceof</span> <span class="n">VoidChannelPromise</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span>
+                    <span class="n">StringUtil</span><span class="o">.</span><span class="na">simpleClassName</span><span class="o">(</span><span class="n">VoidChannelPromise</span><span class="o">.</span><span class="na">class</span><span class="o">)</span> <span class="o">+</span> <span class="s">&#34; not allowed for this operation&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">promise</span> <span class="k">instanceof</span> <span class="n">AbstractChannel</span><span class="o">.</span><span class="na">CloseFuture</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span>
+                    <span class="n">StringUtil</span><span class="o">.</span><span class="na">simpleClassName</span><span class="o">(</span><span class="n">AbstractChannel</span><span class="o">.</span><span class="na">CloseFuture</span><span class="o">.</span><span class="na">class</span><span class="o">)</span> <span class="o">+</span> <span class="s">&#34; not allowed in a pipeline&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bfindcontextoutbound-往上查找outbound事件的channelhandlercontext">b.findContextOutbound 往上查找Outbound事件的ChannelHandlerContext</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="n">AbstractChannelHandlerContext</span> <span class="nf">findContextOutbound</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span> <span class="o">=</span> <span class="k">this</span><span class="o">;</span>
+        <span class="k">do</span> <span class="o">{</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="na">prev</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">while</span> <span class="o">(!</span><span class="n">ctx</span><span class="o">.</span><span class="na">outbound</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">ctx</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="dinvokebind方法就是调用channeloutboundhandlerbind">d.invokeBind方法就是调用ChannelOutboundHandler#bind</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    private void invokeBind(SocketAddress localAddress, ChannelPromise promise) {
+        if (invokeHandler()) {//上面Inbound事件说明过，判断状态是否添加或者等待添加
+            try {
+                ((ChannelOutboundHandler) handler()).bind(this, localAddress, promise);//调用ChannelOutboundHandler.bind
+            } catch (Throwable t) {
+                //promise#tryFailure
+                notifyOutboundHandlerException(t, promise);
+            }
+        } else {
+            bind(localAddress, promise);//往上找
+        }
+    } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2connectsocketaddress-socketaddress-channelpromise">(2).connect(SocketAddress, SocketAddress, ChannelPromise)</h3>
+<p>处理步骤跟bind一样，只是调用方法不同；</p>
+<h3 id="3write">(3).write</h3>
+<ul>
+<li>write(Object msg)最终调用下面方法，自动生成DefaultChannelPromise对象
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">@Override
+    public ChannelFuture write(Object msg) {
+        return write(msg, newPromise());//DefaultChannelPromise
+    }
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>write(final Object msg, final ChannelPromise promise)</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="n">ChannelFuture</span> <span class="nf">write</span><span class="o">(</span><span class="kd">final</span> <span class="n">Object</span> <span class="n">msg</span><span class="o">,</span> <span class="kd">final</span> <span class="n">ChannelPromise</span> <span class="n">promise</span><span class="o">)</span> <span class="o">{</span>
+      <span class="c1">//验证消息写入消息不能为NULL
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="n">msg</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">(</span><span class="s">&#34;msg&#34;</span><span class="o">);</span>
+       <span class="o">}</span>
+
+       <span class="k">try</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">isNotValidPromise</span><span class="o">(</span><span class="n">promise</span><span class="o">,</span> <span class="kc">true</span><span class="o">))</span> <span class="o">{</span><span class="c1">//验证promise
+</span><span class="c1"></span>               <span class="n">ReferenceCountUtil</span><span class="o">.</span><span class="na">release</span><span class="o">(</span><span class="n">msg</span><span class="o">);</span> <span class="c1">//释放msg
+</span><span class="c1"></span>               <span class="c1">// cancelled
+</span><span class="c1"></span>               <span class="k">return</span> <span class="n">promise</span><span class="o">;</span>
+           <span class="o">}</span>
+       <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">RuntimeException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+           <span class="c1">//释放msg
+</span><span class="c1"></span>           <span class="n">ReferenceCountUtil</span><span class="o">.</span><span class="na">release</span><span class="o">(</span><span class="n">msg</span><span class="o">);</span>
+           <span class="k">throw</span> <span class="n">e</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="n">write</span><span class="o">(</span><span class="n">msg</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="n">promise</span><span class="o">);</span>
+       <span class="k">return</span> <span class="n">promise</span><span class="o">;</span>
+   <span class="o">}</span>
+   
+
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="awriteobject-msg-boolean-flush-channelpromise-promise-flush为true做刷新数据">a.write(Object msg, boolean flush, ChannelPromise promise) flush为true做刷新数据</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="kd">private</span> <span class="kt">void</span> <span class="nf">write</span><span class="o">(</span><span class="n">Object</span> <span class="n">msg</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">flush</span><span class="o">,</span> <span class="n">ChannelPromise</span> <span class="n">promise</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">AbstractChannelHandlerContext</span> <span class="n">next</span> <span class="o">=</span> <span class="n">findContextOutbound</span><span class="o">();</span><span class="c1">//往上查找
+</span><span class="c1"></span>        <span class="c1">//内存泄漏检测
+</span><span class="c1"></span>        <span class="kd">final</span> <span class="n">Object</span> <span class="n">m</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="na">touch</span><span class="o">(</span><span class="n">msg</span><span class="o">,</span> <span class="n">next</span><span class="o">);</span>
+         <span class="c1">//获取事件执行器，是当前线程立即执行invokeWriteAndFlush或者invokeWrite，否，往事件执行器提交任务执行invokeWriteAndFlush或者invokeWrite；
+</span><span class="c1"></span>        <span class="n">EventExecutor</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">next</span><span class="o">.</span><span class="na">executor</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">executor</span><span class="o">.</span><span class="na">inEventLoop</span><span class="o">())</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">flush</span><span class="o">)</span> <span class="o">{</span> 
+                <span class="c1">//调用ChannelOutboundHandler#write
+</span><span class="c1"></span>                <span class="c1">//调用ChannelOutboundHandler#flush
+</span><span class="c1"></span>                <span class="n">next</span><span class="o">.</span><span class="na">invokeWriteAndFlush</span><span class="o">(</span><span class="n">m</span><span class="o">,</span> <span class="n">promise</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="c1">//调用ChannelOutboundHandler#write
+</span><span class="c1"></span>                <span class="n">next</span><span class="o">.</span><span class="na">invokeWrite</span><span class="o">(</span><span class="n">m</span><span class="o">,</span> <span class="n">promise</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="n">AbstractWriteTask</span> <span class="n">task</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">flush</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">task</span> <span class="o">=</span> <span class="n">WriteAndFlushTask</span><span class="o">.</span><span class="na">newInstance</span><span class="o">(</span><span class="n">next</span><span class="o">,</span> <span class="n">m</span><span class="o">,</span> <span class="n">promise</span><span class="o">);</span>
+            <span class="o">}</span>  <span class="k">else</span> <span class="o">{</span>
+                <span class="n">task</span> <span class="o">=</span> <span class="n">WriteTask</span><span class="o">.</span><span class="na">newInstance</span><span class="o">(</span><span class="n">next</span><span class="o">,</span> <span class="n">m</span><span class="o">,</span> <span class="n">promise</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="c1">//发送异常，调用ReferenceCountUtil.release
+</span><span class="c1"></span>            <span class="n">safeExecute</span><span class="o">(</span><span class="n">executor</span><span class="o">,</span> <span class="n">task</span><span class="o">,</span> <span class="n">promise</span><span class="o">,</span> <span class="n">m</span><span class="o">);</span><span class="c1">//自己定义executor执行任务
+</span><span class="c1"></span>        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="b自定义execute执行writeandflushtask和writetask源码">b.自定义Execute执行WriteAndFlushTask和WriteTask源码</h4>
+<p>WriteAndFlushTask和WriteTask实现AbstractWriteTask抽象类；</p>
+<h4 id="1abstractwritetask源码分析">1).AbstractWriteTask源码分析</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="kd">abstract</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">AbstractWriteTask</span> <span class="kd">implements</span> <span class="n">Runnable</span> <span class="o">{</span>
+        <span class="c1">//是否估算内容大小
+</span><span class="c1"></span>        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">ESTIMATE_TASK_SIZE_ON_SUBMIT</span> <span class="o">=</span>
+                <span class="n">SystemPropertyUtil</span><span class="o">.</span><span class="na">getBoolean</span><span class="o">(</span><span class="s">&#34;io.netty.transport.estimateSizeOnSubmit&#34;</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+
+        <span class="c1">// Assuming a 64-bit JVM, 16 bytes object header, 3 reference fields and one int field, plus alignment
+</span><span class="c1"></span>        <span class="c1">//假设有一个64位的JVM, 16个字节的对象头，3个引用字段和一个int字段，加上对齐。
+</span><span class="c1"></span>        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">WRITE_TASK_OVERHEAD</span> <span class="o">=</span>
+                <span class="n">SystemPropertyUtil</span><span class="o">.</span><span class="na">getInt</span><span class="o">(</span><span class="s">&#34;io.netty.transport.writeTaskSizeOverhead&#34;</span><span class="o">,</span> <span class="n">48</span><span class="o">);</span>
+
+        <span class="kd">private</span> <span class="kd">final</span> <span class="n">Recycler</span><span class="o">.</span><span class="na">Handle</span><span class="o">&lt;</span><span class="n">AbstractWriteTask</span><span class="o">&gt;</span> <span class="n">handle</span><span class="o">;</span><span class="c1">//使用对象池
+</span><span class="c1"></span>        <span class="kd">private</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">;</span>
+        <span class="kd">private</span> <span class="n">Object</span> <span class="n">msg</span><span class="o">;</span>
+        <span class="kd">private</span> <span class="n">ChannelPromise</span> <span class="n">promise</span><span class="o">;</span>
+        <span class="kd">private</span> <span class="kt">int</span> <span class="n">size</span><span class="o">;</span> <span class="c1">//大小
+</span><span class="c1"></span>
+        <span class="nd">@SuppressWarnings</span><span class="o">(</span><span class="s">&#34;unchecked&#34;</span><span class="o">)</span>
+        <span class="kd">private</span> <span class="nf">AbstractWriteTask</span><span class="o">(</span><span class="n">Recycler</span><span class="o">.</span><span class="na">Handle</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">AbstractWriteTask</span><span class="o">&gt;</span> <span class="n">handle</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">handle</span> <span class="o">=</span> <span class="n">handle</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">protected</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">init</span><span class="o">(</span><span class="n">AbstractWriteTask</span> <span class="n">task</span><span class="o">,</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">,</span>
+                                   <span class="n">Object</span> <span class="n">msg</span><span class="o">,</span> <span class="n">ChannelPromise</span> <span class="n">promise</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">task</span><span class="o">.</span><span class="na">ctx</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">;</span>
+            <span class="n">task</span><span class="o">.</span><span class="na">msg</span> <span class="o">=</span> <span class="n">msg</span><span class="o">;</span>
+            <span class="n">task</span><span class="o">.</span><span class="na">promise</span> <span class="o">=</span> <span class="n">promise</span><span class="o">;</span>
+
+            <span class="k">if</span> <span class="o">(</span><span class="n">ESTIMATE_TASK_SIZE_ON_SUBMIT</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">task</span><span class="o">.</span><span class="na">size</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="na">pipeline</span><span class="o">.</span><span class="na">estimatorHandle</span><span class="o">().</span><span class="na">size</span><span class="o">(</span><span class="n">msg</span><span class="o">)</span> <span class="o">+</span> <span class="n">WRITE_TASK_OVERHEAD</span><span class="o">;</span>
+                <span class="n">ctx</span><span class="o">.</span><span class="na">pipeline</span><span class="o">.</span><span class="na">incrementPendingOutboundBytes</span><span class="o">(</span><span class="n">task</span><span class="o">.</span><span class="na">size</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="n">task</span><span class="o">.</span><span class="na">size</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="c1">// Check for null as it may be set to null if the channel is closed already
+</span><span class="c1"></span>                <span class="c1">//如果通道已经关闭，则检查null，因为它可能被设置为null。
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">ESTIMATE_TASK_SIZE_ON_SUBMIT</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">ctx</span><span class="o">.</span><span class="na">pipeline</span><span class="o">.</span><span class="na">decrementPendingOutboundBytes</span><span class="o">(</span><span class="n">size</span><span class="o">);</span>
+                <span class="o">}</span>
+                <span class="n">write</span><span class="o">(</span><span class="n">ctx</span><span class="o">,</span> <span class="n">msg</span><span class="o">,</span> <span class="n">promise</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                <span class="c1">// Set to null so the GC can collect them directly
+</span><span class="c1"></span>                <span class="n">ctx</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="n">promise</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="n">handle</span><span class="o">.</span><span class="na">recycle</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">write</span><span class="o">(</span><span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">,</span> <span class="n">Object</span> <span class="n">msg</span><span class="o">,</span> <span class="n">ChannelPromise</span> <span class="n">promise</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="na">invokeWrite</span><span class="o">(</span><span class="n">msg</span><span class="o">,</span> <span class="n">promise</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2-writeandflushtask源码分析">2). WriteAndFlushTask源码分析</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">WriteAndFlushTask</span> <span class="kd">extends</span> <span class="n">AbstractWriteTask</span> <span class="o">{</span>
+
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Recycler</span><span class="o">&lt;</span><span class="n">WriteAndFlushTask</span><span class="o">&gt;</span> <span class="n">RECYCLER</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Recycler</span><span class="o">&lt;</span><span class="n">WriteAndFlushTask</span><span class="o">&gt;()</span> <span class="o">{</span>
+            <span class="nd">@Override</span>
+            <span class="kd">protected</span> <span class="n">WriteAndFlushTask</span> <span class="nf">newObject</span><span class="o">(</span><span class="n">Handle</span><span class="o">&lt;</span><span class="n">WriteAndFlushTask</span><span class="o">&gt;</span> <span class="n">handle</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="k">new</span> <span class="n">WriteAndFlushTask</span><span class="o">(</span><span class="n">handle</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">};</span> <span class="c1">//使用对象池
+</span><span class="c1"></span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="n">WriteAndFlushTask</span> <span class="nf">newInstance</span><span class="o">(</span>
+                <span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">,</span> <span class="n">Object</span> <span class="n">msg</span><span class="o">,</span>  <span class="n">ChannelPromise</span> <span class="n">promise</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">WriteAndFlushTask</span> <span class="n">task</span> <span class="o">=</span> <span class="n">RECYCLER</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+            <span class="n">init</span><span class="o">(</span><span class="n">task</span><span class="o">,</span> <span class="n">ctx</span><span class="o">,</span> <span class="n">msg</span><span class="o">,</span> <span class="n">promise</span><span class="o">);</span>
+            <span class="k">return</span> <span class="n">task</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">private</span> <span class="nf">WriteAndFlushTask</span><span class="o">(</span><span class="n">Recycler</span><span class="o">.</span><span class="na">Handle</span><span class="o">&lt;</span><span class="n">WriteAndFlushTask</span><span class="o">&gt;</span> <span class="n">handle</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kd">super</span><span class="o">(</span><span class="n">handle</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">write</span><span class="o">(</span><span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">,</span> <span class="n">Object</span> <span class="n">msg</span><span class="o">,</span> <span class="n">ChannelPromise</span> <span class="n">promise</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kd">super</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="n">ctx</span><span class="o">,</span> <span class="n">msg</span><span class="o">,</span> <span class="n">promise</span><span class="o">);</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="na">invokeFlush</span><span class="o">();</span><span class="c1">//调用刷新
+</span><span class="c1"></span>        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="3-writetask源码分析">3). WriteTask源码分析</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">WriteTask</span> <span class="kd">extends</span> <span class="n">AbstractWriteTask</span> <span class="kd">implements</span> <span class="n">SingleThreadEventLoop</span><span class="o">.</span><span class="na">NonWakeupRunnable</span> <span class="o">{</span>
+
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Recycler</span><span class="o">&lt;</span><span class="n">WriteTask</span><span class="o">&gt;</span> <span class="n">RECYCLER</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Recycler</span><span class="o">&lt;</span><span class="n">WriteTask</span><span class="o">&gt;()</span> <span class="o">{</span>
+            <span class="nd">@Override</span>
+            <span class="kd">protected</span> <span class="n">WriteTask</span> <span class="nf">newObject</span><span class="o">(</span><span class="n">Handle</span><span class="o">&lt;</span><span class="n">WriteTask</span><span class="o">&gt;</span> <span class="n">handle</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="k">new</span> <span class="n">WriteTask</span><span class="o">(</span><span class="n">handle</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">};</span><span class="c1">//使用对象池
+</span><span class="c1"></span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="n">WriteTask</span> <span class="nf">newInstance</span><span class="o">(</span>
+                <span class="n">AbstractChannelHandlerContext</span> <span class="n">ctx</span><span class="o">,</span> <span class="n">Object</span> <span class="n">msg</span><span class="o">,</span> <span class="n">ChannelPromise</span> <span class="n">promise</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">WriteTask</span> <span class="n">task</span> <span class="o">=</span> <span class="n">RECYCLER</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+            <span class="n">init</span><span class="o">(</span><span class="n">task</span><span class="o">,</span> <span class="n">ctx</span><span class="o">,</span> <span class="n">msg</span><span class="o">,</span> <span class="n">promise</span><span class="o">);</span>
+            <span class="k">return</span> <span class="n">task</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">private</span> <span class="nf">WriteTask</span><span class="o">(</span><span class="n">Recycler</span><span class="o">.</span><span class="na">Handle</span><span class="o">&lt;</span><span class="n">WriteTask</span><span class="o">&gt;</span> <span class="n">handle</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kd">super</span><span class="o">(</span><span class="n">handle</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4writeandflushobject-channelpromise">(4).writeAndFlush(Object, ChannelPromise)</h3>
+<p>处理步骤跟write一样，Flush设置为true</p>
+<h3 id="5flush">(5).flush()</h3>
+<p>处理步骤跟bind一样，只是调用方法不同,不用处理ChannelPromise</p>
+<h3 id="6read">(6).read()</h3>
+<p>处理步骤跟bind一样，只是调用方法不同,不用处理ChannelPromise</p>
+<h3 id="7disconnectchannelpromise">(7).disconnect(ChannelPromise)</h3>
+<p>处理步骤跟bind一样，只是调用方法不同</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ChannelFuture</span> <span class="nf">disconnect</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">disconnect</span><span class="o">(</span><span class="n">newPromise</span><span class="o">());</span>
+    <span class="o">}</span>
+
+  <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="n">ChannelFuture</span> <span class="nf">disconnect</span><span class="o">(</span><span class="kd">final</span> <span class="n">ChannelPromise</span> <span class="n">promise</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">isNotValidPromise</span><span class="o">(</span><span class="n">promise</span><span class="o">,</span> <span class="kc">false</span><span class="o">))</span> <span class="o">{</span>
+           <span class="c1">// cancelled
+</span><span class="c1"></span>           <span class="k">return</span> <span class="n">promise</span><span class="o">;</span>
+       <span class="o">}</span>
+
+       <span class="kd">final</span> <span class="n">AbstractChannelHandlerContext</span> <span class="n">next</span> <span class="o">=</span> <span class="n">findContextOutbound</span><span class="o">();</span>
+       <span class="n">EventExecutor</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">next</span><span class="o">.</span><span class="na">executor</span><span class="o">();</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">executor</span><span class="o">.</span><span class="na">inEventLoop</span><span class="o">())</span> <span class="o">{</span>
+           <span class="c1">// Translate disconnect to close if the channel has no notion of disconnect-reconnect.
+</span><span class="c1"></span>           <span class="c1">// So far, UDP/IP is the only transport that has such behavior.
+</span><span class="c1"></span>           <span class="c1">//如果通道没有断开连接 - 重新连接的概念，则将断开连接转换为关闭状态。 到目前为止，UDP / IP是唯一具有这种行为的传输方式。
+</span><span class="c1"></span>           <span class="k">if</span> <span class="o">(!</span><span class="n">channel</span><span class="o">().</span><span class="na">metadata</span><span class="o">().</span><span class="na">hasDisconnect</span><span class="o">())</span> <span class="o">{</span>
+               <span class="n">next</span><span class="o">.</span><span class="na">invokeClose</span><span class="o">(</span><span class="n">promise</span><span class="o">);</span>
+           <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+               <span class="n">next</span><span class="o">.</span><span class="na">invokeDisconnect</span><span class="o">(</span><span class="n">promise</span><span class="o">);</span>
+           <span class="o">}</span>
+       <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+           <span class="n">safeExecute</span><span class="o">(</span><span class="n">executor</span><span class="o">,</span> <span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+               <span class="nd">@Override</span>
+               <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+                   <span class="k">if</span> <span class="o">(!</span><span class="n">channel</span><span class="o">().</span><span class="na">metadata</span><span class="o">().</span><span class="na">hasDisconnect</span><span class="o">())</span> <span class="o">{</span>
+                       <span class="n">next</span><span class="o">.</span><span class="na">invokeClose</span><span class="o">(</span><span class="n">promise</span><span class="o">);</span>
+                   <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                       <span class="n">next</span><span class="o">.</span><span class="na">invokeDisconnect</span><span class="o">(</span><span class="n">promise</span><span class="o">);</span>
+                   <span class="o">}</span>
+               <span class="o">}</span>
+           <span class="o">},</span> <span class="n">promise</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="k">return</span> <span class="n">promise</span><span class="o">;</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="8closechannelpromise">(8).close(ChannelPromise)</h3>
+<p>处理步骤跟bind一样，只是调用方法不同</p>
+<h3 id="9deregisterchannelpromise">(9).deregister(ChannelPromise)</h3>
+<p>处理步骤跟bind一样，只是调用方法不同</p>
+<h2 id="4状态修改cas修改">4.状态修改，CAS修改</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="kd">final</span> <span class="kt">void</span> <span class="nf">setRemoved</span><span class="o">()</span> <span class="o">{</span>
+       <span class="n">handlerState</span> <span class="o">=</span> <span class="n">REMOVE_COMPLETE</span><span class="o">;</span>
+   <span class="o">}</span>
+
+   <span class="kd">final</span> <span class="kt">void</span> <span class="nf">setAddComplete</span><span class="o">()</span> <span class="o">{</span>
+       <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+           <span class="kt">int</span> <span class="n">oldState</span> <span class="o">=</span> <span class="n">handlerState</span><span class="o">;</span>
+           <span class="c1">// Ensure we never update when the handlerState is REMOVE_COMPLETE already.
+</span><span class="c1"></span>           <span class="c1">// oldState is usually ADD_PENDING but can also be REMOVE_COMPLETE when an EventExecutor is used that is not
+</span><span class="c1"></span>           <span class="c1">// exposing ordering guarantees.
+</span><span class="c1"></span>           <span class="k">if</span> <span class="o">(</span><span class="n">oldState</span> <span class="o">==</span> <span class="n">REMOVE_COMPLETE</span> <span class="o">||</span> <span class="n">HANDLER_STATE_UPDATER</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">oldState</span><span class="o">,</span> <span class="n">ADD_COMPLETE</span><span class="o">))</span> <span class="o">{</span>
+               <span class="k">return</span><span class="o">;</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+
+   <span class="kd">final</span> <span class="kt">void</span> <span class="nf">setAddPending</span><span class="o">()</span> <span class="o">{</span>
+       <span class="kt">boolean</span> <span class="n">updated</span> <span class="o">=</span> <span class="n">HANDLER_STATE_UPDATER</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">INIT</span><span class="o">,</span> <span class="n">ADD_PENDING</span><span class="o">);</span>
+       <span class="k">assert</span> <span class="n">updated</span><span class="o">;</span> <span class="c1">// This should always be true as it MUST be called before setAddComplete() or setRemoved().
+</span><span class="c1"></span>   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="5defaultchannelhandlercontext源码分析">5.DefaultChannelHandlerContext源码分析</h2>
+<p>ChannelPipeline添加ChannelHandler任务处理时，创建DefaultChannelHandlerContext拼接；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+<span class="kd">final</span> <span class="kd">class</span> <span class="nc">DefaultChannelHandlerContext</span> <span class="kd">extends</span> <span class="n">AbstractChannelHandlerContext</span> <span class="o">{</span>
+
+   <span class="kd">private</span> <span class="kd">final</span> <span class="n">ChannelHandler</span> <span class="n">handler</span><span class="o">;</span> <span class="c1">//添加ChannelHandler属性
+</span><span class="c1"></span>
+   <span class="n">DefaultChannelHandlerContext</span><span class="o">(</span>
+           <span class="n">DefaultChannelPipeline</span> <span class="n">pipeline</span><span class="o">,</span> <span class="n">EventExecutor</span> <span class="n">executor</span><span class="o">,</span> <span class="n">String</span> <span class="n">name</span><span class="o">,</span> <span class="n">ChannelHandler</span> <span class="n">handler</span><span class="o">)</span> <span class="o">{</span>
+       <span class="kd">super</span><span class="o">(</span><span class="n">pipeline</span><span class="o">,</span> <span class="n">executor</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">isInbound</span><span class="o">(</span><span class="n">handler</span><span class="o">),</span> <span class="n">isOutbound</span><span class="o">(</span><span class="n">handler</span><span class="o">));</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">handler</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">(</span><span class="s">&#34;handler&#34;</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">handler</span> <span class="o">=</span> <span class="n">handler</span><span class="o">;</span>
+   <span class="o">}</span>
+
+   <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="n">ChannelHandler</span> <span class="nf">handler</span><span class="o">()</span> <span class="o">{</span>
+       <span class="k">return</span> <span class="n">handler</span><span class="o">;</span>
+   <span class="o">}</span>
+
+   <span class="kd">private</span> <span class="kd">static</span> <span class="kt">boolean</span> <span class="nf">isInbound</span><span class="o">(</span><span class="n">ChannelHandler</span> <span class="n">handler</span><span class="o">)</span> <span class="o">{</span> 
+       <span class="k">return</span> <span class="n">handler</span> <span class="k">instanceof</span> <span class="n">ChannelInboundHandler</span><span class="o">;</span>
+   <span class="o">}</span>
+
+   <span class="kd">private</span> <span class="kd">static</span> <span class="kt">boolean</span> <span class="nf">isOutbound</span><span class="o">(</span><span class="n">ChannelHandler</span> <span class="n">handler</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">return</span> <span class="n">handler</span> <span class="k">instanceof</span> <span class="n">ChannelOutboundHandler</span><span class="o">;</span>
+   <span class="o">}</span>
+<span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="6headcontext源码分析">6.HeadContext源码分析</h2>
+<ul>
+<li>HeadContext中Outbound事件底层都是Unsafe对象去调用；
+<ul>
+<li>read调用beginRead</li>
+</ul>
+</li>
+<li>Inbound事件都都调用next,这里触发点；</li>
+<li>Inbound事件特殊处理</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">final</span> <span class="kd">class</span> <span class="nc">HeadContext</span> <span class="kd">extends</span> <span class="n">AbstractChannelHandlerContext</span>
+            <span class="kd">implements</span> <span class="n">ChannelOutboundHandler</span><span class="o">,</span> <span class="n">ChannelInboundHandler</span> <span class="o">{</span>
+
+        <span class="kd">private</span> <span class="kd">final</span> <span class="n">Unsafe</span> <span class="n">unsafe</span><span class="o">;</span>
+
+        <span class="n">HeadContext</span><span class="o">(</span><span class="n">DefaultChannelPipeline</span> <span class="n">pipeline</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kd">super</span><span class="o">(</span><span class="n">pipeline</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">HEAD_NAME</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+            <span class="n">unsafe</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="na">channel</span><span class="o">().</span><span class="na">unsafe</span><span class="o">();</span>
+            <span class="n">setAddComplete</span><span class="o">();</span>
+        <span class="o">}</span>
+   
+        <span class="nd">@Override</span>
+           <span class="kd">public</span> <span class="kt">void</span> <span class="nf">read</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">unsafe</span><span class="o">.</span><span class="na">beginRead</span><span class="o">();</span>
+           <span class="o">}</span>
+
+        <span class="o">...</span>
+
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">channelRegistered</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+            <span class="n">invokeHandlerAddedIfNeeded</span><span class="o">();</span><span class="c1">//触发等待添加任务
+</span><span class="c1"></span>            <span class="n">ctx</span><span class="o">.</span><span class="na">fireChannelRegistered</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">channelUnregistered</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="na">fireChannelUnregistered</span><span class="o">();</span>
+            <span class="c1">//如果通道关闭且未注册，则按顺序删除所有处理程序。调用destroy
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(!</span><span class="n">channel</span><span class="o">.</span><span class="na">isOpen</span><span class="o">())</span> <span class="o">{</span>
+                <span class="n">destroy</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">channelActive</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="na">fireChannelActive</span><span class="o">();</span>
+            <span class="n">readIfIsAutoRead</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">channelReadComplete</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="na">fireChannelReadComplete</span><span class="o">();</span>
+            <span class="n">readIfIsAutoRead</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">readIfIsAutoRead</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">channel</span><span class="o">.</span><span class="na">config</span><span class="o">().</span><span class="na">isAutoRead</span><span class="o">())</span> <span class="o">{</span>
+                <span class="n">channel</span><span class="o">.</span><span class="na">read</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+       <span class="o">...</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="7tailcontext源码分析">7.TailContext源码分析</h2>
+<p>TailContext只实现Inbound事件，主要作用在于资源释放；channelRead</p>
+<h1 id="四channelhandler-分析">四、ChannelHandler 分析</h1>
+<h2 id="1channelhandler接口源码分析">1.ChannelHandler接口源码分析</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">ChannelHandler</span> <span class="o">{</span>
+    
+    <span class="c1">//ChannelPipeline添加ChannelHandler成功，回调通知方法
+</span><span class="c1"></span>    <span class="kt">void</span> <span class="nf">handlerAdded</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span><span class="o">;</span>
+    
+    <span class="c1">//ChannelPipeline添加ChannelHandler删除，回调通知方法
+</span><span class="c1"></span>    <span class="kt">void</span> <span class="nf">handlerRemoved</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span><span class="o">;</span>
+
+    <span class="c1">//过时，把这个方法移到ChannelInboundHandler接口中
+</span><span class="c1"></span>    <span class="nd">@Deprecated</span>
+    <span class="kt">void</span> <span class="nf">exceptionCaught</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">,</span> <span class="n">Throwable</span> <span class="n">cause</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * 相同实例可以多次添加到一个或多个{ChannelPipeline}，而不存在竞争条件。
+</span><span class="cm">     */</span>
+    <span class="nd">@Inherited</span>
+    <span class="nd">@Documented</span>
+    <span class="nd">@Target</span><span class="o">(</span><span class="n">ElementType</span><span class="o">.</span><span class="na">TYPE</span><span class="o">)</span>
+    <span class="nd">@Retention</span><span class="o">(</span><span class="n">RetentionPolicy</span><span class="o">.</span><span class="na">RUNTIME</span><span class="o">)</span>
+    <span class="nd">@interface</span> <span class="n">Sharable</span> <span class="o">{</span>
+        <span class="c1">// no value
+</span><span class="c1"></span>    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>ChannelHandler被注解为@Sharable，全局只有一个handler实例，它会被多个Channel的Pipeline共享，在被多线程并发时，不存在竞争条件；</p>
+<h2 id="2channelhandleradapter抽象类源码分析">2.ChannelHandlerAdapter抽象类源码分析</h2>
+<h3 id="1属性">(1).属性</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">ChannelHandlerAdapter</span> <span class="kd">implements</span> <span class="n">ChannelHandler</span> <span class="o">{</span>
+
+    <span class="c1">// Not using volatile because it&#39;s used only for a sanity check.
+</span><span class="c1"></span>    <span class="c1">//不要使用volatile，因为它只用于完整性检查。
+</span><span class="c1"></span>    <span class="kt">boolean</span> <span class="n">added</span><span class="o">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2issharable-判断类注解sharable">(2).isSharable 判断类注解@Sharable</h3>
+<ul>
+<li>用本地缓存保存缓存Class是否共享注解；</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> 
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isSharable</span><span class="o">()</span> <span class="o">{</span>
+        
+        <span class="n">Class</span><span class="o">&lt;?&gt;</span> <span class="n">clazz</span> <span class="o">=</span> <span class="n">getClass</span><span class="o">();</span>
+        <span class="n">Map</span><span class="o">&lt;</span><span class="n">Class</span><span class="o">&lt;?&gt;,</span> <span class="n">Boolean</span><span class="o">&gt;</span> <span class="n">cache</span> <span class="o">=</span> <span class="n">InternalThreadLocalMap</span><span class="o">.</span><span class="na">get</span><span class="o">().</span><span class="na">handlerSharableCache</span><span class="o">();</span>
+        <span class="n">Boolean</span> <span class="n">sharable</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">clazz</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">sharable</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">sharable</span> <span class="o">=</span> <span class="n">clazz</span><span class="o">.</span><span class="na">isAnnotationPresent</span><span class="o">(</span><span class="n">Sharable</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+            <span class="n">cache</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">clazz</span><span class="o">,</span> <span class="n">sharable</span><span class="o">);</span><span class="c1">//缓存InternalThreadLocalMap中；
+</span><span class="c1"></span>        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">sharable</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3channeloutboundhandleradapter类源码分析">3.ChannelOutboundHandlerAdapter类源码分析</h2>
+<p>ChannelOutboundHandlerAdapter类的UML</p>
+<p><img src="/netty/ChannelPipeline03.png" alt=""></p>
+<p>ChannelOutboundHandler的Outbound事件方法调用ChannelHandlerContext方法；</p>
+<h2 id="4channelinboundhandleradapter类源码分析">4.ChannelInboundHandlerAdapter类源码分析</h2>
+<p>ChannelInboundHandlerAdapter类的UML</p>
+<p><img src="/netty/ChannelPipeline04.png" alt=""></p>
+<p>ChannelInboundHandlerAdapter的Inbound事件调用ChannelHandlerContext方法；</p>
+<h2 id="5simplechannelinboundhandler-允许显式只处理特定类型的消息">5.SimpleChannelInboundHandler 允许显式只处理特定类型的消息</h2>
+<p>SimpleChannelInboundHandler类的UML</p>
+<p><img src="/netty/ChannelPipeline05.png" alt=""></p>
+<h3 id="1属性-1">(1).属性</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">SimpleChannelInboundHandler</span><span class="o">&lt;</span><span class="n">I</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">ChannelInboundHandlerAdapter</span> <span class="o">{</span>
+
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">TypeParameterMatcher</span> <span class="n">matcher</span><span class="o">;</span><span class="c1">//类型参数匹配器
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">autoRelease</span><span class="o">;</span> <span class="c1">//自动释放资源
+</span><span class="c1"></span><span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2channelread">(2).channelRead</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">channelRead</span><span class="o">(</span><span class="n">ChannelHandlerContext</span> <span class="n">ctx</span><span class="o">,</span> <span class="n">Object</span> <span class="n">msg</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+      <span class="kt">boolean</span> <span class="n">release</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+      <span class="k">try</span> <span class="o">{</span>
+          <span class="k">if</span> <span class="o">(</span><span class="n">acceptInboundMessage</span><span class="o">(</span><span class="n">msg</span><span class="o">))</span> <span class="o">{</span> <span class="c1">//类型判断
+</span><span class="c1"></span>              <span class="nd">@SuppressWarnings</span><span class="o">(</span><span class="s">&#34;unchecked&#34;</span><span class="o">)</span>
+              <span class="n">I</span> <span class="n">imsg</span> <span class="o">=</span> <span class="o">(</span><span class="n">I</span><span class="o">)</span> <span class="n">msg</span><span class="o">;</span>
+              <span class="n">channelRead0</span><span class="o">(</span><span class="n">ctx</span><span class="o">,</span> <span class="n">imsg</span><span class="o">);</span><span class="c1">//抽象方法，子类实现
+</span><span class="c1"></span>          <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+              <span class="n">release</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+              <span class="n">ctx</span><span class="o">.</span><span class="na">fireChannelRead</span><span class="o">(</span><span class="n">msg</span><span class="o">);</span> <span class="c1">//手动触发查找next的channelRead
+</span><span class="c1"></span>          <span class="o">}</span>
+      <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+          <span class="k">if</span> <span class="o">(</span><span class="n">autoRelease</span> <span class="o">&amp;&amp;</span> <span class="n">release</span><span class="o">)</span> <span class="o">{</span>
+              <span class="n">ReferenceCountUtil</span><span class="o">.</span><span class="na">release</span><span class="o">(</span><span class="n">msg</span><span class="o">);</span>
+          <span class="o">}</span>
+      <span class="o">}</span>
+  <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="五总结">五、总结</h1>
+<h2 id="1channelpipeline是线程安全">1.Channelpipeline是线程安全?</h2>
+<p>ChannelPipeline执行ChannelHandler连时，先判断AbstractChannelHandlerContext中事件执行器是否当前线程，是立即执行，不是提交任务执行ChannelHandler；
+导致只有单线程执行ChannelHandler；保障线程是安全；</p>
+<p>head没有制定事件执行器，还是用channel的事件执行器，说明在Outbound事件时，channel的事件执行器，不存在多线程处理；线程安全；</p>
+<h2 id="2channelpipeline执行流程">2.Channelpipeline执行流程</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-text" data-lang="text">
+*                                                 I/O Request
+*                                            Channel.writeAndFlush  
+*                                                      |
+*  +---------------------------------------------------+--------------------+
+*  |                           ChannelPipeline         |writeAndFlush       |
+*  |                                                  \|/                   |
+*  |    +---------------------------+     +------------+---------------+    |
+*  |    | Inbound channelRead tail  |     | Outbound writeAndFlush tail|    |
+*  |    +----------+----------------+     +------------+---------------+    |
+*  |              /|\                                  | writeAndFlush      |
+*  |               |fireChannelRead                   \|/                   |
+*  |    +----------+----------------+     +------------+---------------+    |
+*  |    | Inbound channelRead  next |     | Outbound writeAndFlush prev|    |
+*  |    +----------+----------------+     +------------+---------------+    |
+*  |              /|\                                  . writeAndFlush      |
+*  |               .                                   .                    |
+*  |               .                                   .                    |
+*  |               . fireChannelRead                  \|/                   |
+*  |    +----------+-----------------+    +------------+---------------+    |
+*  |    | Inbound channelRead  next  |    | Outbound writeAndFlush prev|    |
+*  |    +----------+-----------------+    +------------+---------------+    |
+*  |              /|\                                  | writeAndFlush      |
+*  |               | fireChannelRead                  \|/                   |
+*  |    +----------+-----------------+    +------------+------------ --+    |
+*  |    | Inbound channelRead  head  |    | Outbound writeAndFlush prev|    |
+*  |    +----------+-----------------+    +------------+---------------+    |
+*  |              /|\                                  | flush              |
+*  +---------------+-----------------------------------+--------------------+
+*                  |fireChannelRead                   \|/
+*  +---------------+-----------------------------------+---------------+
+*  |               |                                   |               |
+*  |       [ Socket.read() ]                    [ Socket.write() ]     |
+*  |                                                                   |
+*  |  Netty Internal I/O Threads (Transport Implementation)            |
+*  +-------------------------------------------------------------------+
+* 
+</code></pre></td></tr></table>
+</div>
+</div><p>写ChannelHandler自己手动触发next(fire开头名称)Inbound事件或者prev(write,bind&hellip;)Outbound事件</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-03-23 23:08
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/netty/">netty</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/netty/06.EventLoop/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">EventLoop</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/netty/04.Channel/">
+        <span class="next-text nav-default">Channel</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

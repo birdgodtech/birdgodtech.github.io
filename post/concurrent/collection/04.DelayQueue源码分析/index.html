@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>DelayQueue - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="DelayQueue(延时队列)源码分析 简介 DelayQueue是一种无界的阻塞队列，队列里只允许放入可以&amp;quot;延期&amp;quot;的元素" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/collection/04.DelayQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/collection/04.DelayQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/collection/04.DelayQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="DelayQueue" />
+<meta property="og:description" content="DelayQueue(延时队列)源码分析 简介 DelayQueue是一种无界的阻塞队列，队列里只允许放入可以&quot;延期&quot;的元素" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/collection/04.DelayQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2017-06-15T18:11:08+00:00" />
+<meta property="article:modified_time" content="2017-06-15T18:11:08+00:00" />
+<meta itemprop="name" content="DelayQueue">
+<meta itemprop="description" content="DelayQueue(延时队列)源码分析 简介 DelayQueue是一种无界的阻塞队列，队列里只允许放入可以&quot;延期&quot;的元素">
+<meta itemprop="datePublished" content="2017-06-15T18:11:08&#43;00:00" />
+<meta itemprop="dateModified" content="2017-06-15T18:11:08&#43;00:00" />
+<meta itemprop="wordCount" content="3238">
+
+
+
+<meta itemprop="keywords" content="DelayQueue," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="DelayQueue"/>
+<meta name="twitter:description" content="DelayQueue(延时队列)源码分析 简介 DelayQueue是一种无界的阻塞队列，队列里只允许放入可以&quot;延期&quot;的元素"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">DelayQueue</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-06-15 18:11 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 3238 字 </span>
+      <span class="more-meta"> 预计阅读 7 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#一delayqueue-内部实现">一、DelayQueue 内部实现</a></li>
+    <li><a href="#二入队">二、入队</a>
+      <ul>
+        <li><a href="#2-add方法">2. add方法</a></li>
+        <li><a href="#3-put方法">3. put方法</a></li>
+      </ul>
+    </li>
+    <li><a href="#三出队">三、出队</a>
+      <ul>
+        <li><a href="#1-poll方法">1. poll方法</a></li>
+        <li><a href="#2-take方法">2. take方法</a></li>
+        <li><a href="#3-peek方法">3. peek方法</a></li>
+      </ul>
+    </li>
+    <li><a href="#三移除队列">三、移除队列</a>
+      <ul>
+        <li><a href="#1-remove方法">1. remove方法</a></li>
+        <li><a href="#2-clear方法">2. clear方法</a></li>
+        <li><a href="#3-drainto方法">3. drainTo方法</a></li>
+      </ul>
+    </li>
+    <li><a href="#五iterator-迭代器实现">五、Iterator 迭代器实现</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-06-15T18:11:08" title="June 15, 2017">June 15, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="delayqueue延时队列源码分析">DelayQueue(延时队列)源码分析</h1>
+<h2 id="简介">简介</h2>
+<p>　　DelayQueue是一种无界的阻塞队列，队列里只允许放入可以&quot;延期&quot;的元素，队列中列头的元素是最先&quot;到期&quot;的元素。
+如果队列中没有任何元素&quot;到期&rdquo;，尽管队列中有元素，也不能从队列头获取到任何元素。</p>
+<h2 id="一delayqueue-内部实现">一、DelayQueue 内部实现</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">DelayQueue</span><span class="o">&lt;</span><span class="n">E</span> <span class="kd">extends</span> <span class="n">Delayed</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">AbstractQueue</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span>
+    <span class="kd">implements</span> <span class="n">BlockingQueue</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="c1">//重入锁
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">transient</span> <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ReentrantLock</span><span class="o">();</span>
+    <span class="c1">//优先级队列
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">PriorityQueue</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">q</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PriorityQueue</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Thread designated to wait for the element at the head of
+</span><span class="cm">     * the queue.  This variant of the Leader-Follower pattern
+</span><span class="cm">     * (http://www.cs.wustl.edu/~schmidt/POSA/POSA2/) serves to
+</span><span class="cm">     * minimize unnecessary timed waiting.  When a thread becomes
+</span><span class="cm">     * the leader, it waits only for the next delay to elapse, but
+</span><span class="cm">     * other threads await indefinitely.  The leader thread must
+</span><span class="cm">     * signal some other thread before returning from take() or
+</span><span class="cm">     * poll(...), unless some other thread becomes leader in the
+</span><span class="cm">     * interim.  Whenever the head of the queue is replaced with
+</span><span class="cm">     * an element with an earlier expiration time, the leader
+</span><span class="cm">     * field is invalidated by being reset to null, and some
+</span><span class="cm">     * waiting thread, but not necessarily the current leader, is
+</span><span class="cm">     * signalled.  So waiting threads must be prepared to acquire
+</span><span class="cm">     * and lose leadership while waiting.
+</span><span class="cm">     * 指定在队列头部等待元素的线程。Leader-Follower模式的这种变体用于最小化不必要的定时等待.
+</span><span class="cm">     * (http://www.cs.wustl.edu/~schmidt/POSA/POSA2/)
+</span><span class="cm">     * 当一个线程成为领导者时，它只等待下一个延迟，但其他线程则无限期地等待。
+</span><span class="cm">     * 领导者线程必须在从take（）或poll（...）返回之前发出其他线程的信号，
+</span><span class="cm">     * 除非其他线程在过渡期间成为领导者。每当队列的头部被一个具有较早到期时间的元素替换时，
+</span><span class="cm">     * 领导者字段被重置为空而失效，并且一些等待线程（但不一定是当前领导者）被发信号通知。
+</span><span class="cm">     * 所以等待的线程必须准备好在获得和失去领导的同时等待。
+</span><span class="cm">     */</span>
+    
+    <span class="kd">private</span> <span class="n">Thread</span> <span class="n">leader</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Condition signalled when a newer element becomes available
+</span><span class="cm">     * at the head of the queue or a new thread may need to
+</span><span class="cm">     * become leader.
+</span><span class="cm">     */</span>
+    <span class="c1">//当队列前端有更新的元素或新线程可能需要成为leader时，条件就会发出信号。
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Condition</span> <span class="n">available</span> <span class="o">=</span> <span class="n">lock</span><span class="o">.</span><span class="na">newCondition</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a new &lt;tt&gt;DelayQueue&lt;/tt&gt; that is initially empty.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">DelayQueue</span><span class="o">()</span> <span class="o">{}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a &lt;tt&gt;DelayQueue&lt;/tt&gt; initially containing the elements of the
+</span><span class="cm">     * given collection of {@link Delayed} instances.
+</span><span class="cm">     *
+</span><span class="cm">     * @param c the collection of elements to initially contain
+</span><span class="cm">     * @throws NullPointerException if the specified collection or any
+</span><span class="cm">     *         of its elements are null
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">DelayQueue</span><span class="o">(</span><span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">E</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">c</span><span class="o">);</span>
+    <span class="o">}</span>
+ <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>DelayQueue<!-- raw HTML omitted --> 泛型实现Delayed接口
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Delayed</span> <span class="kd">extends</span> <span class="n">Comparable</span><span class="o">&lt;</span><span class="n">Delayed</span><span class="o">&gt;</span> <span class="o">{</span>
+    
+    <span class="cm">/**
+</span><span class="cm">     * Returns the remaining delay associated with this object, in the
+</span><span class="cm">     * given time unit.
+</span><span class="cm">     * 在给定的时间单元中返回与该对象关联的剩余延迟。
+</span><span class="cm">     * @param unit the time unit
+</span><span class="cm">     * @return the remaining delay; zero or negative values indicate
+</span><span class="cm">     * that the delay has already elapsed
+</span><span class="cm">     */</span>
+    <span class="kt">long</span> <span class="nf">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">);</span>
+<span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>DelayQueue中元素都要继承Delayed接口</p>
+</li>
+</ul>
+<h2 id="二入队">二、入队</h2>
+<ul>
+<li>offer(E e)</li>
+<li>offer(E e, long timeout, TimeUnit unit) 将指定元素插入该队列的尾部，如果队列已满，DelayQueue不支持等待时间,主要数据元素保存到优先队列中</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Inserts the specified element into this delay queue.
+</span><span class="cm">     * 将指定的元素插入到这个延迟队列中。
+</span><span class="cm">     * @param e the element to add
+</span><span class="cm">     * @return &lt;tt&gt;true&lt;/tt&gt;
+</span><span class="cm">     * @throws NullPointerException if the specified element is null
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">offer</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">q</span><span class="o">.</span><span class="na">offer</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">q</span><span class="o">.</span><span class="na">peek</span><span class="o">()</span> <span class="o">==</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">leader</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="n">available</span><span class="o">.</span><span class="na">signal</span><span class="o">();</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+ <span class="cm">/**
+</span><span class="cm">  * Inserts the specified element into this delay queue. As the queue is
+</span><span class="cm">  * unbounded this method will never block.
+</span><span class="cm">  * 将指定的元素插入到这个延迟队列中。由于队列是无限的，此方法将永不阻塞。
+</span><span class="cm">  * @param e the element to add
+</span><span class="cm">  * @param timeout This parameter is ignored as the method never blocks
+</span><span class="cm">  * @param unit This parameter is ignored as the method never blocks
+</span><span class="cm">  * @return &lt;tt&gt;true&lt;/tt&gt;
+</span><span class="cm">  * @throws NullPointerException {@inheritDoc}
+</span><span class="cm">  */</span>
+ <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">offer</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">,</span> <span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span> <span class="o">{</span>
+     <span class="k">return</span> <span class="n">offer</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+ <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2-add方法">2. add方法</h3>
+<p>add(E e) 插入此优先队列，队列满了，DelayQueue 不支持throw IllegalStateException异常</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Inserts the specified element into this delay queue.
+</span><span class="cm">     * 将指定的元素插入到这个延迟队列中。
+</span><span class="cm">     * @param e the element to add
+</span><span class="cm">     * @return &lt;tt&gt;true&lt;/tt&gt; (as specified by {@link Collection#add})
+</span><span class="cm">     * @throws NullPointerException if the specified element is null
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">add</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">offer</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3-put方法">3. put方法</h3>
+<ul>
+<li>将指定的元素插入到这个延迟队列中。由于队列是无限的，此方法将永不阻塞。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Inserts the specified element into this delay queue. As the queue is
+</span><span class="cm">     * unbounded this method will never block.
+</span><span class="cm">     * 将指定的元素插入到这个延迟队列中。由于队列是无限的，此方法将永不阻塞。
+</span><span class="cm">     * @param e the element to add
+</span><span class="cm">     * @throws NullPointerException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">put</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">offer</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="三出队">三、出队</h2>
+<h3 id="1-poll方法">1. poll方法</h3>
+<ul>
+<li>poll() 获取并移除此队列的头，如果此队列为空，则返回 null</li>
+<li>E poll(long timeout, TimeUnit unit) 获取并移除此队列的头部，队列为空时，在指定的等待时间前等待可用的元素。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">     * Retrieves and removes the head of this queue, or returns &lt;tt&gt;null&lt;/tt&gt;
+</span><span class="cm">     * if this queue has no elements with an expired delay.
+</span><span class="cm">     * 检索并删除该队列的头部，或者返回&lt; tt &gt; null &lt;/ tt &gt;，如果此队列没有过期延迟的元素。
+</span><span class="cm">     * @return the head of this queue, or &lt;tt&gt;null&lt;/tt&gt; if this
+</span><span class="cm">     *         queue has no elements with an expired delay
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">poll</span><span class="o">()</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">E</span> <span class="n">first</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">peek</span><span class="o">();</span>  <span class="c1">//获取第一个元素，优先队列peek()方法不删除元素
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(</span><span class="n">first</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">first</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">)</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="c1">//获取元素不为空时，判断元素没有过期延迟。
+</span><span class="c1"></span>                <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="k">else</span>
+                <span class="k">return</span> <span class="n">q</span><span class="o">.</span><span class="na">poll</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+ <span class="cm">/**
+</span><span class="cm">     * Retrieves and removes the head of this queue, waiting if necessary
+</span><span class="cm">     * until an element with an expired delay is available on this queue,
+</span><span class="cm">     * or the specified wait time expires.
+</span><span class="cm">     * 检索并删除该队列的头部，如果需要，则等待，直到该队列上有过期延迟的元素，或者指定的等待时间过期。
+</span><span class="cm">     * @return the head of this queue, or &lt;tt&gt;null&lt;/tt&gt; if the
+</span><span class="cm">     *         specified waiting time elapses before an element with
+</span><span class="cm">     *         an expired delay becomes available
+</span><span class="cm">     * @throws InterruptedException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">poll</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="kt">long</span> <span class="n">nanos</span> <span class="o">=</span> <span class="n">unit</span><span class="o">.</span><span class="na">toNanos</span><span class="o">(</span><span class="n">timeout</span><span class="o">);</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lockInterruptibly</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="n">E</span> <span class="n">first</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">peek</span><span class="o">();</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">first</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span> <span class="c1">// 获取元素为null时候，条件队列等待
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> 
+                        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                    <span class="k">else</span>
+                        <span class="n">nanos</span> <span class="o">=</span> <span class="n">available</span><span class="o">.</span><span class="na">awaitNanos</span><span class="o">(</span><span class="n">nanos</span><span class="o">);</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                    <span class="kt">long</span> <span class="n">delay</span> <span class="o">=</span> <span class="n">first</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">);</span> 
+                    <span class="k">if</span> <span class="o">(</span><span class="n">delay</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="c1">//过期延迟
+</span><span class="c1"></span>                        <span class="k">return</span> <span class="n">q</span><span class="o">.</span><span class="na">poll</span><span class="o">();</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="c1">//超过等待，返回null
+</span><span class="c1"></span>                        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&lt;</span> <span class="n">delay</span> <span class="o">||</span> <span class="n">leader</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="c1">// 
+</span><span class="c1"></span>                        <span class="n">nanos</span> <span class="o">=</span> <span class="n">available</span><span class="o">.</span><span class="na">awaitNanos</span><span class="o">(</span><span class="n">nanos</span><span class="o">);</span>
+                    <span class="k">else</span> <span class="o">{</span>
+                        <span class="n">Thread</span> <span class="n">thisThread</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+                        <span class="n">leader</span> <span class="o">=</span> <span class="n">thisThread</span><span class="o">;</span>
+                        <span class="k">try</span> <span class="o">{</span>
+                            <span class="kt">long</span> <span class="n">timeLeft</span> <span class="o">=</span> <span class="n">available</span><span class="o">.</span><span class="na">awaitNanos</span><span class="o">(</span><span class="n">delay</span><span class="o">);</span>
+                            <span class="n">nanos</span> <span class="o">-=</span> <span class="n">delay</span> <span class="o">-</span> <span class="n">timeLeft</span><span class="o">;</span> <span class="c1">//算出剩余等待时间
+</span><span class="c1"></span>                        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                            <span class="k">if</span> <span class="o">(</span><span class="n">leader</span> <span class="o">==</span> <span class="n">thisThread</span><span class="o">)</span>
+                                <span class="n">leader</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                        <span class="o">}</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">leader</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">q</span><span class="o">.</span><span class="na">peek</span><span class="o">()</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                <span class="n">available</span><span class="o">.</span><span class="na">signal</span><span class="o">();</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2-take方法">2. take方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Retrieves and removes the head of this queue, waiting if necessary
+</span><span class="cm">     * until an element with an expired delay is available on this queue.
+</span><span class="cm">     * 检索并删除此队列的头部，如果需要，则等待，直到该队列上有过期延迟的元素为止。
+</span><span class="cm">     * @return the head of this queue
+</span><span class="cm">     * @throws InterruptedException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">take</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lockInterruptibly</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="n">E</span> <span class="n">first</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">peek</span><span class="o">();</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">first</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                    <span class="n">available</span><span class="o">.</span><span class="na">await</span><span class="o">();</span>
+                <span class="k">else</span> <span class="o">{</span>
+                    <span class="kt">long</span> <span class="n">delay</span> <span class="o">=</span> <span class="n">first</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">);</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">delay</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>
+                        <span class="k">return</span> <span class="n">q</span><span class="o">.</span><span class="na">poll</span><span class="o">();</span>
+                    <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">leader</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                        <span class="n">available</span><span class="o">.</span><span class="na">await</span><span class="o">();</span>
+                    <span class="k">else</span> <span class="o">{</span>
+                        <span class="n">Thread</span> <span class="n">thisThread</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+                        <span class="n">leader</span> <span class="o">=</span> <span class="n">thisThread</span><span class="o">;</span>
+                        <span class="k">try</span> <span class="o">{</span>
+                            <span class="n">available</span><span class="o">.</span><span class="na">awaitNanos</span><span class="o">(</span><span class="n">delay</span><span class="o">);</span>
+                        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                            <span class="k">if</span> <span class="o">(</span><span class="n">leader</span> <span class="o">==</span> <span class="n">thisThread</span><span class="o">)</span>
+                                <span class="n">leader</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                        <span class="o">}</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">leader</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">q</span><span class="o">.</span><span class="na">peek</span><span class="o">()</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                <span class="n">available</span><span class="o">.</span><span class="na">signal</span><span class="o">();</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3-peek方法">3. peek方法</h3>
+<p>peek方法是java.util.Queue接口方法。获取队列的头部，不删除队列头部元素。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Retrieves, but does not remove, the head of this queue, or
+</span><span class="cm">     * returns &lt;tt&gt;null&lt;/tt&gt; if this queue is empty.  Unlike
+</span><span class="cm">     * &lt;tt&gt;poll&lt;/tt&gt;, if no expired elements are available in the queue,
+</span><span class="cm">     * this method returns the element that will expire next,
+</span><span class="cm">     * if one exists.
+</span><span class="cm">     * 如果此队列为空，则检索该队列的头部，但不删除该队列的头，或返回&lt; tt &gt; null &lt;/ tt &gt;。与&lt; tt &gt;poll&lt; / tt &gt;不同，
+</span><span class="cm">     * 如果队列中没有过期的元素，该方法将返回将在下一次过期的元素，如果存在的话。
+</span><span class="cm">     * @return the head of this queue, or &lt;tt&gt;null&lt;/tt&gt; if this
+</span><span class="cm">     *         queue is empty.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">peek</span><span class="o">()</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">q</span><span class="o">.</span><span class="na">peek</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="三移除队列">三、移除队列</h2>
+<h3 id="1-remove方法">1. remove方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Removes a single instance of the specified element from this
+</span><span class="cm">     * queue, if it is present, whether or not it has expired.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">remove</span><span class="o">(</span><span class="n">Object</span> <span class="n">o</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">q</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">o</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2-clear方法">2. clear方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Atomically removes all of the elements from this delay queue.
+</span><span class="cm">     * The queue will be empty after this call returns.
+</span><span class="cm">     * Elements with an unexpired delay are not waited for; they are
+</span><span class="cm">     * simply discarded from the queue.
+</span><span class="cm">     * 原子地从这个延迟队列中删除所有的元素。此调用返回后，队列将为空。未过期的元素没有等待;它们被简单地从队列中丢弃。
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">clear</span><span class="o">()</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">q</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3-drainto方法">3. drainTo方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * @throws UnsupportedOperationException {@inheritDoc}
+</span><span class="cm">     * @throws ClassCastException            {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException          {@inheritDoc}
+</span><span class="cm">     * @throws IllegalArgumentException      {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">drainTo</span><span class="o">(</span><span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">E</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="k">this</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">();</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="n">E</span> <span class="n">first</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">peek</span><span class="o">();</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">first</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">first</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">)</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="c1">//未过期延迟，终止
+</span><span class="c1"></span>                    <span class="k">break</span><span class="o">;</span>
+                <span class="n">c</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">q</span><span class="o">.</span><span class="na">poll</span><span class="o">());</span>
+                <span class="o">++</span><span class="n">n</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="n">n</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @throws UnsupportedOperationException {@inheritDoc}
+</span><span class="cm">     * @throws ClassCastException            {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException          {@inheritDoc}
+</span><span class="cm">     * @throws IllegalArgumentException      {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">drainTo</span><span class="o">(</span><span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">E</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">,</span> <span class="kt">int</span> <span class="n">maxElements</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="k">this</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">maxElements</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>
+            <span class="k">return</span> <span class="n">0</span><span class="o">;</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+            <span class="k">while</span> <span class="o">(</span><span class="n">n</span> <span class="o">&lt;</span> <span class="n">maxElements</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">E</span> <span class="n">first</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">peek</span><span class="o">();</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">first</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">first</span><span class="o">.</span><span class="na">getDelay</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">NANOSECONDS</span><span class="o">)</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="c1">//未过期延迟，终止
+</span><span class="c1"></span>                    <span class="k">break</span><span class="o">;</span>
+                <span class="n">c</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">q</span><span class="o">.</span><span class="na">poll</span><span class="o">());</span>
+                <span class="o">++</span><span class="n">n</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="n">n</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="五iterator-迭代器实现">五、Iterator 迭代器实现</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="kd">class</span> <span class="nc">Itr</span> <span class="kd">implements</span> <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">Object</span><span class="o">[]</span> <span class="n">array</span><span class="o">;</span> <span class="c1">// Array of all elements 数组的所有元素
+</span><span class="c1"></span>        <span class="kt">int</span> <span class="n">cursor</span><span class="o">;</span>           <span class="c1">// index of next element to return; 下一个元素的返回索引;
+</span><span class="c1"></span>        <span class="kt">int</span> <span class="n">lastRet</span><span class="o">;</span>          <span class="c1">// index of last element, or -1 if no such 最后一个元素的索引，或者- 1，如果没有
+</span><span class="c1"></span>
+        <span class="n">Itr</span><span class="o">(</span><span class="n">Object</span><span class="o">[]</span> <span class="n">array</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">lastRet</span> <span class="o">=</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">array</span> <span class="o">=</span> <span class="n">array</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">hasNext</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">cursor</span> <span class="o">&lt;</span> <span class="n">array</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="nd">@SuppressWarnings</span><span class="o">(</span><span class="s">&#34;unchecked&#34;</span><span class="o">)</span>
+        <span class="kd">public</span> <span class="n">E</span> <span class="nf">next</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">cursor</span> <span class="o">&gt;=</span> <span class="n">array</span><span class="o">.</span><span class="na">length</span><span class="o">)</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">NoSuchElementException</span><span class="o">();</span>
+            <span class="n">lastRet</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">;</span>
+            <span class="k">return</span> <span class="o">(</span><span class="n">E</span><span class="o">)</span><span class="n">array</span><span class="o">[</span><span class="n">cursor</span><span class="o">++];</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">remove</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">lastRet</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">();</span>
+            <span class="n">Object</span> <span class="n">x</span> <span class="o">=</span> <span class="n">array</span><span class="o">[</span><span class="n">lastRet</span><span class="o">];</span>
+            <span class="n">lastRet</span> <span class="o">=</span> <span class="o">-</span><span class="n">1</span><span class="o">;</span>
+            <span class="c1">// Traverse underlying queue to find == element,
+</span><span class="c1"></span>            <span class="c1">// not just a .equals element.
+</span><span class="c1"></span>            <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="k">for</span> <span class="o">(</span><span class="n">Iterator</span> <span class="n">it</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">iterator</span><span class="o">();</span> <span class="n">it</span><span class="o">.</span><span class="na">hasNext</span><span class="o">();</span> <span class="o">)</span> <span class="o">{</span> <span class="c1">//迭代优先队列
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">it</span><span class="o">.</span><span class="na">next</span><span class="o">()</span> <span class="o">==</span> <span class="n">x</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">it</span><span class="o">.</span><span class="na">remove</span><span class="o">();</span>
+                        <span class="k">return</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-06-15 18:11
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/DelayQueue/">DelayQueue</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/collection/05.SynchronousQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">SynchronousQueue</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/collection/03.PriorityBlockingQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">PriorityBlockingQueue</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

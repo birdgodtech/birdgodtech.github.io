@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>CopyOnWriteArrayList - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="CopyOnWriteArrayList源码分析 简介 CopyOnWrite容器即写时复制的容器。通俗的理解是当我们往一个容器添加元素的时候，" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/collection/08.CopyOnWriteArrayList%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/collection/08.CopyOnWriteArrayList%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/collection/08.CopyOnWriteArrayList%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="CopyOnWriteArrayList" />
+<meta property="og:description" content="CopyOnWriteArrayList源码分析 简介 CopyOnWrite容器即写时复制的容器。通俗的理解是当我们往一个容器添加元素的时候，" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/collection/08.CopyOnWriteArrayList%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2017-07-08T21:18:08+00:00" />
+<meta property="article:modified_time" content="2017-07-08T21:18:08+00:00" />
+<meta itemprop="name" content="CopyOnWriteArrayList">
+<meta itemprop="description" content="CopyOnWriteArrayList源码分析 简介 CopyOnWrite容器即写时复制的容器。通俗的理解是当我们往一个容器添加元素的时候，">
+<meta itemprop="datePublished" content="2017-07-08T21:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2017-07-08T21:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="2591">
+
+
+
+<meta itemprop="keywords" content="CopyOnWriteArrayList," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="CopyOnWriteArrayList"/>
+<meta name="twitter:description" content="CopyOnWriteArrayList源码分析 简介 CopyOnWrite容器即写时复制的容器。通俗的理解是当我们往一个容器添加元素的时候，"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">CopyOnWriteArrayList</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-07-08 21:18 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 2591 字 </span>
+      <span class="more-meta"> 预计阅读 6 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a>
+      <ul>
+        <li><a href="#一copyonwritearraylist实现内部数据结构">一、CopyOnWriteArrayList实现内部数据结构</a></li>
+        <li><a href="#二add-添加元素">二、add 添加元素</a></li>
+        <li><a href="#三get-获取元素">三、get 获取元素</a></li>
+        <li><a href="#四set-替换元素">四、set 替换元素</a></li>
+        <li><a href="#五remove-删除元素">五、remove 删除元素</a></li>
+        <li><a href="#六总结">六、总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-07-08T21:18:08" title="July 8, 2017">July 8, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="copyonwritearraylist源码分析">CopyOnWriteArrayList源码分析</h1>
+<h2 id="简介">简介</h2>
+<p>　　CopyOnWrite容器即写时复制的容器。通俗的理解是当我们往一个容器添加元素的时候，不直接往当前容器添加，而是先将当前容器进行Copy，
+复制出一个新的容器，然后新的容器里添加元素，添加完元素之后，再将原容器的引用指向新的容器。这样做的好处是我们可以对CopyOnWrite容器
+进行并发的读，而不需要加锁，因为当前容器不会添加任何元素。所以CopyOnWrite容器也是一种读写分离的思想，读和写不同的容器。</p>
+<p>　　CopyOnWriteArrayList这是一个ArrayList的线程安全的变体。</p>
+<h3 id="一copyonwritearraylist实现内部数据结构">一、CopyOnWriteArrayList实现内部数据结构</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">CopyOnWriteArrayList</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span>
+    <span class="kd">implements</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;,</span> <span class="n">RandomAccess</span><span class="o">,</span> <span class="n">Cloneable</span><span class="o">,</span> <span class="n">java</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">Serializable</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="n">8673264195747942595L</span><span class="o">;</span>
+
+    <span class="cm">/** The lock protecting all mutators */</span>
+    <span class="c1">//重入锁
+</span><span class="c1"></span>    <span class="kd">transient</span> <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ReentrantLock</span><span class="o">();</span>
+
+    <span class="cm">/** The array, accessed only via getArray/setArray. */</span>
+    <span class="c1">//Object数组保存集合元素
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">volatile</span> <span class="kd">transient</span> <span class="n">Object</span><span class="o">[]</span> <span class="n">array</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Gets the array.  Non-private so as to also be accessible
+</span><span class="cm">     * from CopyOnWriteArraySet class.
+</span><span class="cm">     */</span>
+    <span class="kd">final</span> <span class="n">Object</span><span class="o">[]</span> <span class="nf">getArray</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">array</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Sets the array.
+</span><span class="cm">     */</span>
+    <span class="kd">final</span> <span class="kt">void</span> <span class="nf">setArray</span><span class="o">(</span><span class="n">Object</span><span class="o">[]</span> <span class="n">a</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">a</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates an empty list.
+</span><span class="cm">     * 创建一个空列表
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">CopyOnWriteArrayList</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">setArray</span><span class="o">(</span><span class="k">new</span> <span class="n">Object</span><span class="o">[</span><span class="n">0</span><span class="o">]);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a list containing the elements of the specified
+</span><span class="cm">     * collection, in the order they are returned by the collection&#39;s
+</span><span class="cm">     * iterator.
+</span><span class="cm">     * 创建包含指定集合元素的列表，按照该集合的迭代器返回的顺序。
+</span><span class="cm">     * @param c the collection of initially held elements
+</span><span class="cm">     * @throws NullPointerException if the specified collection is null
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">CopyOnWriteArrayList</span><span class="o">(</span><span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">E</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">Object</span><span class="o">[]</span> <span class="n">elements</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="na">toArray</span><span class="o">();</span>
+        <span class="c1">// c.toArray might (incorrectly) not return Object[] (see 6260652)
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">elements</span><span class="o">.</span><span class="na">getClass</span><span class="o">()</span> <span class="o">!=</span> <span class="n">Object</span><span class="o">[].</span><span class="na">class</span><span class="o">)</span>
+            <span class="n">elements</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">copyOf</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">elements</span><span class="o">.</span><span class="na">length</span><span class="o">,</span> <span class="n">Object</span><span class="o">[].</span><span class="na">class</span><span class="o">);</span>
+        <span class="n">setArray</span><span class="o">(</span><span class="n">elements</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a list holding a copy of the given array.
+</span><span class="cm">     *创建一个包含给定数组副本的列表
+</span><span class="cm">     * @param toCopyIn the array (a copy of this array is used as the
+</span><span class="cm">     *        internal array)
+</span><span class="cm">     * @throws NullPointerException if the specified array is null
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">CopyOnWriteArrayList</span><span class="o">(</span><span class="n">E</span><span class="o">[]</span> <span class="n">toCopyIn</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">setArray</span><span class="o">(</span><span class="n">Arrays</span><span class="o">.</span><span class="na">copyOf</span><span class="o">(</span><span class="n">toCopyIn</span><span class="o">,</span> <span class="n">toCopyIn</span><span class="o">.</span><span class="na">length</span><span class="o">,</span> <span class="n">Object</span><span class="o">[].</span><span class="na">class</span><span class="o">));</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="二add-添加元素">二、add 添加元素</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Appends the specified element to the end of this list.
+</span><span class="cm">     * 添加元素
+</span><span class="cm">     * @param e element to be appended to this list
+</span><span class="cm">     * @return &lt;tt&gt;true&lt;/tt&gt; (as specified by {@link Collection#add})
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">add</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">Object</span><span class="o">[]</span> <span class="n">elements</span> <span class="o">=</span> <span class="n">getArray</span><span class="o">();</span>
+            <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="n">Object</span><span class="o">[]</span> <span class="n">newElements</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">copyOf</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">len</span> <span class="o">+</span> <span class="n">1</span><span class="o">);</span> <span class="c1">//1.复制一个副本数组
+</span><span class="c1"></span>            <span class="n">newElements</span><span class="o">[</span><span class="n">len</span><span class="o">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">;</span>                                    <span class="c1">//2.新元素添加到副本数组中
+</span><span class="c1"></span>            <span class="n">setArray</span><span class="o">(</span><span class="n">newElements</span><span class="o">);</span>                                   <span class="c1">//3.在把副本赋值给集合数组
+</span><span class="c1"></span>            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+ <span class="cm">/**
+</span><span class="cm">     * Inserts the specified element at the specified position in this
+</span><span class="cm">     * list. Shifts the element currently at that position (if any) and
+</span><span class="cm">     * any subsequent elements to the right (adds one to their indices).
+</span><span class="cm">     * 将指定元素插入该列表中的指定位置。将当前位置上的元素(如果有)和其他元素移到右边(将一个元素添加到它们的索引中)。
+</span><span class="cm">     * @throws IndexOutOfBoundsException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">add</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="n">E</span> <span class="n">element</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">Object</span><span class="o">[]</span> <span class="n">elements</span> <span class="o">=</span> <span class="n">getArray</span><span class="o">();</span>
+            <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">index</span> <span class="o">&gt;</span> <span class="n">len</span> <span class="o">||</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span> <span class="c1">//索引越界判断
+</span><span class="c1"></span>                <span class="k">throw</span> <span class="k">new</span> <span class="n">IndexOutOfBoundsException</span><span class="o">(</span><span class="s">&#34;Index: &#34;</span><span class="o">+</span><span class="n">index</span><span class="o">+</span>
+                                                    <span class="s">&#34;, Size: &#34;</span><span class="o">+</span><span class="n">len</span><span class="o">);</span>
+            <span class="n">Object</span><span class="o">[]</span> <span class="n">newElements</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">numMoved</span> <span class="o">=</span> <span class="n">len</span> <span class="o">-</span> <span class="n">index</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">numMoved</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="c1">//尾添加数据
+</span><span class="c1"></span>                <span class="n">newElements</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">copyOf</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">len</span> <span class="o">+</span> <span class="n">1</span><span class="o">);</span> 
+            <span class="k">else</span> <span class="o">{</span> <span class="c1">//中间添加数据，后面数据都往右移一个下标
+</span><span class="c1"></span>                <span class="n">newElements</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Object</span><span class="o">[</span><span class="n">len</span> <span class="o">+</span> <span class="n">1</span><span class="o">];</span>
+                <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">newElements</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">index</span><span class="o">);</span> 
+                <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">index</span><span class="o">,</span> <span class="n">newElements</span><span class="o">,</span> <span class="n">index</span> <span class="o">+</span> <span class="n">1</span><span class="o">,</span>
+                                 <span class="n">numMoved</span><span class="o">);</span> <span class="c1">//后面数据都往右移一个下标
+</span><span class="c1"></span>            <span class="o">}</span>
+            <span class="n">newElements</span><span class="o">[</span><span class="n">index</span><span class="o">]</span> <span class="o">=</span> <span class="n">element</span><span class="o">;</span>
+            <span class="n">setArray</span><span class="o">(</span><span class="n">newElements</span><span class="o">);</span> <span class="c1">//在把副本赋值给集合数组
+</span><span class="c1"></span>        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+ <span class="cm">/**
+</span><span class="cm">     * Append the element if not present.
+</span><span class="cm">     * 添加元素，如果不存在的话。
+</span><span class="cm">     * @param e element to be added to this list, if absent
+</span><span class="cm">     * @return &lt;tt&gt;true&lt;/tt&gt; if the element was added
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">addIfAbsent</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="c1">// Copy while checking if already present.
+</span><span class="c1"></span>            <span class="c1">// This wins in the most common case where it is not present
+</span><span class="c1"></span>            <span class="n">Object</span><span class="o">[]</span> <span class="n">elements</span> <span class="o">=</span> <span class="n">getArray</span><span class="o">();</span>
+            <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="n">Object</span><span class="o">[]</span> <span class="n">newElements</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Object</span><span class="o">[</span><span class="n">len</span> <span class="o">+</span> <span class="n">1</span><span class="o">];</span>
+            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">len</span><span class="o">;</span> <span class="o">++</span><span class="n">i</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">eq</span><span class="o">(</span><span class="n">e</span><span class="o">,</span> <span class="n">elements</span><span class="o">[</span><span class="n">i</span><span class="o">]))</span>
+                    <span class="k">return</span> <span class="kc">false</span><span class="o">;</span> <span class="c1">// exit, throwing away copy
+</span><span class="c1"></span>                <span class="k">else</span>
+                    <span class="n">newElements</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="n">elements</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+            <span class="o">}</span>
+            <span class="n">newElements</span><span class="o">[</span><span class="n">len</span><span class="o">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">;</span>
+            <span class="n">setArray</span><span class="o">(</span><span class="n">newElements</span><span class="o">);</span>
+            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span> 
+ <span class="cm">/**
+</span><span class="cm">      * Appends all of the elements in the specified collection to the end
+</span><span class="cm">      * of this list, in the order that they are returned by the specified
+</span><span class="cm">      * collection&#39;s iterator.
+</span><span class="cm">      * 将指定集合中的所有元素附加到这个列表的末尾，以便由指定集合的迭代器返回它们。
+</span><span class="cm">      * @param c collection containing elements to be added to this list
+</span><span class="cm">      * @return &lt;tt&gt;true&lt;/tt&gt; if this list changed as a result of the call
+</span><span class="cm">      * @throws NullPointerException if the specified collection is null
+</span><span class="cm">      * @see #add(Object)
+</span><span class="cm">      */</span>
+     <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">addAll</span><span class="o">(</span><span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">E</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">)</span> <span class="o">{</span>
+         <span class="n">Object</span><span class="o">[]</span> <span class="n">cs</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="na">toArray</span><span class="o">();</span>
+         <span class="k">if</span> <span class="o">(</span><span class="n">cs</span><span class="o">.</span><span class="na">length</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span>
+             <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+         <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+         <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+         <span class="k">try</span> <span class="o">{</span>
+             <span class="n">Object</span><span class="o">[]</span> <span class="n">elements</span> <span class="o">=</span> <span class="n">getArray</span><span class="o">();</span>
+             <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+             <span class="n">Object</span><span class="o">[]</span> <span class="n">newElements</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">copyOf</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">len</span> <span class="o">+</span> <span class="n">cs</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+             <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">cs</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">newElements</span><span class="o">,</span> <span class="n">len</span><span class="o">,</span> <span class="n">cs</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+             <span class="n">setArray</span><span class="o">(</span><span class="n">newElements</span><span class="o">);</span>
+             <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+         <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+             <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+         <span class="o">}</span>
+     <span class="o">}</span>
+ 
+     <span class="cm">/**
+</span><span class="cm">      * Inserts all of the elements in the specified collection into this
+</span><span class="cm">      * list, starting at the specified position.  Shifts the element
+</span><span class="cm">      * currently at that position (if any) and any subsequent elements to
+</span><span class="cm">      * the right (increases their indices).  The new elements will appear
+</span><span class="cm">      * in this list in the order that they are returned by the
+</span><span class="cm">      * specified collection&#39;s iterator.
+</span><span class="cm">      * 将指定集合中的所有元素插入该列表，从指定位置开始。将当前位置上的元素(如果有)和其他元素移到右边(增加它们的索引)。新元素将出现在这个列表中，按照指定集合的迭代器返回的顺序。
+</span><span class="cm">      * @param index index at which to insert the first element
+</span><span class="cm">      *        from the specified collection
+</span><span class="cm">      * @param c collection containing elements to be added to this list
+</span><span class="cm">      * @return &lt;tt&gt;true&lt;/tt&gt; if this list changed as a result of the call
+</span><span class="cm">      * @throws IndexOutOfBoundsException {@inheritDoc}
+</span><span class="cm">      * @throws NullPointerException if the specified collection is null
+</span><span class="cm">      * @see #add(int,Object)
+</span><span class="cm">      */</span>
+     <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">addAll</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">E</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">)</span> <span class="o">{</span>
+         <span class="n">Object</span><span class="o">[]</span> <span class="n">cs</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="na">toArray</span><span class="o">();</span>
+         <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+         <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+         <span class="k">try</span> <span class="o">{</span>
+             <span class="n">Object</span><span class="o">[]</span> <span class="n">elements</span> <span class="o">=</span> <span class="n">getArray</span><span class="o">();</span>
+             <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+             <span class="k">if</span> <span class="o">(</span><span class="n">index</span> <span class="o">&gt;</span> <span class="n">len</span> <span class="o">||</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span>
+                 <span class="k">throw</span> <span class="k">new</span> <span class="n">IndexOutOfBoundsException</span><span class="o">(</span><span class="s">&#34;Index: &#34;</span><span class="o">+</span><span class="n">index</span><span class="o">+</span>
+                                                     <span class="s">&#34;, Size: &#34;</span><span class="o">+</span><span class="n">len</span><span class="o">);</span>
+             <span class="k">if</span> <span class="o">(</span><span class="n">cs</span><span class="o">.</span><span class="na">length</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span>
+                 <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+             <span class="kt">int</span> <span class="n">numMoved</span> <span class="o">=</span> <span class="n">len</span> <span class="o">-</span> <span class="n">index</span><span class="o">;</span>
+             <span class="n">Object</span><span class="o">[]</span> <span class="n">newElements</span><span class="o">;</span>
+             <span class="k">if</span> <span class="o">(</span><span class="n">numMoved</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span><span class="c1">//插入尾部
+</span><span class="c1"></span>                 <span class="n">newElements</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">copyOf</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">len</span> <span class="o">+</span> <span class="n">cs</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+             <span class="k">else</span> <span class="o">{</span>
+                 <span class="n">newElements</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Object</span><span class="o">[</span><span class="n">len</span> <span class="o">+</span> <span class="n">cs</span><span class="o">.</span><span class="na">length</span><span class="o">];</span>
+                 <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">newElements</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">index</span><span class="o">);</span>
+                 <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">index</span><span class="o">,</span>
+                                  <span class="n">newElements</span><span class="o">,</span> <span class="n">index</span> <span class="o">+</span> <span class="n">cs</span><span class="o">.</span><span class="na">length</span><span class="o">,</span>
+                                  <span class="n">numMoved</span><span class="o">);</span>
+             <span class="o">}</span>
+             <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">cs</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">newElements</span><span class="o">,</span> <span class="n">index</span><span class="o">,</span> <span class="n">cs</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+             <span class="n">setArray</span><span class="o">(</span><span class="n">newElements</span><span class="o">);</span>
+             <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+         <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+             <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+         <span class="o">}</span>
+     <span class="o">}</span>   
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="三get-获取元素">三、get 获取元素</h3>
+<p>获取值时，没有用到锁。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="n">E</span> <span class="nf">get</span><span class="o">(</span><span class="n">Object</span><span class="o">[]</span> <span class="n">a</span><span class="o">,</span> <span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="o">(</span><span class="n">E</span><span class="o">)</span> <span class="n">a</span><span class="o">[</span><span class="n">index</span><span class="o">];</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * {@inheritDoc}
+</span><span class="cm">     *
+</span><span class="cm">     * @throws IndexOutOfBoundsException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">get</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">get</span><span class="o">(</span><span class="n">getArray</span><span class="o">(),</span> <span class="n">index</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="四set-替换元素">四、set 替换元素</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * Replaces the element at the specified position in this list with the
+</span><span class="cm">     * specified element.
+</span><span class="cm">     * 用指定的元素替换该列表中指定位置的元素。
+</span><span class="cm">     * @throws IndexOutOfBoundsException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">set</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="n">E</span> <span class="n">element</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">Object</span><span class="o">[]</span> <span class="n">elements</span> <span class="o">=</span> <span class="n">getArray</span><span class="o">();</span>
+            <span class="n">E</span> <span class="n">oldValue</span> <span class="o">=</span> <span class="n">get</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">index</span><span class="o">);</span>
+
+            <span class="k">if</span> <span class="o">(</span><span class="n">oldValue</span> <span class="o">!=</span> <span class="n">element</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+                <span class="n">Object</span><span class="o">[]</span> <span class="n">newElements</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">copyOf</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">len</span><span class="o">);</span>
+                <span class="n">newElements</span><span class="o">[</span><span class="n">index</span><span class="o">]</span> <span class="o">=</span> <span class="n">element</span><span class="o">;</span>
+                <span class="n">setArray</span><span class="o">(</span><span class="n">newElements</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="c1">// Not quite a no-op; ensures volatile write semantics
+</span><span class="c1"></span>                <span class="n">setArray</span><span class="o">(</span><span class="n">elements</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="n">oldValue</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="五remove-删除元素">五、remove 删除元素</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * Removes the element at the specified position in this list.
+</span><span class="cm">     * Shifts any subsequent elements to the left (subtracts one from their
+</span><span class="cm">     * indices).  Returns the element that was removed from the list.
+</span><span class="cm">     * 按下标删除元素
+</span><span class="cm">     * @throws IndexOutOfBoundsException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">remove</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">Object</span><span class="o">[]</span> <span class="n">elements</span> <span class="o">=</span> <span class="n">getArray</span><span class="o">();</span>
+            <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="n">E</span> <span class="n">oldValue</span> <span class="o">=</span> <span class="n">get</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">index</span><span class="o">);</span>
+            <span class="kt">int</span> <span class="n">numMoved</span> <span class="o">=</span> <span class="n">len</span> <span class="o">-</span> <span class="n">index</span> <span class="o">-</span> <span class="n">1</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">numMoved</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span><span class="c1">//删除最后一个元素
+</span><span class="c1"></span>                <span class="n">setArray</span><span class="o">(</span><span class="n">Arrays</span><span class="o">.</span><span class="na">copyOf</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">len</span> <span class="o">-</span> <span class="n">1</span><span class="o">));</span>
+            <span class="k">else</span> <span class="o">{</span>
+                <span class="n">Object</span><span class="o">[]</span> <span class="n">newElements</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Object</span><span class="o">[</span><span class="n">len</span> <span class="o">-</span> <span class="n">1</span><span class="o">];</span>
+                <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">newElements</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">index</span><span class="o">);</span>
+                <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">elements</span><span class="o">,</span> <span class="n">index</span> <span class="o">+</span> <span class="n">1</span><span class="o">,</span> <span class="n">newElements</span><span class="o">,</span> <span class="n">index</span><span class="o">,</span>
+                                 <span class="n">numMoved</span><span class="o">);</span><span class="c1">//往左移一个下标
+</span><span class="c1"></span>                <span class="n">setArray</span><span class="o">(</span><span class="n">newElements</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="n">oldValue</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Removes the first occurrence of the specified element from this list,
+</span><span class="cm">     * if it is present.  If this list does not contain the element, it is
+</span><span class="cm">     * unchanged.  More formally, removes the element with the lowest index
+</span><span class="cm">     * &lt;tt&gt;i&lt;/tt&gt; such that
+</span><span class="cm">     * &lt;tt&gt;(o==null&amp;nbsp;?&amp;nbsp;get(i)==null&amp;nbsp;:&amp;nbsp;o.equals(get(i)))&lt;/tt&gt;
+</span><span class="cm">     * (if such an element exists).  Returns &lt;tt&gt;true&lt;/tt&gt; if this list
+</span><span class="cm">     * contained the specified element (or equivalently, if this list
+</span><span class="cm">     * changed as a result of the call).
+</span><span class="cm">     * 按元素值删除这个元素
+</span><span class="cm">     * @param o element to be removed from this list, if present
+</span><span class="cm">     * @return &lt;tt&gt;true&lt;/tt&gt; if this list contained the specified element
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">remove</span><span class="o">(</span><span class="n">Object</span> <span class="n">o</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">ReentrantLock</span> <span class="n">lock</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">lock</span><span class="o">;</span>
+        <span class="n">lock</span><span class="o">.</span><span class="na">lock</span><span class="o">();</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">Object</span><span class="o">[]</span> <span class="n">elements</span> <span class="o">=</span> <span class="n">getArray</span><span class="o">();</span>
+            <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">len</span> <span class="o">!=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                <span class="c1">// Copy while searching for element to remove 搜索要删除的元素时复制
+</span><span class="c1"></span>                <span class="c1">// This wins in the normal case of element being present 在元素出现的正常情况下，复制剩余元素
+</span><span class="c1"></span>                <span class="kt">int</span> <span class="n">newlen</span> <span class="o">=</span> <span class="n">len</span> <span class="o">-</span> <span class="n">1</span><span class="o">;</span>
+                <span class="n">Object</span><span class="o">[]</span> <span class="n">newElements</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Object</span><span class="o">[</span><span class="n">newlen</span><span class="o">];</span>
+
+                <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">newlen</span><span class="o">;</span> <span class="o">++</span><span class="n">i</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">eq</span><span class="o">(</span><span class="n">o</span><span class="o">,</span> <span class="n">elements</span><span class="o">[</span><span class="n">i</span><span class="o">]))</span> <span class="o">{</span>
+                        <span class="c1">// found one;  copy remaining and exit
+</span><span class="c1"></span>                        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">1</span><span class="o">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">len</span><span class="o">;</span> <span class="o">++</span><span class="n">k</span><span class="o">)</span>
+                            <span class="n">newElements</span><span class="o">[</span><span class="n">k</span><span class="o">-</span><span class="n">1</span><span class="o">]</span> <span class="o">=</span> <span class="n">elements</span><span class="o">[</span><span class="n">k</span><span class="o">];</span>
+                        <span class="n">setArray</span><span class="o">(</span><span class="n">newElements</span><span class="o">);</span>
+                        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+                    <span class="o">}</span> <span class="k">else</span>
+                        <span class="n">newElements</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="n">elements</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+                <span class="o">}</span>
+
+                <span class="c1">// special handling for last cell 最后一个数据的特殊处理
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">eq</span><span class="o">(</span><span class="n">o</span><span class="o">,</span> <span class="n">elements</span><span class="o">[</span><span class="n">newlen</span><span class="o">]))</span> <span class="o">{</span>
+                    <span class="n">setArray</span><span class="o">(</span><span class="n">newElements</span><span class="o">);</span>
+                    <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">lock</span><span class="o">.</span><span class="na">unlock</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="六总结">六、总结</h3>
+<ul>
+<li>添加或者删除用ReentrantLock控制锁，System.arraycopy操作，性能低；</li>
+<li>get没有锁，可能存在数据不一致情况；</li>
+<li>使用场景，读多，写少地方</li>
+</ul>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-07-08 21:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/CopyOnWriteArrayList/">CopyOnWriteArrayList</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/collection/09.CopyOnWriteArraySet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">CopyOnWriteArraySet</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/collection/07.LinkedBlockingDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">LinkedBlockingDeque</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,1124 @@
+<?xml-stylesheet type="text/xsl" href="https://birdgodtech.github.io/sitemap.xsl"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/rocketmq/2.%E7%BD%91%E7%BB%9C%E5%B1%82%E4%BB%A5%E5%8F%8ARPC%E5%AE%9E%E7%8E%B0/</loc>
+    <lastmod>2020-05-02T20:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/</loc>
+    <lastmod>2020-05-02T20:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/categories/</loc>
+    <lastmod>2020-05-02T20:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/</loc>
+    <lastmod>2020-05-02T20:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/rocketmq/</loc>
+    <lastmod>2020-05-02T20:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/categories/rocketmq/</loc>
+    <lastmod>2020-05-02T20:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/</loc>
+    <lastmod>2020-05-02T20:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/rocketmq/1.rocketmq%E8%83%8C%E6%99%AF/</loc>
+    <lastmod>2020-05-01T20:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/netty/</loc>
+    <lastmod>2019-05-01T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/categories/netty/</loc>
+    <lastmod>2019-05-01T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/14.TrafficShaping/</loc>
+    <lastmod>2019-05-01T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/13.HashedWheelTimer/</loc>
+    <lastmod>2019-04-25T23:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/11.Codec/</loc>
+    <lastmod>2019-04-25T21:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/12.IdleStateHandler/</loc>
+    <lastmod>2019-04-20T22:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/09.FastThreadLocal/</loc>
+    <lastmod>2019-04-15T21:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/08.Future%E5%92%8CPromise/</loc>
+    <lastmod>2019-04-10T21:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/07.Bootstrap/</loc>
+    <lastmod>2019-04-09T22:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/06.EventLoop/</loc>
+    <lastmod>2019-04-04T22:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/05.ChannelPipeline/</loc>
+    <lastmod>2019-03-23T23:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/04.Channel/</loc>
+    <lastmod>2019-03-17T21:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/03.Recycler%E5%AF%B9%E8%B1%A1%E6%B1%A0/</loc>
+    <lastmod>2019-03-12T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/02.PooledByteBuf%E5%86%85%E5%AD%98%E6%B1%A0/</loc>
+    <lastmod>2019-03-07T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/01.Bytebuf/</loc>
+    <lastmod>2019-03-02T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/dubbo/</loc>
+    <lastmod>2018-12-20T20:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/categories/dubbo/</loc>
+    <lastmod>2018-12-20T20:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/dubbo/03.dubbo%E5%BC%95%E7%94%A8%E6%9C%8D%E5%8A%A1/</loc>
+    <lastmod>2018-12-20T20:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/dubbo/02.dubbo%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83/</loc>
+    <lastmod>2018-12-10T20:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/dubbo/01.dubbo%E4%B8%AD%E7%9A%84SPI%E6%9C%BA%E5%88%B6/</loc>
+    <lastmod>2018-12-02T20:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/categories/spring/</loc>
+    <lastmod>2018-11-01T23:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/spring-ApplicationContext/</loc>
+    <lastmod>2018-11-01T23:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/spring-boot/</loc>
+    <lastmod>2018-11-01T23:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/categories/spring-boot/</loc>
+    <lastmod>2018-11-01T23:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/springboot/01.spring-boot%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-11-01T23:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/spring/05.spring-mvc%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-11-01T23:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/spring/04.ApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</loc>
+    <lastmod>2018-10-20T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/spring-Transaction/</loc>
+    <lastmod>2018-10-15T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/spring/03.spring%E7%9A%84%E4%BA%8B%E7%89%A9%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</loc>
+    <lastmod>2018-10-15T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/spring-AOP/</loc>
+    <lastmod>2018-10-05T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/spring/02.spring%E7%9A%84AOP%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</loc>
+    <lastmod>2018-10-05T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/spring-ioc/</loc>
+    <lastmod>2018-10-01T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/spring/01.spring%E7%9A%84IOC%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</loc>
+    <lastmod>2018-10-01T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/striped64/LongAccumulator%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-09-22T20:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/striped64/</loc>
+    <lastmod>2018-09-22T20:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/categories/%E5%B9%B6%E5%8F%91/</loc>
+    <lastmod>2018-09-22T20:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/striped64/LongAdder%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-09-13T20:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/striped64/Striped64%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-09-02T20:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/disruptor/</loc>
+    <lastmod>2018-08-20T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/jdk1.8/ForkJoin1.8%E6%A8%A1%E5%BC%8F%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-08-20T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/disruptor/%E7%BC%93%E5%AD%98%E8%A1%8C%E5%A1%AB%E5%85%85cache-line-padding/</loc>
+    <lastmod>2018-08-15T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/disruptor/%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9Cmemory-barriers/</loc>
+    <lastmod>2018-08-01T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/disruptor/%E4%BC%AA%E5%85%B1%E4%BA%ABFalse-Sharing/</loc>
+    <lastmod>2018-07-25T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/disruptor/8.Disruptor%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-07-16T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/disruptor/7.EventProcessor%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-07-02T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/disruptor/6.RingBuffer%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-06-25T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/disruptor/5.WaitStrategy%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-06-20T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/disruptor/4.SequenceBarrier%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-05-15T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/disruptor/3.Sequencer%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-05-15T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/disruptor/2.Sequence%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-05-08T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/disruptor/1.disruptor%E4%BB%8B%E7%BB%8D/</loc>
+    <lastmod>2018-05-05T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/ConcurrentHashMap/</loc>
+    <lastmod>2018-05-01T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/11.ConcurrentHashMap1.7%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2018-05-01T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/ConcurrentHashMap1.8/</loc>
+    <lastmod>2017-08-18T21:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/14.ConcurrentHashMap1.8%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-08-18T21:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/ConcurrentSkipListSet/</loc>
+    <lastmod>2017-08-18T21:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/13.ConcurrentSkipListSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-08-18T21:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/ConcurrentSkipListMap/</loc>
+    <lastmod>2017-08-10T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/12.ConcurrentSkipListMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-08-10T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/ConcurrentLinkedQueue/</loc>
+    <lastmod>2017-07-22T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/10.ConcurrentLinkedQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-07-22T18:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/CopyOnWriteArraySet/</loc>
+    <lastmod>2017-07-18T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/09.CopyOnWriteArraySet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-07-18T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/CopyOnWriteArrayList/</loc>
+    <lastmod>2017-07-08T21:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/08.CopyOnWriteArrayList%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-07-08T21:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/07.LinkedBlockingDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-07-02T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/LinkedTransferQueue/</loc>
+    <lastmod>2017-07-02T22:18:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/06.LinkedTransferQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-06-25T21:08:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/SynchronousQueue/</loc>
+    <lastmod>2017-06-20T22:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/05.SynchronousQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-06-20T22:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/DelayQueue/</loc>
+    <lastmod>2017-06-15T18:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/04.DelayQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-06-15T18:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/PriorityBlockingQueue/</loc>
+    <lastmod>2017-06-10T18:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/03.PriorityBlockingQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-06-10T18:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/LinkBlockingQueue/</loc>
+    <lastmod>2017-06-04T18:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/02.LinkedBlockingQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-06-04T18:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/ArrayBlockingQueue/</loc>
+    <lastmod>2017-06-01T21:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/collection/01.ArrayBlockingQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-06-01T21:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/ForkJoin/</loc>
+    <lastmod>2017-05-23T21:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/JMH-JVM%E5%9F%BA%E5%87%86%E6%B5%8B%E8%AF%95%E5%B7%A5%E5%85%B7/</loc>
+    <lastmod>2017-05-23T21:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/CLH%E9%94%81-MCS%E9%94%81/</loc>
+    <lastmod>2017-05-15T18:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/CLH%E9%94%81%E5%92%8CMCS%E9%94%81/</loc>
+    <lastmod>2017-05-15T18:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/Fork_Join_Framework/</loc>
+    <lastmod>2017-05-14T20:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/StamppedLock/</loc>
+    <lastmod>2017-05-11T19:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/16.StampedLock/</loc>
+    <lastmod>2017-05-11T19:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/15.ForkJoin%E6%A8%A1%E5%BC%8F%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-05-03T19:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/ScheduledThreadPoolExecutor/</loc>
+    <lastmod>2017-04-25T19:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/14.ScheduledThreadPoolExecutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-04-25T19:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/ThreadPoolExecutor/</loc>
+    <lastmod>2017-04-20T20:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/13.ThreadPoolExecutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-04-20T20:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/FutureTask/</loc>
+    <lastmod>2017-04-15T20:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/12.FutureTask%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-04-15T20:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/ThreadLocal/</loc>
+    <lastmod>2017-04-11T21:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/11.ThreadLocal%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-04-11T21:11:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/CyclicBarrier/</loc>
+    <lastmod>2017-04-06T22:10:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/09.CyclicBarrier%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-04-06T22:10:08+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/Semaphore/</loc>
+    <lastmod>2017-04-03T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/08.Semaphore%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-04-03T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/CountDownLatch/</loc>
+    <lastmod>2017-04-02T22:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/07.CountDownLatch%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-04-02T22:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/ReentrantReadWriteLock/</loc>
+    <lastmod>2017-03-25T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/06.ReentrantReadWriteLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-03-25T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/ReentrantLock/</loc>
+    <lastmod>2017-03-20T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/05.ReentrantLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-03-20T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/AQS/</loc>
+    <lastmod>2017-03-15T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/04.AQS/</loc>
+    <lastmod>2017-03-15T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/Thread/</loc>
+    <lastmod>2017-03-15T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/03.Thread%E7%9A%84interrupt%E8%AF%A6%E8%A7%A3/</loc>
+    <lastmod>2017-03-15T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/Atomic/</loc>
+    <lastmod>2017-03-14T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/02.Atomic%E8%AE%B2%E8%A7%A3/</loc>
+    <lastmod>2017-03-14T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/Synchronizer_Framework/</loc>
+    <lastmod>2017-03-14T18:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/Unsafe/</loc>
+    <lastmod>2017-03-13T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/01.Unsafe/</loc>
+    <lastmod>2017-03-13T21:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/categories/java%E9%9B%86%E5%90%88/</loc>
+    <lastmod>2017-03-10T21:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/TreeSet/</loc>
+    <lastmod>2017-03-10T21:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/16.TreeSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-03-10T21:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/LinkedHashSet/</loc>
+    <lastmod>2017-03-03T20:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/15.LinkedHashSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-03-03T20:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/HashSet/</loc>
+    <lastmod>2017-03-01T21:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/14.HashSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-03-01T21:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/Hashtable/</loc>
+    <lastmod>2017-02-21T20:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/13.Hashtable%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-02-21T20:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/TreeMap/</loc>
+    <lastmod>2017-02-20T20:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/12.TreeMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-02-20T20:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/WeakHashMap/</loc>
+    <lastmod>2017-02-19T20:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/11.WeakHashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-02-19T20:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/IdentityHashMap/</loc>
+    <lastmod>2017-02-18T19:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/10.IdentityHashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-02-18T19:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/LinkedHashMap/</loc>
+    <lastmod>2017-02-17T23:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/09.LinkedHashMap/</loc>
+    <lastmod>2017-02-17T23:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/HashMap/</loc>
+    <lastmod>2017-02-16T20:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/08.HashMap_1.7/</loc>
+    <lastmod>2017-02-16T20:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/ArrayDeque/</loc>
+    <lastmod>2017-02-15T22:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/07.ArrayDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-02-15T22:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/PriorityQueue/</loc>
+    <lastmod>2017-02-14T21:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/06.PriorityQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-02-14T21:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/Stack/</loc>
+    <lastmod>2017-02-13T20:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/05.Stack%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-02-13T20:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/Vector/</loc>
+    <lastmod>2017-02-13T18:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/04.Vector%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2017-02-13T18:30:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/LinkedList/</loc>
+    <lastmod>2017-02-12T19:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/03.LinkedList/</loc>
+    <lastmod>2017-02-12T19:00:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/01.java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6/</loc>
+    <lastmod>2017-02-10T20:12:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/List/</loc>
+    <lastmod>2017-02-10T20:12:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/Map/</loc>
+    <lastmod>2017-02-10T20:12:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/Queue/</loc>
+    <lastmod>2017-02-10T20:12:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/tags/Set/</loc>
+    <lastmod>2017-02-10T20:12:11+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/about/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/collection/08.HashMap_1.8/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/10.Phaser%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/17.Exchange%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/concurrent/jdk1.8/CompletableFuture%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://birdgodtech.github.io/post/netty/10.%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%E6%A3%80%E6%B5%8B/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+</urlset>

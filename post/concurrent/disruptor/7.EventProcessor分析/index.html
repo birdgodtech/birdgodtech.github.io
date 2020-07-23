@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>EventProcessor - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="EventProcessor分析 简介 EventProcessor 持有特定消费者(Consumer)的 Sequence，并提供用于调用事件处理实现的事件循环(Event" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/disruptor/7.EventProcessor%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/disruptor/7.EventProcessor%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/disruptor/7.EventProcessor%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="EventProcessor" />
+<meta property="og:description" content="EventProcessor分析 简介 EventProcessor 持有特定消费者(Consumer)的 Sequence，并提供用于调用事件处理实现的事件循环(Event" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/disruptor/7.EventProcessor%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2018-07-02T18:18:08+00:00" />
+<meta property="article:modified_time" content="2018-07-02T18:18:08+00:00" />
+<meta itemprop="name" content="EventProcessor">
+<meta itemprop="description" content="EventProcessor分析 简介 EventProcessor 持有特定消费者(Consumer)的 Sequence，并提供用于调用事件处理实现的事件循环(Event">
+<meta itemprop="datePublished" content="2018-07-02T18:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2018-07-02T18:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="3386">
+
+
+
+<meta itemprop="keywords" content="disruptor," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="EventProcessor"/>
+<meta name="twitter:description" content="EventProcessor分析 简介 EventProcessor 持有特定消费者(Consumer)的 Sequence，并提供用于调用事件处理实现的事件循环(Event"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">EventProcessor</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2018-07-02 18:18 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 3386 字 </span>
+      <span class="more-meta"> 预计阅读 7 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#一eventprocessor-接口说明">一、EventProcessor 接口说明</a></li>
+    <li><a href="#二batcheventprocessor">二、BatchEventProcessor</a>
+      <ul>
+        <li><a href="#1batcheventprocessor构造">1.BatchEventProcessor构造</a></li>
+        <li><a href="#2eventprocessor接口实现方法">2.EventProcessor接口实现方法</a></li>
+        <li><a href="#3线程执行run方法">3.线程执行run方法</a></li>
+      </ul>
+    </li>
+    <li><a href="#三workprocessor">三、WorkProcessor</a>
+      <ul>
+        <li><a href="#1workprocessor-构造">1.WorkProcessor 构造</a></li>
+        <li><a href="#2eventprocessor接口实现方法-1">2.EventProcessor接口实现方法</a></li>
+        <li><a href="#3线程执行run方法-1">3.线程执行run方法</a></li>
+        <li><a href="#4workerpool-实现">4.WorkerPool 实现</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2018-07-02T18:18:08" title="July 2, 2018">July 2, 2018</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="eventprocessor分析">EventProcessor分析</h1>
+<h2 id="简介">简介</h2>
+<p>EventProcessor 持有特定消费者(Consumer)的 Sequence，并提供用于调用事件处理实现的事件循环(Event Loop)。</p>
+<p>BatchEventProcessor 包含事件循环的有效实现，并将回调到EventHandler接口的已使用提供的实现。</p>
+<h2 id="一eventprocessor-接口说明">一、EventProcessor 接口说明</h2>
+<p>EventProcessor实现Runnable接口，EventProcessor通常与执行的线程关联。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm"> * EventProcessors waitFor events to become available for consumption from the {@link RingBuffer}
+</span><span class="cm"> * 事件处理器等待事件变成可用于消费的事件
+</span><span class="cm"> * &lt;p&gt;
+</span><span class="cm"> * An EventProcessor will generally be associated with a Thread for execution.
+</span><span class="cm"> * 
+</span><span class="cm"> */</span>
+<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">EventProcessor</span> <span class="kd">extends</span> <span class="n">Runnable</span>
+<span class="o">{</span>
+    <span class="cm">/**
+</span><span class="cm">     * Get a reference to the {@link Sequence} being used by this {@link EventProcessor}.
+</span><span class="cm">     * 获取一个事件处理器使用的序列引用
+</span><span class="cm">     * 
+</span><span class="cm">     * @return reference to the {@link Sequence} for this {@link EventProcessor}
+</span><span class="cm">     */</span>
+    <span class="n">Sequence</span> <span class="nf">getSequence</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Signal that this EventProcessor should stop when it has finished consuming at the next clean break.
+</span><span class="cm">     * 指示此EventProcessor在下一次清理完毕后应该停止使用。
+</span><span class="cm">     * It will call {@link SequenceBarrier#alert()} to notify the thread to check status.
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">halt</span><span class="o">();</span>
+   
+    <span class="kt">boolean</span> <span class="nf">isRunning</span><span class="o">();</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二batcheventprocessor">二、BatchEventProcessor</h2>
+<h3 id="1batcheventprocessor构造">1.BatchEventProcessor构造</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm"> * Convenience class for handling the batching semantics of consuming entries from a {@link RingBuffer}
+</span><span class="cm"> * and delegating the available events to an {@link EventHandler}.
+</span><span class="cm"> * &lt;p&gt;
+</span><span class="cm"> * If the {@link EventHandler} also implements {@link LifecycleAware} it will be notified just after the thread
+</span><span class="cm"> * is started and just before the thread is shutdown.
+</span><span class="cm"> *
+</span><span class="cm"> * @param &lt;T&gt; event implementation storing the data for sharing during exchange or parallel coordination of an event.
+</span><span class="cm"> */</span>
+<span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">BatchEventProcessor</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span>
+    <span class="kd">implements</span> <span class="n">EventProcessor</span>
+<span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">AtomicBoolean</span> <span class="n">running</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AtomicBoolean</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span> <span class="c1">//运行状态
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="n">ExceptionHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;</span> <span class="n">exceptionHandler</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FatalExceptionHandler</span><span class="o">();</span>  <span class="c1">//异常处理
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">DataProvider</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">dataProvider</span><span class="o">;</span>  <span class="c1">//数据提供者
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">SequenceBarrier</span> <span class="n">sequenceBarrier</span><span class="o">;</span> <span class="c1">// 序列屏障
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">EventHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;</span> <span class="n">eventHandler</span><span class="o">;</span> <span class="c1">//事件处理
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">sequence</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Sequence</span><span class="o">(</span><span class="n">Sequencer</span><span class="o">.</span><span class="na">INITIAL_CURSOR_VALUE</span><span class="o">);</span> <span class="c1">//序列
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">TimeoutHandler</span> <span class="n">timeoutHandler</span><span class="o">;</span>  <span class="c1">//超时处理
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">BatchStartAware</span> <span class="n">batchStartAware</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Construct a {@link EventProcessor} that will automatically track the progress by updating its sequence when
+</span><span class="cm">     * the {@link EventHandler#onEvent(Object, long, boolean)} method returns.
+</span><span class="cm">     *
+</span><span class="cm">     * @param dataProvider    to which events are published.
+</span><span class="cm">     * @param sequenceBarrier on which it is waiting.
+</span><span class="cm">     * @param eventHandler    is the delegate to which events are dispatched.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">BatchEventProcessor</span><span class="o">(</span>
+        <span class="kd">final</span> <span class="n">DataProvider</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">dataProvider</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">SequenceBarrier</span> <span class="n">sequenceBarrier</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">EventHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;</span> <span class="n">eventHandler</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">dataProvider</span> <span class="o">=</span> <span class="n">dataProvider</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">sequenceBarrier</span> <span class="o">=</span> <span class="n">sequenceBarrier</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">eventHandler</span> <span class="o">=</span> <span class="n">eventHandler</span><span class="o">;</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">eventHandler</span> <span class="k">instanceof</span> <span class="n">SequenceReportingEventHandler</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="o">((</span><span class="n">SequenceReportingEventHandler</span><span class="o">&lt;?&gt;)</span> <span class="n">eventHandler</span><span class="o">).</span><span class="na">setSequenceCallback</span><span class="o">(</span><span class="n">sequence</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="n">batchStartAware</span> <span class="o">=</span>
+                <span class="o">(</span><span class="n">eventHandler</span> <span class="k">instanceof</span> <span class="n">BatchStartAware</span><span class="o">)</span> <span class="o">?</span> <span class="o">(</span><span class="n">BatchStartAware</span><span class="o">)</span> <span class="n">eventHandler</span> <span class="o">:</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="n">timeoutHandler</span> <span class="o">=</span>
+                <span class="o">(</span><span class="n">eventHandler</span> <span class="k">instanceof</span> <span class="n">TimeoutHandler</span><span class="o">)</span> <span class="o">?</span> <span class="o">(</span><span class="n">TimeoutHandler</span><span class="o">)</span> <span class="n">eventHandler</span> <span class="o">:</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2eventprocessor接口实现方法">2.EventProcessor接口实现方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Sequence</span> <span class="nf">getSequence</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">sequence</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">halt</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="n">running</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+        <span class="n">sequenceBarrier</span><span class="o">.</span><span class="na">alert</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isRunning</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">running</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3线程执行run方法">3.线程执行run方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * It is ok to have another thread rerun this method after a halt().
+</span><span class="cm">     *
+</span><span class="cm">     * @throws IllegalStateException if this object instance is already running in a thread
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">running</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="kc">false</span><span class="o">,</span> <span class="kc">true</span><span class="o">))</span>  <span class="c1">//检查是否执行状态
+</span><span class="c1"></span>        <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">&#34;Thread is already running&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="c1">//先清除序列屏障的通知状态。
+</span><span class="c1"></span>        <span class="n">sequenceBarrier</span><span class="o">.</span><span class="na">clearAlert</span><span class="o">();</span>
+
+        <span class="n">notifyStart</span><span class="o">();</span>
+
+        <span class="n">T</span> <span class="n">event</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="c1">//获取要申请的序列值。
+</span><span class="c1"></span>        <span class="kt">long</span> <span class="n">nextSequence</span> <span class="o">=</span> <span class="n">sequence</span><span class="o">.</span><span class="na">get</span><span class="o">()</span> <span class="o">+</span> <span class="n">1L</span><span class="o">;</span>
+        <span class="k">try</span>
+        <span class="o">{</span>
+            <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="k">try</span>
+                <span class="o">{</span>   
+                    <span class="c1">//通过序列栅栏来等待可用的序列值。
+</span><span class="c1"></span>                    <span class="kd">final</span> <span class="kt">long</span> <span class="n">availableSequence</span> <span class="o">=</span> <span class="n">sequenceBarrier</span><span class="o">.</span><span class="na">waitFor</span><span class="o">(</span><span class="n">nextSequence</span><span class="o">);</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">batchStartAware</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+                    <span class="o">{</span>  
+                        <span class="c1">//得到可用的序列值后，批量处理nextSequence到availableSequence之间的事件。
+</span><span class="c1"></span>                        <span class="n">batchStartAware</span><span class="o">.</span><span class="na">onBatchStart</span><span class="o">(</span><span class="n">availableSequence</span> <span class="o">-</span> <span class="n">nextSequence</span> <span class="o">+</span> <span class="n">1</span><span class="o">);</span>
+                    <span class="o">}</span>
+
+                    <span class="k">while</span> <span class="o">(</span><span class="n">nextSequence</span> <span class="o">&lt;=</span> <span class="n">availableSequence</span><span class="o">)</span><span class="c1">//循环处理
+</span><span class="c1"></span>                    <span class="o">{</span>
+                        <span class="n">event</span> <span class="o">=</span> <span class="n">dataProvider</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">nextSequence</span><span class="o">);</span>
+                        <span class="n">eventHandler</span><span class="o">.</span><span class="na">onEvent</span><span class="o">(</span><span class="n">event</span><span class="o">,</span> <span class="n">nextSequence</span><span class="o">,</span> <span class="n">nextSequence</span> <span class="o">==</span> <span class="n">availableSequence</span><span class="o">);</span>
+                        <span class="n">nextSequence</span><span class="o">++;</span>
+                    <span class="o">}</span>
+
+                    <span class="n">sequence</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">availableSequence</span><span class="o">);</span>
+                <span class="o">}</span>
+                <span class="k">catch</span> <span class="o">(</span><span class="kd">final</span> <span class="n">TimeoutException</span> <span class="n">e</span><span class="o">)</span>
+                <span class="o">{</span>
+                    <span class="n">notifyTimeout</span><span class="o">(</span><span class="n">sequence</span><span class="o">.</span><span class="na">get</span><span class="o">());</span> <span class="c1">//超时处理
+</span><span class="c1"></span>                <span class="o">}</span>
+                <span class="k">catch</span> <span class="o">(</span><span class="kd">final</span> <span class="n">AlertException</span> <span class="n">ex</span><span class="o">)</span> 
+                <span class="o">{</span>   <span class="c1">// 通知异常，判断运行状态是否为false，是停止任务。否，继续运行
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(!</span><span class="n">running</span><span class="o">.</span><span class="na">get</span><span class="o">())</span>   
+                    <span class="o">{</span>
+                        <span class="k">break</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+                <span class="k">catch</span> <span class="o">(</span><span class="kd">final</span> <span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span>
+                <span class="o">{</span>
+                    <span class="n">exceptionHandler</span><span class="o">.</span><span class="na">handleEventException</span><span class="o">(</span><span class="n">ex</span><span class="o">,</span> <span class="n">nextSequence</span><span class="o">,</span> <span class="n">event</span><span class="o">);</span> <span class="c1">//异常处理
+</span><span class="c1"></span>                    <span class="n">sequence</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">nextSequence</span><span class="o">);</span>
+                    <span class="n">nextSequence</span><span class="o">++;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="k">finally</span>
+        <span class="o">{</span>   
+            <span class="c1">//主循环退出后，如果eventHandler实现了LifecycleAware，这里会对其进行一个停止通知。
+</span><span class="c1"></span>            <span class="n">notifyShutdown</span><span class="o">();</span>
+            <span class="n">running</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * Notifies the EventHandler when this processor is starting up
+</span><span class="cm">     * 当处理器启动时通知事件处理程序
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">notifyStart</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">eventHandler</span> <span class="k">instanceof</span> <span class="n">LifecycleAware</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">try</span>
+            <span class="o">{</span>
+                <span class="o">((</span><span class="n">LifecycleAware</span><span class="o">)</span> <span class="n">eventHandler</span><span class="o">).</span><span class="na">onStart</span><span class="o">();</span>
+            <span class="o">}</span>
+            <span class="k">catch</span> <span class="o">(</span><span class="kd">final</span> <span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="n">exceptionHandler</span><span class="o">.</span><span class="na">handleOnStartException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">notifyTimeout</span><span class="o">(</span><span class="kd">final</span> <span class="kt">long</span> <span class="n">availableSequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">try</span>
+        <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">timeoutHandler</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="n">timeoutHandler</span><span class="o">.</span><span class="na">onTimeout</span><span class="o">(</span><span class="n">availableSequence</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">e</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="n">exceptionHandler</span><span class="o">.</span><span class="na">handleEventException</span><span class="o">(</span><span class="n">e</span><span class="o">,</span> <span class="n">availableSequence</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+  <span class="cm">/**
+</span><span class="cm">     * Notifies the EventHandler immediately prior to this processor shutting down
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">notifyShutdown</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">eventHandler</span> <span class="k">instanceof</span> <span class="n">LifecycleAware</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">try</span>
+            <span class="o">{</span>
+                <span class="o">((</span><span class="n">LifecycleAware</span><span class="o">)</span> <span class="n">eventHandler</span><span class="o">).</span><span class="na">onShutdown</span><span class="o">();</span>
+            <span class="o">}</span>
+            <span class="k">catch</span> <span class="o">(</span><span class="kd">final</span> <span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="n">exceptionHandler</span><span class="o">.</span><span class="na">handleOnShutdownException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="三workprocessor">三、WorkProcessor</h2>
+<h3 id="1workprocessor-构造">1.WorkProcessor 构造</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm"> * &lt;p&gt;A {@link WorkProcessor} wraps a single {@link WorkHandler}, effectively consuming the sequence
+</span><span class="cm"> * and ensuring appropriate barriers.&lt;/p&gt;
+</span><span class="cm"> *
+</span><span class="cm"> * &lt;p&gt;Generally, this will be used as part of a {@link WorkerPool}.&lt;/p&gt;
+</span><span class="cm"> *
+</span><span class="cm"> * @param &lt;T&gt; event implementation storing the details for the work to processed.
+</span><span class="cm"> */</span>
+<span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">WorkProcessor</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span>
+    <span class="kd">implements</span> <span class="n">EventProcessor</span>
+<span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">AtomicBoolean</span> <span class="n">running</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AtomicBoolean</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">sequence</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Sequence</span><span class="o">(</span><span class="n">Sequencer</span><span class="o">.</span><span class="na">INITIAL_CURSOR_VALUE</span><span class="o">);</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">RingBuffer</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">ringBuffer</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">SequenceBarrier</span> <span class="n">sequenceBarrier</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">WorkHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;</span> <span class="n">workHandler</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">ExceptionHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;</span> <span class="n">exceptionHandler</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">workSequence</span><span class="o">;</span>
+
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">EventReleaser</span> <span class="n">eventReleaser</span> <span class="o">=</span> <span class="k">new</span> <span class="n">EventReleaser</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">release</span><span class="o">()</span>
+        <span class="o">{</span>
+            <span class="n">sequence</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">Long</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">};</span>
+
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">TimeoutHandler</span> <span class="n">timeoutHandler</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Construct a {@link WorkProcessor}.
+</span><span class="cm">     *
+</span><span class="cm">     * @param ringBuffer       to which events are published.
+</span><span class="cm">     * @param sequenceBarrier  on which it is waiting.
+</span><span class="cm">     * @param workHandler      is the delegate to which events are dispatched.
+</span><span class="cm">     * @param exceptionHandler to be called back when an error occurs
+</span><span class="cm">     * @param workSequence     from which to claim the next event to be worked on.  It should always be initialised
+</span><span class="cm">     *                         as {@link Sequencer#INITIAL_CURSOR_VALUE}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">WorkProcessor</span><span class="o">(</span>
+        <span class="kd">final</span> <span class="n">RingBuffer</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">ringBuffer</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">SequenceBarrier</span> <span class="n">sequenceBarrier</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">WorkHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;</span> <span class="n">workHandler</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">ExceptionHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;</span> <span class="n">exceptionHandler</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">workSequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">ringBuffer</span> <span class="o">=</span> <span class="n">ringBuffer</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">sequenceBarrier</span> <span class="o">=</span> <span class="n">sequenceBarrier</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">workHandler</span> <span class="o">=</span> <span class="n">workHandler</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">exceptionHandler</span> <span class="o">=</span> <span class="n">exceptionHandler</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">workSequence</span> <span class="o">=</span> <span class="n">workSequence</span><span class="o">;</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">workHandler</span> <span class="k">instanceof</span> <span class="n">EventReleaseAware</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="o">((</span><span class="n">EventReleaseAware</span><span class="o">)</span> <span class="k">this</span><span class="o">.</span><span class="na">workHandler</span><span class="o">).</span><span class="na">setEventReleaser</span><span class="o">(</span><span class="n">eventReleaser</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="n">timeoutHandler</span> <span class="o">=</span> <span class="o">(</span><span class="n">workHandler</span> <span class="k">instanceof</span> <span class="n">TimeoutHandler</span><span class="o">)</span> <span class="o">?</span> <span class="o">(</span><span class="n">TimeoutHandler</span><span class="o">)</span> <span class="n">workHandler</span> <span class="o">:</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2eventprocessor接口实现方法-1">2.EventProcessor接口实现方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+ <span class="nd">@Override</span>
+ <span class="kd">public</span> <span class="n">Sequence</span> <span class="nf">getSequence</span><span class="o">()</span>
+ <span class="o">{</span>
+     <span class="k">return</span> <span class="n">sequence</span><span class="o">;</span>
+ <span class="o">}</span>
+
+ <span class="nd">@Override</span>
+ <span class="kd">public</span> <span class="kt">void</span> <span class="nf">halt</span><span class="o">()</span>
+ <span class="o">{</span>
+     <span class="n">running</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+     <span class="n">sequenceBarrier</span><span class="o">.</span><span class="na">alert</span><span class="o">();</span>
+ <span class="o">}</span>
+
+ <span class="nd">@Override</span>
+ <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isRunning</span><span class="o">()</span>
+ <span class="o">{</span>
+     <span class="k">return</span> <span class="n">running</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+ <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3线程执行run方法-1">3.线程执行run方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">     * It is ok to have another thread re-run this method after a halt().
+</span><span class="cm">     *
+</span><span class="cm">     * @throws IllegalStateException if this processor is already running
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">running</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="kc">false</span><span class="o">,</span> <span class="kc">true</span><span class="o">))</span>
+        <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">&#34;Thread is already running&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="n">sequenceBarrier</span><span class="o">.</span><span class="na">clearAlert</span><span class="o">();</span>
+
+        <span class="n">notifyStart</span><span class="o">();</span>
+
+        <span class="kt">boolean</span> <span class="n">processedSequence</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="kt">long</span> <span class="n">cachedAvailableSequence</span> <span class="o">=</span> <span class="n">Long</span><span class="o">.</span><span class="na">MIN_VALUE</span><span class="o">;</span>
+        <span class="kt">long</span> <span class="n">nextSequence</span> <span class="o">=</span> <span class="n">sequence</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+        <span class="n">T</span> <span class="n">event</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">try</span>
+            <span class="o">{</span>
+                <span class="c1">// if previous sequence was processed - fetch the next sequence and set
+</span><span class="c1"></span>                <span class="c1">// that we have successfully processed the previous sequence
+</span><span class="c1"></span>                <span class="c1">// typically, this will be true
+</span><span class="c1"></span>                <span class="c1">// this prevents the sequence getting too far forward if an exception
+</span><span class="c1"></span>                <span class="c1">// is thrown from the WorkHandler
+</span><span class="c1"></span>                <span class="c1">//如果先前的序列被处理 - 取下一个序列，并设置我们已经成功处理了前一个序列，这将是真实的，这将防止如果从WorkHandler抛出异常
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">processedSequence</span><span class="o">)</span>
+                <span class="o">{</span>
+                    <span class="n">processedSequence</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                    <span class="k">do</span>
+                    <span class="o">{</span>
+                        <span class="n">nextSequence</span> <span class="o">=</span> <span class="n">workSequence</span><span class="o">.</span><span class="na">get</span><span class="o">()</span> <span class="o">+</span> <span class="n">1L</span><span class="o">;</span>
+                        <span class="n">sequence</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">nextSequence</span> <span class="o">-</span> <span class="n">1L</span><span class="o">);</span>
+                    <span class="o">}</span>
+                    <span class="k">while</span> <span class="o">(!</span><span class="n">workSequence</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="n">nextSequence</span> <span class="o">-</span> <span class="n">1L</span><span class="o">,</span> <span class="n">nextSequence</span><span class="o">));</span><span class="c1">//竞争workSequence序列
+</span><span class="c1"></span>                <span class="o">}</span>
+
+                 <span class="c1">//检查序列值是否需要申请。这一步是为了防止和事件生产者冲突。
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">cachedAvailableSequence</span> <span class="o">&gt;=</span> <span class="n">nextSequence</span><span class="o">)</span>
+                <span class="o">{</span>
+                    <span class="n">event</span> <span class="o">=</span> <span class="n">ringBuffer</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">nextSequence</span><span class="o">);</span>
+                    <span class="n">workHandler</span><span class="o">.</span><span class="na">onEvent</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
+                    <span class="n">processedSequence</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">else</span>
+                <span class="o">{</span>
+                    <span class="c1">//如果需要申请，通过序列栅栏来申请可用的序列。
+</span><span class="c1"></span>                    <span class="n">cachedAvailableSequence</span> <span class="o">=</span> <span class="n">sequenceBarrier</span><span class="o">.</span><span class="na">waitFor</span><span class="o">(</span><span class="n">nextSequence</span><span class="o">);</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+            <span class="k">catch</span> <span class="o">(</span><span class="kd">final</span> <span class="n">TimeoutException</span> <span class="n">e</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="n">notifyTimeout</span><span class="o">(</span><span class="n">sequence</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+            <span class="o">}</span>
+            <span class="k">catch</span> <span class="o">(</span><span class="kd">final</span> <span class="n">AlertException</span> <span class="n">ex</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(!</span><span class="n">running</span><span class="o">.</span><span class="na">get</span><span class="o">())</span>
+                <span class="o">{</span>
+                    <span class="k">break</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+            <span class="k">catch</span> <span class="o">(</span><span class="kd">final</span> <span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="c1">// handle, mark as processed, unless the exception handler threw an exception
+</span><span class="c1"></span>                <span class="n">exceptionHandler</span><span class="o">.</span><span class="na">handleEventException</span><span class="o">(</span><span class="n">ex</span><span class="o">,</span> <span class="n">nextSequence</span><span class="o">,</span> <span class="n">event</span><span class="o">);</span>
+                <span class="n">processedSequence</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="n">notifyShutdown</span><span class="o">();</span>
+
+        <span class="n">running</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">notifyTimeout</span><span class="o">(</span><span class="kd">final</span> <span class="kt">long</span> <span class="n">availableSequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">try</span>
+        <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">timeoutHandler</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="n">timeoutHandler</span><span class="o">.</span><span class="na">onTimeout</span><span class="o">(</span><span class="n">availableSequence</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">e</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="n">exceptionHandler</span><span class="o">.</span><span class="na">handleEventException</span><span class="o">(</span><span class="n">e</span><span class="o">,</span> <span class="n">availableSequence</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">notifyStart</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">workHandler</span> <span class="k">instanceof</span> <span class="n">LifecycleAware</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">try</span>
+            <span class="o">{</span>
+                <span class="o">((</span><span class="n">LifecycleAware</span><span class="o">)</span> <span class="n">workHandler</span><span class="o">).</span><span class="na">onStart</span><span class="o">();</span>
+            <span class="o">}</span>
+            <span class="k">catch</span> <span class="o">(</span><span class="kd">final</span> <span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="n">exceptionHandler</span><span class="o">.</span><span class="na">handleOnStartException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">notifyShutdown</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">workHandler</span> <span class="k">instanceof</span> <span class="n">LifecycleAware</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">try</span>
+            <span class="o">{</span>
+                <span class="o">((</span><span class="n">LifecycleAware</span><span class="o">)</span> <span class="n">workHandler</span><span class="o">).</span><span class="na">onShutdown</span><span class="o">();</span>
+            <span class="o">}</span>
+            <span class="k">catch</span> <span class="o">(</span><span class="kd">final</span> <span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="n">exceptionHandler</span><span class="o">.</span><span class="na">handleOnShutdownException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4workerpool-实现">4.WorkerPool 实现</h3>
+<p>WorkerPool是Work模式下的事件处理器池，它起到了维护事件处理器生命周期、关联事件处理器与事件队列(RingBuffer)、提供工作序列(上面分析WorkProcessor时看到多个处理器需要使用统一的workSequence)的作用。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span><span class="lnt">157
+</span><span class="lnt">158
+</span><span class="lnt">159
+</span><span class="lnt">160
+</span><span class="lnt">161
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm"> * WorkerPool contains a pool of {@link WorkProcessor}s that will consume sequences so jobs can be farmed out across a pool of workers.
+</span><span class="cm"> * Each of the {@link WorkProcessor}s manage and calls a {@link WorkHandler} to process the events.
+</span><span class="cm"> * 
+</span><span class="cm"> * WorkerPool包含一个{@link WorkProcessor}池，它将消耗序列，以使作业可以跨越一组工作人员。每个WorkProcessor都管理和调用一个WorkHandler来处理事件。
+</span><span class="cm"> *
+</span><span class="cm"> * @param &lt;T&gt; event to be processed by a pool of workers
+</span><span class="cm"> */</span>
+<span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">WorkerPool</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span>
+<span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">AtomicBoolean</span> <span class="n">started</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AtomicBoolean</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>  <span class="c1">//运行状态
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">workSequence</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Sequence</span><span class="o">(</span><span class="n">Sequencer</span><span class="o">.</span><span class="na">INITIAL_CURSOR_VALUE</span><span class="o">);</span> <span class="c1">// 工作序列
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">RingBuffer</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">ringBuffer</span><span class="o">;</span>
+    <span class="c1">// WorkProcessors are created to wrap each of the provided WorkHandlers
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">WorkProcessor</span><span class="o">&lt;?&gt;[]</span> <span class="n">workProcessors</span><span class="o">;</span>   <span class="c1">//创建工作处理器来包装每个提供的工作处理程序
+</span><span class="c1"></span>
+    <span class="cm">/**
+</span><span class="cm">     * Create a worker pool to enable an array of {@link WorkHandler}s to consume published sequences.
+</span><span class="cm">     * &lt;p&gt;
+</span><span class="cm">     * This option requires a pre-configured {@link RingBuffer} which must have {@link RingBuffer#addGatingSequences(Sequence...)}
+</span><span class="cm">     * called before the work pool is started.
+</span><span class="cm">     *
+</span><span class="cm">     * @param ringBuffer       of events to be consumed.
+</span><span class="cm">     * @param sequenceBarrier  on which the workers will depend.
+</span><span class="cm">     * @param exceptionHandler to callback when an error occurs which is not handled by the {@link WorkHandler}s.
+</span><span class="cm">     * @param workHandlers     to distribute the work load across.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">WorkerPool</span><span class="o">(</span>
+        <span class="kd">final</span> <span class="n">RingBuffer</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">ringBuffer</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">SequenceBarrier</span> <span class="n">sequenceBarrier</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">ExceptionHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;</span> <span class="n">exceptionHandler</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">WorkHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;...</span> <span class="n">workHandlers</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">ringBuffer</span> <span class="o">=</span> <span class="n">ringBuffer</span><span class="o">;</span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="n">numWorkers</span> <span class="o">=</span> <span class="n">workHandlers</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+        <span class="n">workProcessors</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WorkProcessor</span><span class="o">[</span><span class="n">numWorkers</span><span class="o">];</span>
+
+        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">numWorkers</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span>
+        <span class="o">{</span>
+            <span class="n">workProcessors</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WorkProcessor</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;(</span>
+                <span class="n">ringBuffer</span><span class="o">,</span>
+                <span class="n">sequenceBarrier</span><span class="o">,</span>
+                <span class="n">workHandlers</span><span class="o">[</span><span class="n">i</span><span class="o">],</span>
+                <span class="n">exceptionHandler</span><span class="o">,</span>
+                <span class="n">workSequence</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Construct a work pool with an internal {@link RingBuffer} for convenience.
+</span><span class="cm">     * &lt;p&gt;
+</span><span class="cm">     * This option does not require {@link RingBuffer#addGatingSequences(Sequence...)} to be called before the work pool is started.
+</span><span class="cm">     *
+</span><span class="cm">     * @param eventFactory     for filling the {@link RingBuffer}
+</span><span class="cm">     * @param exceptionHandler to callback when an error occurs which is not handled by the {@link WorkHandler}s.
+</span><span class="cm">     * @param workHandlers     to distribute the work load across.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">WorkerPool</span><span class="o">(</span>
+        <span class="kd">final</span> <span class="n">EventFactory</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">eventFactory</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">ExceptionHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;</span> <span class="n">exceptionHandler</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">WorkHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;...</span> <span class="n">workHandlers</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">ringBuffer</span> <span class="o">=</span> <span class="n">RingBuffer</span><span class="o">.</span><span class="na">createMultiProducer</span><span class="o">(</span><span class="n">eventFactory</span><span class="o">,</span> <span class="n">1024</span><span class="o">,</span> <span class="k">new</span> <span class="n">BlockingWaitStrategy</span><span class="o">());</span>
+        <span class="kd">final</span> <span class="n">SequenceBarrier</span> <span class="n">barrier</span> <span class="o">=</span> <span class="n">ringBuffer</span><span class="o">.</span><span class="na">newBarrier</span><span class="o">();</span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="n">numWorkers</span> <span class="o">=</span> <span class="n">workHandlers</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+        <span class="n">workProcessors</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WorkProcessor</span><span class="o">[</span><span class="n">numWorkers</span><span class="o">];</span>
+
+        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">numWorkers</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span>
+        <span class="o">{</span>
+            <span class="n">workProcessors</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WorkProcessor</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;(</span>
+                <span class="n">ringBuffer</span><span class="o">,</span>
+                <span class="n">barrier</span><span class="o">,</span>
+                <span class="n">workHandlers</span><span class="o">[</span><span class="n">i</span><span class="o">],</span>
+                <span class="n">exceptionHandler</span><span class="o">,</span>
+                <span class="n">workSequence</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="n">ringBuffer</span><span class="o">.</span><span class="na">addGatingSequences</span><span class="o">(</span><span class="n">getWorkerSequences</span><span class="o">());</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Get an array of {@link Sequence}s representing the progress of the workers.
+</span><span class="cm">     *
+</span><span class="cm">     * @return an array of {@link Sequence}s representing the progress of the workers.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">Sequence</span><span class="o">[]</span> <span class="nf">getWorkerSequences</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">Sequence</span><span class="o">[]</span> <span class="n">sequences</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Sequence</span><span class="o">[</span><span class="n">workProcessors</span><span class="o">.</span><span class="na">length</span> <span class="o">+</span> <span class="n">1</span><span class="o">];</span>
+        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">,</span> <span class="n">size</span> <span class="o">=</span> <span class="n">workProcessors</span><span class="o">.</span><span class="na">length</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">size</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span>
+        <span class="o">{</span>
+            <span class="n">sequences</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="n">workProcessors</span><span class="o">[</span><span class="n">i</span><span class="o">].</span><span class="na">getSequence</span><span class="o">();</span>
+        <span class="o">}</span>
+        <span class="n">sequences</span><span class="o">[</span><span class="n">sequences</span><span class="o">.</span><span class="na">length</span> <span class="o">-</span> <span class="n">1</span><span class="o">]</span> <span class="o">=</span> <span class="n">workSequence</span><span class="o">;</span>
+
+        <span class="k">return</span> <span class="n">sequences</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Start the worker pool processing events in sequence.
+</span><span class="cm">     *  按顺序启动工作池处理事件。
+</span><span class="cm">     * @param executor providing threads for running the workers.
+</span><span class="cm">     * @return the {@link RingBuffer} used for the work queue.
+</span><span class="cm">     * @throws IllegalStateException if the pool has already been started and not halted yet
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">RingBuffer</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">start</span><span class="o">(</span><span class="kd">final</span> <span class="n">Executor</span> <span class="n">executor</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">started</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="kc">false</span><span class="o">,</span> <span class="kc">true</span><span class="o">))</span>
+        <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">&#34;WorkerPool has already been started and cannot be restarted until halted.&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="kd">final</span> <span class="kt">long</span> <span class="n">cursor</span> <span class="o">=</span> <span class="n">ringBuffer</span><span class="o">.</span><span class="na">getCursor</span><span class="o">();</span>
+        <span class="n">workSequence</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">cursor</span><span class="o">);</span>
+
+        <span class="k">for</span> <span class="o">(</span><span class="n">WorkProcessor</span><span class="o">&lt;?&gt;</span> <span class="n">processor</span> <span class="o">:</span> <span class="n">workProcessors</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="n">processor</span><span class="o">.</span><span class="na">getSequence</span><span class="o">().</span><span class="na">set</span><span class="o">(</span><span class="n">cursor</span><span class="o">);</span>
+            <span class="n">executor</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="n">processor</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="k">return</span> <span class="n">ringBuffer</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Wait for the {@link RingBuffer} to drain of published events then halt the workers.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">drainAndHalt</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="n">Sequence</span><span class="o">[]</span> <span class="n">workerSequences</span> <span class="o">=</span> <span class="n">getWorkerSequences</span><span class="o">();</span>
+        <span class="k">while</span> <span class="o">(</span><span class="n">ringBuffer</span><span class="o">.</span><span class="na">getCursor</span><span class="o">()</span> <span class="o">&gt;</span> <span class="n">Util</span><span class="o">.</span><span class="na">getMinimumSequence</span><span class="o">(</span><span class="n">workerSequences</span><span class="o">))</span>
+        <span class="o">{</span>
+            <span class="n">Thread</span><span class="o">.</span><span class="na">yield</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="k">for</span> <span class="o">(</span><span class="n">WorkProcessor</span><span class="o">&lt;?&gt;</span> <span class="n">processor</span> <span class="o">:</span> <span class="n">workProcessors</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="n">processor</span><span class="o">.</span><span class="na">halt</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="n">started</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Halt all workers immediately at the end of their current cycle.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">halt</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">for</span> <span class="o">(</span><span class="n">WorkProcessor</span><span class="o">&lt;?&gt;</span> <span class="n">processor</span> <span class="o">:</span> <span class="n">workProcessors</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="n">processor</span><span class="o">.</span><span class="na">halt</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="n">started</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isRunning</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">started</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2018-07-02 18:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/disruptor/">disruptor</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/disruptor/8.Disruptor%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Disruptor</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/disruptor/6.RingBuffer%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">RingBuffer</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

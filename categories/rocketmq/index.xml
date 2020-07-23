@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>rocketmq on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/categories/rocketmq/</link>
+    <description>Recent content in rocketmq on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Sat, 02 May 2020 20:08:08 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/categories/rocketmq/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>2.网络层以及RPC实现</title>
+      <link>https://birdgodtech.github.io/post/rocketmq/2.%E7%BD%91%E7%BB%9C%E5%B1%82%E4%BB%A5%E5%8F%8ARPC%E5%AE%9E%E7%8E%B0/</link>
+      <pubDate>Sat, 02 May 2020 20:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/rocketmq/2.%E7%BD%91%E7%BB%9C%E5%B1%82%E4%BB%A5%E5%8F%8ARPC%E5%AE%9E%E7%8E%B0/</guid>
+      <description>一、背景 rocketmq-remoting模块贯穿RocketMq网络层以及RPC实现；基于Netty实现； 二、基于Netty实现线程模型 线</description>
+    </item>
+    
+    <item>
+      <title>1.Rocketmq背景</title>
+      <link>https://birdgodtech.github.io/post/rocketmq/1.rocketmq%E8%83%8C%E6%99%AF/</link>
+      <pubDate>Fri, 01 May 2020 20:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/rocketmq/1.rocketmq%E8%83%8C%E6%99%AF/</guid>
+      <description>一、目标 RocketMQ(4.5.2)源码分析，记录对源码理解，以及探讨RocketMQ设计思想； 二、开发者指南 中文文档 官方写文档很棒； 三、</description>
+    </item>
+    
+  </channel>
+</rss>

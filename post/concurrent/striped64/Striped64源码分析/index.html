@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Striped64 - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="Striped64源码分析 Striped64博客 jdk 1.8.0.90 分析 简介 Striped64是jdk1.8提供的用于支持如Long累加器，Double累加" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/striped64/Striped64%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/striped64/Striped64%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/striped64/Striped64%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="Striped64" />
+<meta property="og:description" content="Striped64源码分析 Striped64博客 jdk 1.8.0.90 分析 简介 Striped64是jdk1.8提供的用于支持如Long累加器，Double累加" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/striped64/Striped64%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2018-09-02T20:18:08+00:00" />
+<meta property="article:modified_time" content="2018-09-02T20:18:08+00:00" />
+<meta itemprop="name" content="Striped64">
+<meta itemprop="description" content="Striped64源码分析 Striped64博客 jdk 1.8.0.90 分析 简介 Striped64是jdk1.8提供的用于支持如Long累加器，Double累加">
+<meta itemprop="datePublished" content="2018-09-02T20:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2018-09-02T20:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="5118">
+
+
+
+<meta itemprop="keywords" content="striped64," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Striped64"/>
+<meta name="twitter:description" content="Striped64源码分析 Striped64博客 jdk 1.8.0.90 分析 简介 Striped64是jdk1.8提供的用于支持如Long累加器，Double累加"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">Striped64</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2018-09-02 20:18 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 5118 字 </span>
+      <span class="more-meta"> 预计阅读 11 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#一striped64说明">一、Striped64说明</a>
+      <ul>
+        <li><a href="#数据-striping">数据 striping</a></li>
+        <li><a href="#设计思路">设计思路</a></li>
+        <li><a href="#设计思路小结">设计思路小结</a></li>
+      </ul>
+    </li>
+    <li><a href="#二striped64数据结构">二、Striped64数据结构</a>
+      <ul>
+        <li><a href="#1cell">1.Cell</a></li>
+        <li><a href="#2内部属性">2.内部属性</a></li>
+        <li><a href="#3内部公用方法">3.内部公用方法</a></li>
+      </ul>
+    </li>
+    <li><a href="#三longaccumulate">三、longAccumulate</a></li>
+    <li><a href="#三doubleaccumulate">三、doubleAccumulate</a>
+      <ul>
+        <li><a href="#1doubledoubletorawlongbits">1.Double.doubleToRawLongBits</a></li>
+        <li><a href="#2doublelongbitstodouble">2.Double.longBitsToDouble</a></li>
+      </ul>
+    </li>
+    <li><a href="#五总结">五、总结</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2018-09-02T20:18:08" title="September 2, 2018">September 2, 2018</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="striped64源码分析">Striped64源码分析</h1>
+<p><a href="https://coderbee.net/index.php/concurrent/20140518/931">Striped64博客</a></p>
+<p>jdk 1.8.0.90 分析</p>
+<h2 id="简介">简介</h2>
+<ul>
+<li>Striped64是jdk1.8提供的用于支持如Long累加器，Double累加器这样机制的基础类。</li>
+<li>Striped64的设计核心思路就是通过内部的分散计算来避免竞争(比如多线程CAS操作时的竞争)。</li>
+<li>Striped64内部包含一个基础值(base)和一个单元哈希表(Cell)。没有竞争的情况下，要累加的数会累加到这个基础值上；如果有竞争的话，
+会将要累加的数累加到单元哈希表中的某个单元里面。所以整个Striped64的值包括基础值和单元哈希表中所有单元的值的总和。</li>
+</ul>
+<h2 id="一striped64说明">一、Striped64说明</h2>
+<h3 id="数据-striping">数据 striping</h3>
+<p>根据维基百科的这段<a href="http://en.wikipedia.org/wiki/Data_striping">说明</a>：</p>
+<blockquote>
+<p>In computer data storage, data striping is the technique of segmenting logically sequential data, such as a file, so that
+consecutive segments are stored on different physical storage devices.</p>
+<p>Striping is useful when a processing device requests data more quickly than a single storage device can provide it. By spreading
+segments across multiple devices which can be accessed concurrently, total data throughput is increased. It is also a useful method
+for balancing I/O load across an array of disks. Striping is used across disk drives in redundant array of independent disks (RAID) storage,
+network interface controllers, different computers in clustered file systems and grid-oriented storage, and RAM in some systems.</p>
+</blockquote>
+<p>数据 striping 就是把逻辑上连续的数据分为多个段，使这一序列的段存储在不同的物理设备上。通过把段分散到多个设备上可以增加访问并发性，从而提升总体
+的吞吐量。</p>
+<h3 id="设计思路">设计思路</h3>
+<p>这个类维护一个延迟初始的、原子地更新值的表，加上额外的 &ldquo;base&rdquo; 字段。表的大小是 2 的幂。索引使用每线程的哈希码来masked。这个的几乎所有声明都是
+包私有的，通过子类直接访问。</p>
+<p>表的条目是 Cell 类，一个填充过（通过 <code>sun.misc.Contended</code> ）的 AtomicLong 的变体，用于减少缓存竞争。填充对于多数 Atomics 是过度杀伤的，因为它
+们一般不规则地分布在内存里，因此彼此间不会有太多冲突。但存在于数组的原子对象将倾向于彼此相邻地放置，因此将通常共享缓存行（对性能有巨大的副作用），
+在没有这个防备下。</p>
+<p>部分地，因为Cell相对比较大，我们避免创建它们直到需要时。当没有竞争时，所有的更新都作用到 base 字段。根据第一次竞争（更新 base 的 CAS 失败），
+表被初始化为大小 2。表的大小根据更多的竞争加倍，直到大于或等于CPU数量的最小的 2 的幂。表的槽在它们需要之前保持空。</p>
+<p>一个单独的自旋锁（&ldquo;cellsBusy&rdquo;）用于初始化和resize表，还有用新的Cell填充槽。不需要阻塞锁，当锁不可得，线程尝试其他槽（或 base）。在这些重试中，
+会增加竞争和减少本地性，这仍然好于其他选择。</p>
+<p>通过 ThreadLocalRandom 维护线程中threadLocalRandomProbe字段，作为每线程的哈希码。我们让它们为 0 来保持未初始化直到它们在槽 0 竞争。然后初始化它们为通常不会互相
+冲突的值。当执行更新操作时，竞争和/或表冲突通过失败了的 CAS 来指示。根据冲突，如果表的大小小于容量，它的大小加倍，除非有些线程持有了锁。如果一
+个哈希后的槽是空的，且锁可得，创建新的Cell。否则，如果槽存在，重试CAS。重试通过 &ldquo;重散列，double hashing&rdquo; 来继续，使用一个次要的哈希算法
+（Marsaglia XorShift）来尝试找到一个自由槽位。</p>
+<p>表的大小是有上限的，因为，当线程数多于CPU数时，假如每个线程绑定到一个CPU上，存在一个完美的哈希函数映射线程到槽上，消除了冲突。当我们到达容量，
+我们随机改变碰撞线程的哈希码搜索这个映射。因为搜索是随机的，冲突只能通过CAS失败来知道，收敛convergence(聚合) 是慢的，因为线程通常不会一直绑定到CPU上，
+可能根本不会发生。然而，尽管有这些限制，在这些案例下观察到的竞争频率显著地低。</p>
+<p>当哈希到特定 Cell 的线程终止后，Cell 可能变为空闲的，表加倍后导致没有线程哈希到扩展的 Cell 也会出现这种情况。我们不尝试去检测或移除这些 Cell，
+在实例长期运行的假设下，观察到的竞争水平将重现，所以 Cell 将最终被再次需要。对于短期存活的实例，这没关系。</p>
+<h3 id="设计思路小结">设计思路小结</h3>
+<ul>
+<li>striping和缓存行填充：通过把类数据 striping 为 64bit 的片段，使数据成为缓存行友好的，减少CAS竞争。</li>
+<li>分解表示：对于一个数字 5，可以分解为一序列数的和：<code>2 + 3</code>，这个数字加 1 也等价于它的分解序列中的任一 数字加 1：<code>5 + 1 = 2 + (3 + 1)</code>。</li>
+<li>通过把分解序列存放在表里面，表的条目都是填充后的 Cell；限制表的大小为 2 的幂，则可以用掩码来实现索引；同时把表的大小限制为大于等于CPU数量的最小的 2 的幂。</li>
+<li>当表的条目上出现竞争时，在到达容量前表扩容一倍，通过增加条目来减少竞争。</li>
+</ul>
+<h2 id="二striped64数据结构">二、Striped64数据结构</h2>
+<h3 id="1cell">1.Cell</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Padded variant of AtomicLong supporting only raw accesses plus CAS. AtomicLong的填充变体只支持原始访问和CAS。
+</span><span class="cm">     *
+</span><span class="cm">     * JVM intrinsics note: It would be possible to use a release-only
+</span><span class="cm">     * form of CAS here, if it were provided.
+</span><span class="cm">     * JVM内部函数注意：如果提供的话，可以在这里使用CAS的只发布形式。
+</span><span class="cm">     */</span>
+    <span class="nd">@sun.misc.Contended</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">Cell</span> <span class="o">{</span>
+        <span class="kd">volatile</span> <span class="kt">long</span> <span class="n">value</span><span class="o">;</span>
+        <span class="n">Cell</span><span class="o">(</span><span class="kt">long</span> <span class="n">x</span><span class="o">)</span> <span class="o">{</span> <span class="n">value</span> <span class="o">=</span> <span class="n">x</span><span class="o">;</span> <span class="o">}</span>
+        <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">cas</span><span class="o">(</span><span class="kt">long</span> <span class="n">cmp</span><span class="o">,</span> <span class="kt">long</span> <span class="n">val</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapLong</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">valueOffset</span><span class="o">,</span> <span class="n">cmp</span><span class="o">,</span> <span class="n">val</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="c1">// Unsafe mechanics
+</span><span class="c1"></span>        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Unsafe</span> <span class="n">UNSAFE</span><span class="o">;</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">valueOffset</span><span class="o">;</span>
+        <span class="kd">static</span> <span class="o">{</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">UNSAFE</span> <span class="o">=</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Unsafe</span><span class="o">.</span><span class="na">getUnsafe</span><span class="o">();</span>
+                <span class="n">Class</span><span class="o">&lt;?&gt;</span> <span class="n">ak</span> <span class="o">=</span> <span class="n">Cell</span><span class="o">.</span><span class="na">class</span><span class="o">;</span>
+                <span class="n">valueOffset</span> <span class="o">=</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">objectFieldOffset</span>
+                    <span class="o">(</span><span class="n">ak</span><span class="o">.</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&#34;value&#34;</span><span class="o">));</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>注解 <code>@sun.misc.Contended</code> 来自动实现缓存行填充，让Java编译器和JRE运行时来决定如何填充。本质上是一个填充了的、提供了CAS更新的volatile变量。</p>
+<h3 id="2内部属性">2.内部属性</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="cm">/** Number of CPUS, to place bound on table size */</span>
+   <span class="c1">//cpu的数量,确定cells数量大小
+</span><span class="c1"></span>   <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">NCPU</span> <span class="o">=</span> <span class="n">Runtime</span><span class="o">.</span><span class="na">getRuntime</span><span class="o">().</span><span class="na">availableProcessors</span><span class="o">();</span>
+
+   <span class="cm">/**
+</span><span class="cm">    * Table of cells. When non-null, size is a power of 2.
+</span><span class="cm">    * 表的cells。当非空时，大小是2的幂。
+</span><span class="cm">    */</span>
+   <span class="kd">transient</span> <span class="kd">volatile</span> <span class="n">Cell</span><span class="o">[]</span> <span class="n">cells</span><span class="o">;</span>
+
+   <span class="cm">/**
+</span><span class="cm">    * Base value, used mainly when there is no contention, but also as
+</span><span class="cm">    * a fallback during table initialization races. Updated via CAS.
+</span><span class="cm">    * base 值，在没有竞争时使用，也作为表初始化竞争时的一个后备。
+</span><span class="cm">    */</span>
+   <span class="kd">transient</span> <span class="kd">volatile</span> <span class="kt">long</span> <span class="n">base</span><span class="o">;</span>
+
+   <span class="cm">/**
+</span><span class="cm">    * Spinlock (locked via CAS) used when resizing and/or creating Cells.
+</span><span class="cm">    * 自旋锁，在 resizing 和/或 创建Cell时使用。
+</span><span class="cm">    */</span>
+   <span class="kd">transient</span> <span class="kd">volatile</span> <span class="kt">int</span> <span class="n">cellsBusy</span><span class="o">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3内部公用方法">3.内部公用方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">     * CASes the base field.
+</span><span class="cm">     * CAS base字段
+</span><span class="cm">     */</span>
+    <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">casBase</span><span class="o">(</span><span class="kt">long</span> <span class="n">cmp</span><span class="o">,</span> <span class="kt">long</span> <span class="n">val</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapLong</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">BASE</span><span class="o">,</span> <span class="n">cmp</span><span class="o">,</span> <span class="n">val</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * CASes the cellsBusy field from 0 to 1 to acquire lock.
+</span><span class="cm">     * CAS cellsBusy 字段 0到1获取锁。
+</span><span class="cm">     */</span>
+    <span class="kd">final</span> <span class="kt">boolean</span> <span class="nf">casCellsBusy</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapInt</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">CELLSBUSY</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">1</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Returns the probe value for the current thread.
+</span><span class="cm">     * Duplicated from ThreadLocalRandom because of packaging restrictions.
+</span><span class="cm">     * 返回当前线程的探测值。由于封装限制，从ThreadLocalRandom复制。
+</span><span class="cm">     */</span>
+    <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="nf">getProbe</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">getInt</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">(),</span> <span class="n">PROBE</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Pseudo-randomly advances and records the given probe value for the
+</span><span class="cm">     * given thread.
+</span><span class="cm">     * Duplicated from ThreadLocalRandom because of packaging restrictions.
+</span><span class="cm">     */</span>
+    <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="nf">advanceProbe</span><span class="o">(</span><span class="kt">int</span> <span class="n">probe</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">probe</span> <span class="o">^=</span> <span class="n">probe</span> <span class="o">&lt;&lt;</span> <span class="n">13</span><span class="o">;</span>   <span class="c1">// xorshift
+</span><span class="c1"></span>        <span class="n">probe</span> <span class="o">^=</span> <span class="n">probe</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">17</span><span class="o">;</span>
+        <span class="n">probe</span> <span class="o">^=</span> <span class="n">probe</span> <span class="o">&lt;&lt;</span> <span class="n">5</span><span class="o">;</span>
+        <span class="n">UNSAFE</span><span class="o">.</span><span class="na">putInt</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">(),</span> <span class="n">PROBE</span><span class="o">,</span> <span class="n">probe</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">probe</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="三longaccumulate">三、longAccumulate</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span><span class="lnt">93
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * Handles cases of updates involving initialization, resizing,
+</span><span class="cm">     * creating new Cells, and/or contention. See above for
+</span><span class="cm">     * explanation. This method suffers the usual non-modularity
+</span><span class="cm">     * problems of optimistic retry code, relying on rechecked sets of
+</span><span class="cm">     * reads.
+</span><span class="cm">     * 处理涉及初始化，调整大小，创建新单元格和/或争用的更新案例。请参阅上面的解释。这种方法受到乐观重试代码通常的非模块化问题的困扰，依靠重新检查的读取组。
+</span><span class="cm">     *
+</span><span class="cm">     * @param x the value
+</span><span class="cm">     * @param fn the update function, or null for add (this convention
+</span><span class="cm">     * avoids the need for an extra field or function in LongAdder).
+</span><span class="cm">     * @param wasUncontended false if CAS failed before call
+</span><span class="cm">     */</span>
+    <span class="kd">final</span> <span class="kt">void</span> <span class="nf">longAccumulate</span><span class="o">(</span><span class="kt">long</span> <span class="n">x</span><span class="o">,</span> <span class="n">LongBinaryOperator</span> <span class="n">fn</span><span class="o">,</span>
+                              <span class="kt">boolean</span> <span class="n">wasUncontended</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">h</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">((</span><span class="n">h</span> <span class="o">=</span> <span class="n">getProbe</span><span class="o">())</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>          <span class="c1">//获取当前线程probe值，probe为空时， ThreadLocalRandom.current()初始化当前线程probe值。
+</span><span class="c1"></span>            <span class="n">ThreadLocalRandom</span><span class="o">.</span><span class="na">current</span><span class="o">();</span> <span class="c1">// force initialization
+</span><span class="c1"></span>            <span class="n">h</span> <span class="o">=</span> <span class="n">getProbe</span><span class="o">();</span>
+            <span class="n">wasUncontended</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span><span class="c1">//这次相当于再次计算了当前线程probe值，所以设置未竞争标记为true。
+</span><span class="c1"></span>        <span class="o">}</span>
+        <span class="kt">boolean</span> <span class="n">collide</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>                <span class="c1">// True if last slot nonempty
+</span><span class="c1"></span>        <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+            <span class="n">Cell</span><span class="o">[]</span> <span class="n">as</span><span class="o">;</span> <span class="n">Cell</span> <span class="n">a</span><span class="o">;</span> <span class="kt">int</span> <span class="n">n</span><span class="o">;</span> <span class="kt">long</span> <span class="n">v</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">((</span><span class="n">as</span> <span class="o">=</span> <span class="n">cells</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">n</span> <span class="o">=</span> <span class="n">as</span><span class="o">.</span><span class="na">length</span><span class="o">)</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>  <span class="c1">// cells 表不为空情况
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">((</span><span class="n">a</span> <span class="o">=</span> <span class="n">as</span><span class="o">[(</span><span class="n">n</span> <span class="o">-</span> <span class="n">1</span><span class="o">)</span> <span class="o">&amp;</span> <span class="n">h</span><span class="o">])</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>            <span class="c1">//  (n - 1) &amp; h 查找cells下标值。为空，添加值
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">cellsBusy</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>       <span class="c1">// Try to attach new Cell
+</span><span class="c1"></span>                        <span class="n">Cell</span> <span class="n">r</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Cell</span><span class="o">(</span><span class="n">x</span><span class="o">);</span>   <span class="c1">// Optimistically create
+</span><span class="c1"></span>                        <span class="k">if</span> <span class="o">(</span><span class="n">cellsBusy</span> <span class="o">==</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="n">casCellsBusy</span><span class="o">())</span> <span class="o">{</span>
+                            <span class="kt">boolean</span> <span class="n">created</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                            <span class="k">try</span> <span class="o">{</span>               <span class="c1">// Recheck under lock
+</span><span class="c1"></span>                                <span class="n">Cell</span><span class="o">[]</span> <span class="n">rs</span><span class="o">;</span> <span class="kt">int</span> <span class="n">m</span><span class="o">,</span> <span class="n">j</span><span class="o">;</span>
+                                <span class="k">if</span> <span class="o">((</span><span class="n">rs</span> <span class="o">=</span> <span class="n">cells</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span>
+                                    <span class="o">(</span><span class="n">m</span> <span class="o">=</span> <span class="n">rs</span><span class="o">.</span><span class="na">length</span><span class="o">)</span> <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span>
+                                    <span class="n">rs</span><span class="o">[</span><span class="n">j</span> <span class="o">=</span> <span class="o">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">1</span><span class="o">)</span> <span class="o">&amp;</span> <span class="n">h</span><span class="o">]</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>   <span class="c1">//再一次做判断
+</span><span class="c1"></span>                                    <span class="n">rs</span><span class="o">[</span><span class="n">j</span><span class="o">]</span> <span class="o">=</span> <span class="n">r</span><span class="o">;</span>
+                                    <span class="n">created</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                                <span class="o">}</span>
+                            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                                <span class="n">cellsBusy</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+                            <span class="o">}</span>
+                            <span class="k">if</span> <span class="o">(</span><span class="n">created</span><span class="o">)</span>
+                                <span class="k">break</span><span class="o">;</span>
+                            <span class="k">continue</span><span class="o">;</span>           <span class="c1">// Slot is now non-empty
+</span><span class="c1"></span>                        <span class="o">}</span>
+                    <span class="o">}</span>
+                    <span class="n">collide</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">else</span> <span class="k">if</span> <span class="o">(!</span><span class="n">wasUncontended</span><span class="o">)</span>       <span class="c1">// CAS already known to fail CAS已经知道会失败，重新计算当前线程probe值
+</span><span class="c1"></span>                    <span class="n">wasUncontended</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>      <span class="c1">// Continue after rehash
+</span><span class="c1"></span>                <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">a</span><span class="o">.</span><span class="na">cas</span><span class="o">(</span><span class="n">v</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="na">value</span><span class="o">,</span> <span class="o">((</span><span class="n">fn</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span> <span class="n">v</span> <span class="o">+</span> <span class="n">x</span> <span class="o">:</span>
+                                             <span class="n">fn</span><span class="o">.</span><span class="na">applyAsLong</span><span class="o">(</span><span class="n">v</span><span class="o">,</span> <span class="n">x</span><span class="o">))))</span>  <span class="c1">// cas cells下标值。
+</span><span class="c1"></span>                    <span class="k">break</span><span class="o">;</span>
+                <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">&gt;=</span> <span class="n">NCPU</span> <span class="o">||</span> <span class="n">cells</span> <span class="o">!=</span> <span class="n">as</span><span class="o">)</span>                   <span class="c1">// cas cells下标值失败，判断一下cells大小大于cpu数量，大于，不能在扩容cells大小。
+</span><span class="c1"></span>                    <span class="n">collide</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>            <span class="c1">// At max size or stale
+</span><span class="c1"></span>                <span class="k">else</span> <span class="k">if</span> <span class="o">(!</span><span class="n">collide</span><span class="o">)</span>
+                    <span class="n">collide</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">cellsBusy</span> <span class="o">==</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="n">casCellsBusy</span><span class="o">())</span> <span class="o">{</span>       <span class="c1">//扩容cells大小，以2倍扩容
+</span><span class="c1"></span>                    <span class="k">try</span> <span class="o">{</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">cells</span> <span class="o">==</span> <span class="n">as</span><span class="o">)</span> <span class="o">{</span>      <span class="c1">// Expand table unless stale
+</span><span class="c1"></span>                            <span class="n">Cell</span><span class="o">[]</span> <span class="n">rs</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Cell</span><span class="o">[</span><span class="n">n</span> <span class="o">&lt;&lt;</span> <span class="n">1</span><span class="o">];</span>        <span class="c1">// n &lt;&lt; 1 2倍扩容
+</span><span class="c1"></span>                            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="o">;</span> <span class="o">++</span><span class="n">i</span><span class="o">)</span>
+                                <span class="n">rs</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="n">as</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+                            <span class="n">cells</span> <span class="o">=</span> <span class="n">rs</span><span class="o">;</span>
+                        <span class="o">}</span>
+                    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                        <span class="n">cellsBusy</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+                    <span class="o">}</span>
+                    <span class="n">collide</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                    <span class="k">continue</span><span class="o">;</span>                   <span class="c1">// Retry with expanded table
+</span><span class="c1"></span>                <span class="o">}</span>
+                <span class="n">h</span> <span class="o">=</span> <span class="n">advanceProbe</span><span class="o">(</span><span class="n">h</span><span class="o">);</span>     <span class="c1">// 重新计算当前线程probe值，用的哈希算法（Marsaglia XorShift）。
+</span><span class="c1"></span>            <span class="o">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">cellsBusy</span> <span class="o">==</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="n">cells</span> <span class="o">==</span> <span class="n">as</span> <span class="o">&amp;&amp;</span> <span class="n">casCellsBusy</span><span class="o">())</span> <span class="o">{</span> <span class="c1">// cells为空情况，初始化cells表
+</span><span class="c1"></span>                <span class="kt">boolean</span> <span class="n">init</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                <span class="k">try</span> <span class="o">{</span>                           <span class="c1">// Initialize table 初始化cells数组值，默认数组大小2
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">cells</span> <span class="o">==</span> <span class="n">as</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">Cell</span><span class="o">[]</span> <span class="n">rs</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Cell</span><span class="o">[</span><span class="n">2</span><span class="o">];</span>
+                        <span class="n">rs</span><span class="o">[</span><span class="n">h</span> <span class="o">&amp;</span> <span class="n">1</span><span class="o">]</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Cell</span><span class="o">(</span><span class="n">x</span><span class="o">);</span>
+                        <span class="n">cells</span> <span class="o">=</span> <span class="n">rs</span><span class="o">;</span>
+                        <span class="n">init</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                    <span class="n">cellsBusy</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">init</span><span class="o">)</span>
+                    <span class="k">break</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">casBase</span><span class="o">(</span><span class="n">v</span> <span class="o">=</span> <span class="n">base</span><span class="o">,</span> <span class="o">((</span><span class="n">fn</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span> <span class="n">v</span> <span class="o">+</span> <span class="n">x</span> <span class="o">:</span>
+                                        <span class="n">fn</span><span class="o">.</span><span class="na">applyAsLong</span><span class="o">(</span><span class="n">v</span><span class="o">,</span> <span class="n">x</span><span class="o">))))</span>   <span class="c1">//在竞争情况下，已经初始化cells表，cas,base字段值
+</span><span class="c1"></span>                <span class="k">break</span><span class="o">;</span>                          <span class="c1">// Fall back on using base
+</span><span class="c1"></span>        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="三doubleaccumulate">三、doubleAccumulate</h2>
+<p>doubleAccumulate跟longAccumulate逻辑是一样，我具体不做分析，唯一区别是先是Double.doubleToRawLongBits(x)转换为long值做longAccumulate操作。
+在累加获取值时Double.longBitsToDouble转换为double在做累加。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span><span class="lnt">93
+</span><span class="lnt">94
+</span><span class="lnt">95
+</span><span class="lnt">96
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * Same as longAccumulate, but injecting long/double conversions
+</span><span class="cm">     * in too many places to sensibly merge with long version, given
+</span><span class="cm">     * the low-overhead requirements of this class. So must instead be
+</span><span class="cm">     * maintained by copy/paste/adapt.
+</span><span class="cm">     */</span>
+    <span class="kd">final</span> <span class="kt">void</span> <span class="nf">doubleAccumulate</span><span class="o">(</span><span class="kt">double</span> <span class="n">x</span><span class="o">,</span> <span class="n">DoubleBinaryOperator</span> <span class="n">fn</span><span class="o">,</span>
+                                <span class="kt">boolean</span> <span class="n">wasUncontended</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">h</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">((</span><span class="n">h</span> <span class="o">=</span> <span class="n">getProbe</span><span class="o">())</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">ThreadLocalRandom</span><span class="o">.</span><span class="na">current</span><span class="o">();</span> <span class="c1">// force initialization
+</span><span class="c1"></span>            <span class="n">h</span> <span class="o">=</span> <span class="n">getProbe</span><span class="o">();</span>
+            <span class="n">wasUncontended</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="kt">boolean</span> <span class="n">collide</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>                <span class="c1">// True if last slot nonempty
+</span><span class="c1"></span>        <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+            <span class="n">Cell</span><span class="o">[]</span> <span class="n">as</span><span class="o">;</span> <span class="n">Cell</span> <span class="n">a</span><span class="o">;</span> <span class="kt">int</span> <span class="n">n</span><span class="o">;</span> <span class="kt">long</span> <span class="n">v</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">((</span><span class="n">as</span> <span class="o">=</span> <span class="n">cells</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">n</span> <span class="o">=</span> <span class="n">as</span><span class="o">.</span><span class="na">length</span><span class="o">)</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">((</span><span class="n">a</span> <span class="o">=</span> <span class="n">as</span><span class="o">[(</span><span class="n">n</span> <span class="o">-</span> <span class="n">1</span><span class="o">)</span> <span class="o">&amp;</span> <span class="n">h</span><span class="o">])</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">cellsBusy</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>       <span class="c1">// Try to attach new Cell
+</span><span class="c1"></span>                        <span class="n">Cell</span> <span class="n">r</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Cell</span><span class="o">(</span><span class="n">Double</span><span class="o">.</span><span class="na">doubleToRawLongBits</span><span class="o">(</span><span class="n">x</span><span class="o">));</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">cellsBusy</span> <span class="o">==</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="n">casCellsBusy</span><span class="o">())</span> <span class="o">{</span>
+                            <span class="kt">boolean</span> <span class="n">created</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                            <span class="k">try</span> <span class="o">{</span>               <span class="c1">// Recheck under lock
+</span><span class="c1"></span>                                <span class="n">Cell</span><span class="o">[]</span> <span class="n">rs</span><span class="o">;</span> <span class="kt">int</span> <span class="n">m</span><span class="o">,</span> <span class="n">j</span><span class="o">;</span>
+                                <span class="k">if</span> <span class="o">((</span><span class="n">rs</span> <span class="o">=</span> <span class="n">cells</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span>
+                                    <span class="o">(</span><span class="n">m</span> <span class="o">=</span> <span class="n">rs</span><span class="o">.</span><span class="na">length</span><span class="o">)</span> <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span>
+                                    <span class="n">rs</span><span class="o">[</span><span class="n">j</span> <span class="o">=</span> <span class="o">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">1</span><span class="o">)</span> <span class="o">&amp;</span> <span class="n">h</span><span class="o">]</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                                    <span class="n">rs</span><span class="o">[</span><span class="n">j</span><span class="o">]</span> <span class="o">=</span> <span class="n">r</span><span class="o">;</span>
+                                    <span class="n">created</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                                <span class="o">}</span>
+                            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                                <span class="n">cellsBusy</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+                            <span class="o">}</span>
+                            <span class="k">if</span> <span class="o">(</span><span class="n">created</span><span class="o">)</span>
+                                <span class="k">break</span><span class="o">;</span>
+                            <span class="k">continue</span><span class="o">;</span>           <span class="c1">// Slot is now non-empty
+</span><span class="c1"></span>                        <span class="o">}</span>
+                    <span class="o">}</span>
+                    <span class="n">collide</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">else</span> <span class="k">if</span> <span class="o">(!</span><span class="n">wasUncontended</span><span class="o">)</span>       <span class="c1">// CAS already known to fail
+</span><span class="c1"></span>                    <span class="n">wasUncontended</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>      <span class="c1">// Continue after rehash
+</span><span class="c1"></span>                <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">a</span><span class="o">.</span><span class="na">cas</span><span class="o">(</span><span class="n">v</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="na">value</span><span class="o">,</span>
+                               <span class="o">((</span><span class="n">fn</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span>
+                                <span class="n">Double</span><span class="o">.</span><span class="na">doubleToRawLongBits</span>
+                                <span class="o">(</span><span class="n">Double</span><span class="o">.</span><span class="na">longBitsToDouble</span><span class="o">(</span><span class="n">v</span><span class="o">)</span> <span class="o">+</span> <span class="n">x</span><span class="o">)</span> <span class="o">:</span>
+                                <span class="n">Double</span><span class="o">.</span><span class="na">doubleToRawLongBits</span>
+                                <span class="o">(</span><span class="n">fn</span><span class="o">.</span><span class="na">applyAsDouble</span>
+                                 <span class="o">(</span><span class="n">Double</span><span class="o">.</span><span class="na">longBitsToDouble</span><span class="o">(</span><span class="n">v</span><span class="o">),</span> <span class="n">x</span><span class="o">)))))</span>
+                    <span class="k">break</span><span class="o">;</span>
+                <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">&gt;=</span> <span class="n">NCPU</span> <span class="o">||</span> <span class="n">cells</span> <span class="o">!=</span> <span class="n">as</span><span class="o">)</span>
+                    <span class="n">collide</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>            <span class="c1">// At max size or stale
+</span><span class="c1"></span>                <span class="k">else</span> <span class="k">if</span> <span class="o">(!</span><span class="n">collide</span><span class="o">)</span>
+                    <span class="n">collide</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">cellsBusy</span> <span class="o">==</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="n">casCellsBusy</span><span class="o">())</span> <span class="o">{</span>
+                    <span class="k">try</span> <span class="o">{</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">cells</span> <span class="o">==</span> <span class="n">as</span><span class="o">)</span> <span class="o">{</span>      <span class="c1">// Expand table unless stale
+</span><span class="c1"></span>                            <span class="n">Cell</span><span class="o">[]</span> <span class="n">rs</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Cell</span><span class="o">[</span><span class="n">n</span> <span class="o">&lt;&lt;</span> <span class="n">1</span><span class="o">];</span>
+                            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="o">;</span> <span class="o">++</span><span class="n">i</span><span class="o">)</span>
+                                <span class="n">rs</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="n">as</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+                            <span class="n">cells</span> <span class="o">=</span> <span class="n">rs</span><span class="o">;</span>
+                        <span class="o">}</span>
+                    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                        <span class="n">cellsBusy</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+                    <span class="o">}</span>
+                    <span class="n">collide</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                    <span class="k">continue</span><span class="o">;</span>                   <span class="c1">// Retry with expanded table
+</span><span class="c1"></span>                <span class="o">}</span>
+                <span class="n">h</span> <span class="o">=</span> <span class="n">advanceProbe</span><span class="o">(</span><span class="n">h</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">cellsBusy</span> <span class="o">==</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="n">cells</span> <span class="o">==</span> <span class="n">as</span> <span class="o">&amp;&amp;</span> <span class="n">casCellsBusy</span><span class="o">())</span> <span class="o">{</span>
+                <span class="kt">boolean</span> <span class="n">init</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                <span class="k">try</span> <span class="o">{</span>                           <span class="c1">// Initialize table
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">cells</span> <span class="o">==</span> <span class="n">as</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">Cell</span><span class="o">[]</span> <span class="n">rs</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Cell</span><span class="o">[</span><span class="n">2</span><span class="o">];</span>
+                        <span class="n">rs</span><span class="o">[</span><span class="n">h</span> <span class="o">&amp;</span> <span class="n">1</span><span class="o">]</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Cell</span><span class="o">(</span><span class="n">Double</span><span class="o">.</span><span class="na">doubleToRawLongBits</span><span class="o">(</span><span class="n">x</span><span class="o">));</span>
+                        <span class="n">cells</span> <span class="o">=</span> <span class="n">rs</span><span class="o">;</span>
+                        <span class="n">init</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                    <span class="n">cellsBusy</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">init</span><span class="o">)</span>
+                    <span class="k">break</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">casBase</span><span class="o">(</span><span class="n">v</span> <span class="o">=</span> <span class="n">base</span><span class="o">,</span>
+                             <span class="o">((</span><span class="n">fn</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span>
+                              <span class="n">Double</span><span class="o">.</span><span class="na">doubleToRawLongBits</span>
+                              <span class="o">(</span><span class="n">Double</span><span class="o">.</span><span class="na">longBitsToDouble</span><span class="o">(</span><span class="n">v</span><span class="o">)</span> <span class="o">+</span> <span class="n">x</span><span class="o">)</span> <span class="o">:</span>
+                              <span class="n">Double</span><span class="o">.</span><span class="na">doubleToRawLongBits</span>
+                              <span class="o">(</span><span class="n">fn</span><span class="o">.</span><span class="na">applyAsDouble</span>
+                               <span class="o">(</span><span class="n">Double</span><span class="o">.</span><span class="na">longBitsToDouble</span><span class="o">(</span><span class="n">v</span><span class="o">),</span> <span class="n">x</span><span class="o">)))))</span>
+                <span class="k">break</span><span class="o">;</span>                          <span class="c1">// Fall back on using base
+</span><span class="c1"></span>        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1doubledoubletorawlongbits">1.Double.doubleToRawLongBits</h3>
+<p>doubleToLongBits方法根据 IEEE 754 浮点双精度格式 (&ldquo;double format&rdquo;) 位布局，返回指定浮点值的表示形式。</p>
+<p>第 63 位（掩码 0x8000000000000000L 选定的位）表示浮点数的符号，第62～52位（掩码 0x7ff0000000000000L 选定的位）表示指数，
+第51～0位（掩码 0x000fffffffffffffL 选定的位）表示浮点数的有效数字（有时也称为尾数）。如果参数是正无穷大，则结果为 0x7ff0000000000000L；如果参数是负无穷大，
+则结果为 0xfff0000000000000L；如果参数是 NaN，则结果为 0x7ff8000000000000L。</p>
+<p>在所有情况下，结果都是一个 long 整数，将其赋予 longBitsToDouble(long) 方法将生成一个与 doubleToLongBits 的参数相同的浮点值（所有 NaN 值被压缩成一个&quot;规范&quot;NaN 值时除外）。</p>
+<h3 id="2doublelongbitstodouble">2.Double.longBitsToDouble</h3>
+<p>longBitsToDouble方法返回对应于给定位表示形式的 double 值。根据 IEEE 754 浮点&quot;双精度格式&quot;位布局，参数被视为浮点值表示形式。</p>
+<p>如果参数是 0x7ff0000000000000L，则结果为正无穷大；如果参数是 0xfff0000000000000L，则结果为负无穷大；如果参数值在 0x7ff0000000000001L 到 0x7fffffffffffffffL
+之间或者在 0xfff0000000000001L 到 0xffffffffffffffffL 之间，则结果为 NaN。Java提供的任何IEEE 754浮点操作都不能区分具有不同位模式的两个同类型NaN值，不同的NaN值只
+能使用Double.doubleToRawLongBits方法区分。在所有其他情况下，设 s、e和m为可以通过以下参数计算的3个值。</p>
+<p>int s = ((bits &raquo; 63) == 0) ? 1 : -1;</p>
+<p>int e = (int)((bits &raquo; 52) &amp; 0x7ffL);</p>
+<p>long m = (e == 0) ? (bits &amp; 0xfffffffffffffL) &laquo; 1 : (bits &amp; 0xfffffffffffffL) | 0x10000000000000L;</p>
+<p>那么浮点结果等于算术表达式 s·m·2e-1075 的值。</p>
+<p>注意，此方法不能返回与 long 参数具有完全相同位模式的 double NaN。IEEE 754 区分了两种 NaN：quiet NaN和signaling NaN，这两种 NaN 之间的差别在中通常是不可见的。对 signaling NaN
+进行的算术运算将它们转换为具有不同（但通常类似）位模式的 quiet NaN，但是在某些处理器上，只复制 signaling NaN 也执行这种转换。特别是在复制 signaling NaN以将其返回给调用方法时，
+可能会执行这种转换。因此，longBitsToDouble可能无法返回具有signaling NaN 位模式的double值。对于某些long值，</p>
+<p>doubleToRawLongBits(longBitsToDouble (start)) 可能不 等于 start。此外，尽管所有 NaN 位模式（不管是 quiet NaN 还是 signaling NaN）都必须在上面提到的 NaN 范围内，
+但表示 signaling NaN 的特定位模式与平台有关。</p>
+<h2 id="五总结">五、总结</h2>
+<ul>
+<li>用分段锁机制，解决多个CAS竞争问题，更好提高性能</li>
+<li><a href="https://www.iteye.com/blog/brokendreams-2256239">IEEE754</a> 这个博客讲的很棒，值得学习</li>
+</ul>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2018-09-02 20:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/striped64/">striped64</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/striped64/LongAdder%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">LongAdder</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/jdk1.8/ForkJoin1.8%E6%A8%A1%E5%BC%8F%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">ForkJoin1.8 模式分析</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>HashedWheelTimer - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="一、介绍 由于netty管理100w&#43;的连接，用IdleStateHandler心跳检测存在问题： 毋庸置疑占用IO线程； 超时间不精准，例如:N" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/netty/13.HashedWheelTimer/" />
+<link href="/post/netty/13.HashedWheelTimer/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/netty/13.HashedWheelTimer/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="HashedWheelTimer" />
+<meta property="og:description" content="一、介绍 由于netty管理100w&#43;的连接，用IdleStateHandler心跳检测存在问题： 毋庸置疑占用IO线程； 超时间不精准，例如:N" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/netty/13.HashedWheelTimer/" />
+<meta property="article:published_time" content="2019-04-25T23:18:08+00:00" />
+<meta property="article:modified_time" content="2019-04-25T23:18:08+00:00" />
+<meta itemprop="name" content="HashedWheelTimer">
+<meta itemprop="description" content="一、介绍 由于netty管理100w&#43;的连接，用IdleStateHandler心跳检测存在问题： 毋庸置疑占用IO线程； 超时间不精准，例如:N">
+<meta itemprop="datePublished" content="2019-04-25T23:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2019-04-25T23:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="3080">
+
+
+
+<meta itemprop="keywords" content="netty," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="HashedWheelTimer"/>
+<meta name="twitter:description" content="一、介绍 由于netty管理100w&#43;的连接，用IdleStateHandler心跳检测存在问题： 毋庸置疑占用IO线程； 超时间不精准，例如:N"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">HashedWheelTimer</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2019-04-25 23:18 </span>
+      <div class="post-category">
+        <a href="/categories/netty/"> netty </a>
+        </div>
+      <span class="more-meta"> 约 3080 字 </span>
+      <span class="more-meta"> 预计阅读 7 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1原理">1.原理</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1数据结构">1.数据结构</a></li>
+    <li><a href="#2构造方法">2.构造方法</a></li>
+    <li><a href="#3hashedwheelbucket-管理超时时间任务">3.HashedWheelBucket 管理超时时间任务</a>
+      <ul>
+        <li><a href="#a数据结构">a.数据结构</a></li>
+        <li><a href="#baddtimeout-添加超时任务">b.addTimeout 添加超时任务</a></li>
+        <li><a href="#cremove-删除操作">c.remove 删除操作</a></li>
+        <li><a href="#dexpiretimeouts">d.expireTimeouts</a></li>
+      </ul>
+    </li>
+    <li><a href="#4hashedwheeltimeout">4.HashedWheelTimeout</a>
+      <ul>
+        <li><a href="#a接口类图">a.接口类图</a></li>
+        <li><a href="#b结构">b.结构</a></li>
+        <li><a href="#cexpire-执行任务">c.expire 执行任务</a></li>
+        <li><a href="#dcancel取消">d.cancel取消</a></li>
+      </ul>
+    </li>
+    <li><a href="#5worker">5.Worker</a>
+      <ul>
+        <li><a href="#arun">a.run</a></li>
+        <li><a href="#bwaitfornexttick">b.waitForNextTick</a></li>
+        <li><a href="#bprocesscancelledtasks-处理取消任务">b.processCancelledTasks 处理取消任务</a></li>
+        <li><a href="#ctransfertimeoutstobuckets-添加超时任务">c.transferTimeoutsToBuckets 添加超时任务</a></li>
+      </ul>
+    </li>
+    <li><a href="#6start-启动">6.start 启动</a></li>
+    <li><a href="#7stop-暂停返回未处理超时任务">7.stop 暂停返回未处理超时任务</a></li>
+    <li><a href="#8newtimeout-创建">8.newTimeout 创建</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2019-04-25T23:18:08" title="April 25, 2019">April 25, 2019</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="一介绍">一、介绍</h1>
+<p>由于netty管理100w+的连接，用IdleStateHandler心跳检测存在问题：</p>
+<ul>
+<li>毋庸置疑占用IO线程；</li>
+<li>超时间不精准，例如:NioEventLoop配置ioRatio,默认50，
+处理IO事件花费100MS,处理相应队列中任务也只能花费100ms,觉得100w+数据能处理完吗？导致下次轮询执行；</li>
+</ul>
+<p>解决方案，引用时间轮；</p>
+<h2 id="1原理">1.原理</h2>
+<p>时间轮其实就是一种环形的数据结构，可以想象成时钟，分成很多格子，一个格子代码一段时间（这个时间越短，Timer的精度越高）。</p>
+<p>如果任务的时间跨度很大，数量很大，单层的时间轮会造成任务的round很大，单个格子的链表很长。这时候可以将时间轮分层，类似于时钟的时分秒3层。
+秒，分，时；</p>
+<h1 id="二hashedwheeltimer">二、HashedWheelTimer</h1>
+<p>HashedWheelTimer实现单层时间轮</p>
+<h2 id="1数据结构">1.数据结构</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    //执行任务线程，指针转动到那个格子
+    private final Worker worker = new Worker();
+    private final Thread workerThread;
+
+    public static final int WORKER_STATE_INIT = 0;
+    public static final int WORKER_STATE_STARTED = 1;
+    public static final int WORKER_STATE_SHUTDOWN = 2;
+    //运行状态  0 - 初始化, 1 - 开始, 2 - 关闭
+    private volatile int workerState; // 0 - init, 1 - started, 2 - shut down
+    
+    //滴答间隔数据，就是类似秒钟，1秒执行一次， 
+    private final long tickDuration;
+    //环形的数据结构
+    private final HashedWheelBucket[] wheel;
+    //超时任务队列
+    private final Queue&lt;HashedWheelTimeout&gt; timeouts = PlatformDependent.newMpscQueue();
+    //取消超时任务队列
+    private final Queue&lt;HashedWheelTimeout&gt; cancelledTimeouts = PlatformDependent.newMpscQueue();
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2构造方法">2.构造方法</h2>
+<ul>
+<li>创建环形的数据结构HashedWheelBucket</li>
+<li>设置滴答时间</li>
+<li>创建线程执行任务，滴答时间到那个格子</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public HashedWheelTimer(
+           ThreadFactory threadFactory,
+           long tickDuration, TimeUnit unit, int ticksPerWheel, boolean leakDetection,
+           long maxPendingTimeouts) {
+
+       ...
+
+       // 创建环形的数据结构HashedWheelBucket，ticksPerWheel大小必须2次方
+       wheel = createWheel(ticksPerWheel);
+      //掩码快速定位下标索引
+       mask = wheel.length - 1;
+
+       //滴答间隔数据，就是类似秒钟，1秒执行一次， 
+       this.tickDuration = unit.toNanos(tickDuration);
+
+       // 防止溢出。
+       if (this.tickDuration &gt;= Long.MAX_VALUE / wheel.length) {
+           throw new IllegalArgumentException(...);
+       }
+       //创建工作线程
+       workerThread = threadFactory.newThread(worker);
+       //内存泄漏检测
+       leak = leakDetection || !workerThread.isDaemon() ? leakDetector.track(this) : null;
+       //最大等待超时
+       this.maxPendingTimeouts = maxPendingTimeouts;
+       //创建HashedWheelTimer对象大于64个实例，打印异常
+       if (INSTANCE_COUNTER.incrementAndGet() &gt; INSTANCE_COUNT_LIMIT &amp;&amp;
+           WARNED_TOO_MANY_INSTANCES.compareAndSet(false, true)) {
+           reportTooManyInstances();
+       }
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3hashedwheelbucket-管理超时时间任务">3.HashedWheelBucket 管理超时时间任务</h2>
+<p>管理超时时间任务(HashedWheelTimeout)，HashedWheelTimeout是双链表结构；支持快速删除操作；</p>
+<h3 id="a数据结构">a.数据结构</h3>
+<ul>
+<li>head 从前面查询数据</li>
+<li>tail 从后面查询数据</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> private HashedWheelTimeout head;
+ private HashedWheelTimeout tail; 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="baddtimeout-添加超时任务">b.addTimeout 添加超时任务</h3>
+<ul>
+<li>就是双链表添加操作</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">       public void addTimeout(HashedWheelTimeout timeout) {
+           assert timeout.bucket == null;
+           timeout.bucket = this;
+           if (head == null) {
+               head = tail = timeout;
+           } else {
+               tail.next = timeout;
+               timeout.prev = tail;
+               tail = timeout;
+           }
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="cremove-删除操作">c.remove 删除操作</h3>
+<p>双链表删除操作</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">        public HashedWheelTimeout remove(HashedWheelTimeout timeout) {
+            HashedWheelTimeout next = timeout.next;
+            // remove timeout that was either processed or cancelled by updating the linked-list
+            if (timeout.prev != null) {
+                timeout.prev.next = next;
+            }
+            if (timeout.next != null) {
+                timeout.next.prev = timeout.prev;
+            }
+
+            if (timeout == head) {
+                // if timeout is also the tail we need to adjust the entry too
+                if (timeout == tail) {
+                    tail = null;
+                    head = null;
+                } else {
+                    head = next;
+                }
+            } else if (timeout == tail) {
+                // if the timeout is the tail modify the tail to be the prev node.
+                tail = timeout.prev;
+            }
+            // 设置为null，进行GC
+            timeout.prev = null;
+            timeout.next = null;
+            timeout.bucket = null;
+            timeout.timer.pendingTimeouts.decrementAndGet();
+            return next;
+        }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="dexpiretimeouts">d.expireTimeouts</h3>
+<ul>
+<li>执行超时任务</li>
+<li>判断是否取消</li>
+<li>上面操作都进行删除操作</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">       public void expireTimeouts(long deadline) {
+           HashedWheelTimeout timeout = head;
+           // process all timeouts
+           while (timeout != null) {
+               HashedWheelTimeout next = timeout.next;
+               // HashedWheelTimeout.remainingRounds轮询次数
+               //  根据超时时间进行轮询次数，每调用一次减一次，减到到零，任务已经到期，执行任务；
+               if (timeout.remainingRounds &lt;= 0) {
+                   next = remove(timeout);//移除
+                   if (timeout.deadline &lt;= deadline) {
+                       //执行任务
+                       timeout.expire();
+                   } else {
+                       // 放错槽
+                       throw new IllegalStateException(...);
+                   }
+               } else if (timeout.isCancelled()) { //取消
+                   next = remove(timeout);//移除
+               } else {
+                   timeout.remainingRounds --;
+               }
+               timeout = next;
+           }
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4hashedwheeltimeout">4.HashedWheelTimeout</h2>
+<h3 id="a接口类图">a.接口类图</h3>
+<p><img src="images/netty01.png" alt=""></p>
+<h3 id="b结构">b.结构</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">      private static final int ST_INIT = 0;
+       private static final int ST_CANCELLED = 1;
+       private static final int ST_EXPIRED = 2;
+       private static final AtomicIntegerFieldUpdater&lt;HashedWheelTimeout&gt; STATE_UPDATER =
+               AtomicIntegerFieldUpdater.newUpdater(HashedWheelTimeout.class, &#34;state&#34;);
+       //超时时间
+       private final long deadline;
+
+       // 状态 0-初始化 1 -取消 2 -过期
+       private volatile int state = ST_INIT;
+
+       // 轮询次数 
+       // Worker.transferTimeoutsToBuckets()执行这个值
+       long remainingRounds;
+
+       // 运用锁添加超时任务，不用volatile修饰
+       HashedWheelTimeout next;
+       HashedWheelTimeout prev;
+       private final HashedWheelTimer timer;
+       private final TimerTask task;
+       // The bucket to which the timeout was added
+       HashedWheelBucket bucket; 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="cexpire-执行任务">c.expire 执行任务</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    public void expire() {
+           //修改状态
+           if (!compareAndSetState(ST_INIT, ST_EXPIRED)) {
+               return;
+           }
+
+           try {
+               执行任务
+               task.run(this);
+           } catch (Throwable t) {
+               ...
+           }
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="dcancel取消">d.cancel取消</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">     public boolean cancel() {
+           // only update the state it will be removed from HashedWheelBucket on next tick.
+           if (!compareAndSetState(ST_INIT, ST_CANCELLED)) {
+               return false;
+           }
+           //如果应该取消一项任务，我们将其放入另一个队列，该队列将在每个刻度上处理。
+           timer.cancelledTimeouts.add(this);
+           return true;
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="5worker">5.Worker</h2>
+<h3 id="arun">a.run</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">       //滴答记录
+       private long tick;
+       @Override
+       public void run() {
+           // 初始化startTime。
+           startTime = System.nanoTime();
+           if (startTime == 0) {
+               // 我们在这里使用0作为未初始化值的指标，因此请确保在初始化时它不为0。                
+              startTime = 1;
+           }
+
+           // 在start（）处通知其他线程等待初始化。
+           startTimeInitialized.countDown();
+
+           do {
+               final long deadline = waitForNextTick();
+               if (deadline &gt; 0) {
+                   int idx = (int) (tick &amp; mask);
+                   processCancelledTasks();
+                   HashedWheelBucket bucket =
+                           wheel[idx];
+                   //添加超时任务
+                   transferTimeoutsToBuckets();
+                   //执行超时任务
+                   bucket.expireTimeouts(deadline);
+                   tick++;
+               }
+           } while (WORKER_STATE_UPDATER.get(HashedWheelTimer.this) == WORKER_STATE_STARTED);
+
+           //往unprocessedTimeouts集合添加未处理的超时，以便我们可以从stop（）方法返回它们。
+           for (HashedWheelBucket bucket: wheel) {
+               bucket.clearTimeouts(unprocessedTimeouts);
+           }
+           for (;;) {
+               HashedWheelTimeout timeout = timeouts.poll();
+               if (timeout == null) {
+                   break;
+               }
+               if (!timeout.isCancelled()) {
+                   unprocessedTimeouts.add(timeout);
+               }
+           }
+           processCancelledTasks();
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="bwaitfornexttick">b.waitForNextTick</h3>
+<p>从startTime和当前滴答数计算目标nanoTime，然后等待直到达到该目标。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">        private long waitForNextTick() {
+            long deadline = tickDuration * (tick + 1);
+
+            for (;;) {
+                final long currentTime = System.nanoTime() - startTime;
+                long sleepTimeMs = (deadline - currentTime + 999999) / 1000000;
+
+                if (sleepTimeMs &lt;= 0) {
+                    if (currentTime == Long.MIN_VALUE) {
+                        return -Long.MAX_VALUE;
+                    } else {
+                        return currentTime;
+                    }
+                }
+
+                // 检查我们是否在Windows上运行，如果那样的话，
+                //我们将需要把sleepTime四舍五入为一个错误的解决方法，该错误仅在JVM在Windows上运行时才会影响JVM。
+                //
+                // See https://github.com/netty/netty/issues/356
+                if (PlatformDependent.isWindows()) {
+                    sleepTimeMs = sleepTimeMs / 10 * 10;
+                }
+
+                try {
+                    Thread.sleep(sleepTimeMs);
+                } catch (InterruptedException ignored) {
+                    if (WORKER_STATE_UPDATER.get(HashedWheelTimer.this) == WORKER_STATE_SHUTDOWN) {
+                        return Long.MIN_VALUE;
+                    }
+                }
+            }
+        }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="bprocesscancelledtasks-处理取消任务">b.processCancelledTasks 处理取消任务</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">        private void processCancelledTasks() {
+            for (;;) {
+                HashedWheelTimeout timeout = cancelledTimeouts.poll();
+                if (timeout == null) {
+                    // all processed
+                    break;
+                }
+                try {
+                    timeout.remove();
+                } catch (Throwable t) {
+                    ...
+                }
+            }
+        }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="ctransfertimeoutstobuckets-添加超时任务">c.transferTimeoutsToBuckets 添加超时任务</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    private void transferTimeoutsToBuckets() {
+            // 每次最多只能100000处理超时任务，以防止线程在循环中添加新超时时使workerThread过时。
+            for (int i = 0; i &lt; 100000; i++) {
+                HashedWheelTimeout timeout = timeouts.poll();
+                if (timeout == null) {
+                    // all processed
+                    break;
+                }
+                if (timeout.state() == HashedWheelTimeout.ST_CANCELLED) {
+                    // Was cancelled in the meantime.
+                    continue;
+                }
+
+                long calculated = timeout.deadline / tickDuration;
+                //计算滴答轮询次数，这个核心的核心
+                timeout.remainingRounds = (calculated - tick) / wheel.length;
+
+                final long ticks = Math.max(calculated, tick); // 确保我们不安排过去的时间。
+                int stopIndex = (int) (ticks &amp; mask);
+
+                HashedWheelBucket bucket = wheel[stopIndex];
+                bucket.addTimeout(timeout);
+            }
+        }
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="6start-启动">6.start 启动</h2>
+<ul>
+<li>WORKER_STATE_INIT -&gt;  WORKER_STATE_STARTED</li>
+<li>workerThread.start</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public void start() {
+       switch (WORKER_STATE_UPDATER.get(this)) {
+           case WORKER_STATE_INIT:
+               if (WORKER_STATE_UPDATER.compareAndSet(this, WORKER_STATE_INIT, WORKER_STATE_STARTED)) {
+                   workerThread.start();
+               }
+               break;
+           case WORKER_STATE_STARTED:
+               break;
+           case WORKER_STATE_SHUTDOWN:
+               throw new IllegalStateException(&#34;cannot be started once stopped&#34;);
+           default:
+               throw new Error(&#34;Invalid WorkerState&#34;);
+       }
+
+       // 等待直到startTime由工作程序初始化。
+       while (startTime == 0) {
+           try {
+               startTimeInitialized.await();
+           } catch (InterruptedException ignore) {
+           }
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="7stop-暂停返回未处理超时任务">7.stop 暂停返回未处理超时任务</h2>
+<ul>
+<li>workerThread不能处理stop</li>
+<li>WORKER_STATE_STARTED -&gt; WORKER_STATE_SHUTDOWN</li>
+<li>workerThread.interrupt(); 中断线程</li>
+<li>workerThread.join(100) 等待执行stop</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  @Override
+   public Set&lt;Timeout&gt; stop() {
+       if (Thread.currentThread() == workerThread) {
+           throw new IllegalStateException(...);
+       }
+
+       if (!WORKER_STATE_UPDATER.compareAndSet(this, WORKER_STATE_STARTED, WORKER_STATE_SHUTDOWN)) {
+           // workerState can be 0 or 2 at this moment - let it always be 2.
+           if (WORKER_STATE_UPDATER.getAndSet(this, WORKER_STATE_SHUTDOWN) != WORKER_STATE_SHUTDOWN) {
+               INSTANCE_COUNTER.decrementAndGet();
+               if (leak != null) {
+                   boolean closed = leak.close(this);
+                   assert closed;
+               }
+           }
+
+           return Collections.emptySet();
+       }
+
+       try {
+           boolean interrupted = false;
+           while (workerThread.isAlive()) {
+               workerThread.interrupt();
+               try {
+                   workerThread.join(100);
+               } catch (InterruptedException ignored) {
+                   interrupted = true;
+               }
+           }
+
+           if (interrupted) {
+               Thread.currentThread().interrupt();
+           }
+       } finally {
+           INSTANCE_COUNTER.decrementAndGet();
+           if (leak != null) {
+               boolean closed = leak.close(this);
+               assert closed;
+           }
+       }
+       return worker.unprocessedTimeouts();
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="8newtimeout-创建">8.newTimeout 创建</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   @Override
+   public Timeout newTimeout(TimerTask task, long delay, TimeUnit unit) {
+       ...
+       long pendingTimeoutsCount = pendingTimeouts.incrementAndGet();
+
+       if (maxPendingTimeouts &gt; 0 &amp;&amp; pendingTimeoutsCount &gt; maxPendingTimeouts) {
+           pendingTimeouts.decrementAndGet();
+           throw new RejectedExecutionException(...);
+       }
+
+       start();
+
+       // 将超时添加到超时队列中，该队列将在下一个滴答中处理。
+       // 在处理期间，所有排队的HashedWheelTimeouts将添加到正确的HashedWheelBucket。
+       long deadline = System.nanoTime() + unit.toNanos(delay) - startTime;
+       HashedWheelTimeout timeout = new HashedWheelTimeout(this, task, deadline);
+       timeouts.add(timeout);
+       return timeout;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="三总结">三、总结</h1>
+<ul>
+<li>超时任务队列，添加任务时，添加队列才有并发情况，任务分配到到那个桶，在workerThread处理，不存在并发情况</li>
+<li>单层时间轮</li>
+<li>有sleep时间，这时间可以处理，任务分配到到那个桶和取消超时任务；可以提高性能；我个人建议，sleep时间短没必要</li>
+<li>JCTool高性能队列的使用</li>
+</ul>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-04-25 23:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/netty/">netty</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/netty/14.TrafficShaping/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">TrafficShaping</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/netty/11.Codec/">
+        <span class="next-text nav-default">Codec</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

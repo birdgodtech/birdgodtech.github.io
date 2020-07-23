@@ -1,0 +1,2294 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>2.网络层以及RPC实现 - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="一、背景 rocketmq-remoting模块贯穿RocketMq网络层以及RPC实现；基于Netty实现； 二、基于Netty实现线程模型 线" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/rocketmq/2.%E7%BD%91%E7%BB%9C%E5%B1%82%E4%BB%A5%E5%8F%8ARPC%E5%AE%9E%E7%8E%B0/" />
+<link href="/post/rocketmq/2.%E7%BD%91%E7%BB%9C%E5%B1%82%E4%BB%A5%E5%8F%8ARPC%E5%AE%9E%E7%8E%B0/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/rocketmq/2.%E7%BD%91%E7%BB%9C%E5%B1%82%E4%BB%A5%E5%8F%8ARPC%E5%AE%9E%E7%8E%B0/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="2.网络层以及RPC实现" />
+<meta property="og:description" content="一、背景 rocketmq-remoting模块贯穿RocketMq网络层以及RPC实现；基于Netty实现； 二、基于Netty实现线程模型 线" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/rocketmq/2.%E7%BD%91%E7%BB%9C%E5%B1%82%E4%BB%A5%E5%8F%8ARPC%E5%AE%9E%E7%8E%B0/" />
+<meta property="article:published_time" content="2020-05-02T20:08:08+00:00" />
+<meta property="article:modified_time" content="2020-05-02T20:08:08+00:00" />
+<meta itemprop="name" content="2.网络层以及RPC实现">
+<meta itemprop="description" content="一、背景 rocketmq-remoting模块贯穿RocketMq网络层以及RPC实现；基于Netty实现； 二、基于Netty实现线程模型 线">
+<meta itemprop="datePublished" content="2020-05-02T20:08:08&#43;00:00" />
+<meta itemprop="dateModified" content="2020-05-02T20:08:08&#43;00:00" />
+<meta itemprop="wordCount" content="7682">
+
+
+
+<meta itemprop="keywords" content="rocketmq," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="2.网络层以及RPC实现"/>
+<meta name="twitter:description" content="一、背景 rocketmq-remoting模块贯穿RocketMq网络层以及RPC实现；基于Netty实现； 二、基于Netty实现线程模型 线"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">2.网络层以及RPC实现</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2020-05-02 20:08 </span>
+      <div class="post-category">
+        <a href="/categories/rocketmq/"> rocketmq </a>
+        </div>
+      <span class="more-meta"> 约 7682 字 </span>
+      <span class="more-meta"> 预计阅读 16 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1消息协议">1、消息协议</a></li>
+    <li><a href="#2header-data-协议">2、header data 协议</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1核心接口类图">1.核心接口类图</a></li>
+    <li><a href="#2remotingserverrpc服务端实现">2.RemotingServer(RPC服务端实现)</a>
+      <ul>
+        <li><a href="#1实现类图结构">(1).实现类图结构</a></li>
+        <li><a href="#2如何利用netty工具包启动服务">(2).如何利用netty工具包启动服务？</a></li>
+        <li><a href="#3rpc中定义协议很重要如何定义协议nettyencoder编码协议和nettydecoder解码协议分析">(3).RPC中定义协议很重要，如何定义协议？NettyEncoder编码协议和NettyDecoder解码协议分析</a></li>
+        <li><a href="#4rpc协议定义好数据传输操作发送操作">(4).RPC协议定义好，数据传输操作，发送操作</a></li>
+        <li><a href="#5rpc协议定义好数据传输操作读操作nettyserverhandler处理相应这块逻辑">(5).RPC协议定义好，数据传输操作，读操作，NettyServerHandler处理相应这块逻辑</a></li>
+        <li><a href="#6nettyrequestprocessor实现接口处理相应业务逻辑">(6).NettyRequestProcessor实现接口处理相应业务逻辑；</a></li>
+      </ul>
+    </li>
+    <li><a href="#3nettyremotingclient-rpc客服端实现">3.NettyRemotingClient RPC客服端实现</a>
+      <ul>
+        <li><a href="#1实现类图结构-1">(1).实现类图结构</a></li>
+        <li><a href="#2如何实现netty创建链接">(2).如何实现Netty创建链接?</a></li>
+        <li><a href="#3发送消息">(3).发送消息</a></li>
+        <li><a href="#4接受消息nettyclienthandler核心类">(4).接受消息，NettyClientHandler核心类</a></li>
+      </ul>
+    </li>
+    <li><a href="#4channeleventlistener-在服务端以及客服端构造方法中都有这个参数来了解作用">4.ChannelEventListener 在服务端以及客服端构造方法中都有这个参数，来了解作用</a>
+      <ul>
+        <li><a href="#1结构展示出来">(1).结构展示出来</a></li>
+        <li><a href="#2服务端或者客户端start">(2).服务端或者客户端start()</a></li>
+      </ul>
+    </li>
+    <li><a href="#五配置">五、配置</a>
+      <ul>
+        <li><a href="#1nettyserverconfig-看看server配置做相应优化操作">1.NettyServerConfig 看看Server配置做相应优化操作</a></li>
+        <li><a href="#2nettyclientconfig-看看client配置做相应优化操作">2.NettyClientConfig 看看Client配置做相应优化操作</a></li>
+      </ul>
+    </li>
+    <li><a href="#六总结">六、总结</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <h1 id="一背景">一、背景</h1>
+<p>rocketmq-remoting模块贯穿RocketMq网络层以及RPC实现；基于Netty实现；</p>
+<h1 id="二基于netty实现线程模型">二、基于Netty实现线程模型</h1>
+<p><img src="/rocketmq/rocketmq_design_6.png" alt=""></p>
+<table>
+<thead>
+<tr>
+<th>线程数</th>
+<th>线程名</th>
+<th>线程具体说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>NettyBoss_%d</td>
+<td>Reactor 线程池(1)</td>
+</tr>
+<tr>
+<td>N</td>
+<td>NettyServerEPOLLSelector_%d_%d</td>
+<td>Reactor 线程池</td>
+</tr>
+<tr>
+<td>M1</td>
+<td>NettyServerCodecThread_%d</td>
+<td>Worker线程池</td>
+</tr>
+<tr>
+<td>M2</td>
+<td>RemotingExecutorThread_%d</td>
+<td>业务RequestProcessor处理线程池</td>
+</tr>
+</tbody>
+</table>
+<p>盗用官方的图片以及描述</p>
+<h1 id="三协议定义">三、协议定义</h1>
+<h2 id="1消息协议">1、消息协议</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   +----------------------+-------------------------------+----------------+-----------+
+   | Message total length | serializeType &amp; header length |  header data   | body data |
+   |        (4byte)       |           4(1 + 3 )           |                |           |
+   +----------------------+-------------------------------+----------------+-----------+
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2header-data-协议">2、header data 协议</h2>
+<p>serializeType有两种：</p>
+<ul>
+<li>JSON (fastjson 序列化)</li>
+<li>ROCKETMQ (自定义如下)</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-text" data-lang="text">   +------+---------------+------------+--------+------+---------------+--------------------------------------------------+
+   | code | LanguageCode  |  version   | opaque | flag |     remark    |              extFields                           |
+   |  (2) |    1          |     2      |   4    | 4    | length(4) + data | length(4)+ keySize(2) + Key+ valSize(4) + val |
+   +------+---------------+------------+--------+------+---------------+--------------------------------------------------+
+</code></pre></td></tr></table>
+</div>
+</div><table>
+<thead>
+<tr>
+<th>Header字段</th>
+<th>类型</th>
+<th>Request说明</th>
+<th>Response说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>code</td>
+<td>int</td>
+<td>请求操作码，应答方根据不同的请求码进行不同的业务处理</td>
+<td>应答响应码。0表示成功，非0则表示各种错误</td>
+</tr>
+<tr>
+<td>language</td>
+<td>LanguageCode</td>
+<td>请求方实现的语言</td>
+<td>应答方实现的语言</td>
+</tr>
+<tr>
+<td>version</td>
+<td>int</td>
+<td>请求方程序的版本</td>
+<td>应答方程序的版本</td>
+</tr>
+<tr>
+<td>opaque</td>
+<td>int</td>
+<td>相当于requestId，在同一个连接上的不同请求标识码，与响应消息中的相对应</td>
+<td>应答不做修改直接返回</td>
+</tr>
+<tr>
+<td>flag</td>
+<td>int</td>
+<td>区分是普通RPC还是onewayRPC得标志</td>
+<td>区分是普通RPC还是onewayRPC得标志</td>
+</tr>
+<tr>
+<td>remark</td>
+<td>String</td>
+<td>传输自定义文本信息</td>
+<td>传输自定义文本信息</td>
+</tr>
+<tr>
+<td>extFields</td>
+<td>HashMap&lt;String, String&gt;</td>
+<td>请求自定义扩展信息</td>
+<td>响应自定义扩展信息</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>extFields 用于继承CommandCustomHeader实现类，把相应字段存放extFields，按一定协议序列化以及发序列化操作</li>
+</ul>
+<h1 id="四源码分析">四、源码分析</h1>
+<p>从这个rocketmq-remoting模块开始，就是RocketMq网络层以及RPC实现的模块；</p>
+<h2 id="1核心接口类图">1.核心接口类图</h2>
+<p><img src="/rocketmq/rocketmq01.png" alt=""></p>
+<p>相关方法具体说明一下：</p>
+<ul>
+<li>registerProcessor 根据请求code处理相应业务逻辑NettyRequestProcessor；</li>
+<li>invokeSync，invokeAsync，invokeOneway,根据方面名字就知道意思，调用方式：同步，异步，单工(请求没有返回结果)</li>
+</ul>
+<p>基于接口编程，为扩展性，NettyRequestProcessor改一下，我觉得更好，不跟Netty网络协议名称定义；那天开源比Netty更好的网络协议；更好扩展这块；</p>
+<h2 id="2remotingserverrpc服务端实现">2.RemotingServer(RPC服务端实现)</h2>
+<h3 id="1实现类图结构">(1).实现类图结构</h3>
+<p><img src="/rocketmq/rocketmq02.png" alt=""></p>
+<p>基于netty实现NettyRemotingServer类；</p>
+<h3 id="2如何利用netty工具包启动服务">(2).如何利用netty工具包启动服务？</h3>
+<h4 id="a第一步查看一下nettyremotingserver构造">a.第一步查看一下NettyRemotingServer构造</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="nf">NettyRemotingServer</span><span class="o">(</span><span class="kd">final</span> <span class="n">NettyServerConfig</span> <span class="n">nettyServerConfig</span><span class="o">,</span><span class="kd">final</span> <span class="n">ChannelEventListener</span> <span class="n">channelEventListener</span><span class="o">)</span> <span class="o">{</span>
+       <span class="c1">// 1.创建两个Semaphore，作用于单工调用和异步调用的限流控制；    
+</span><span class="c1"></span>       <span class="kd">super</span><span class="o">(</span><span class="n">nettyServerConfig</span><span class="o">.</span><span class="na">getServerOnewaySemaphoreValue</span><span class="o">(),</span> <span class="n">nettyServerConfig</span><span class="o">.</span><span class="na">getServerAsyncSemaphoreValue</span><span class="o">());</span>
+       <span class="c1">// 2.创建ServerBootstrap，这个就是Netty工具包，Server启动类
+</span><span class="c1"></span>       <span class="k">this</span><span class="o">.</span><span class="na">serverBootstrap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ServerBootstrap</span><span class="o">();</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">nettyServerConfig</span> <span class="o">=</span> <span class="n">nettyServerConfig</span><span class="o">;</span>
+       <span class="c1">// 连接Channel生命周期监听事件，后面具体说明
+</span><span class="c1"></span>       <span class="k">this</span><span class="o">.</span><span class="na">channelEventListener</span> <span class="o">=</span> <span class="n">channelEventListener</span><span class="o">;</span>
+       <span class="c1">// 3.创建公共线程池，作用于在注册NettyRequestProcessor，没用设置线程池默认用该线程池
+</span><span class="c1"></span>       <span class="kt">int</span> <span class="n">publicThreadNums</span> <span class="o">=</span> <span class="n">nettyServerConfig</span><span class="o">.</span><span class="na">getServerCallbackExecutorThreads</span><span class="o">();</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">publicThreadNums</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">publicThreadNums</span> <span class="o">=</span> <span class="n">4</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="c1">// NettyServerPublicExecutor_
+</span><span class="c1"></span>       <span class="k">this</span><span class="o">.</span><span class="na">publicExecutor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="n">publicThreadNums</span><span class="o">,....</span>
+       <span class="c1">// 4.创建EventLoopGroup，根据epoll选择EpollEventLoopGroup或者NioEventLoopGroup；
+</span><span class="c1"></span>       <span class="c1">//   创建两个线程组：1.boss线程组，用于ACCEPT,2.selector线程组，用于select(),读或者写操作；这个是经典Reactor模型；
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="n">useEpoll</span><span class="o">())</span> <span class="o">{</span>
+           <span class="k">this</span><span class="o">.</span><span class="na">eventLoopGroupBoss</span> <span class="o">=</span> <span class="k">new</span> <span class="n">EpollEventLoopGroup</span><span class="o">(</span><span class="n">1</span><span class="o">,</span> <span class="o">....</span>
+           <span class="k">this</span><span class="o">.</span><span class="na">eventLoopGroupSelector</span> <span class="o">=</span> <span class="k">new</span> <span class="n">EpollEventLoopGroup</span><span class="o">(</span><span class="n">nettyServerConfig</span><span class="o">.</span><span class="na">getServerSelectorThreads</span><span class="o">()...</span>
+       <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+           <span class="k">this</span><span class="o">.</span><span class="na">eventLoopGroupBoss</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NioEventLoopGroup</span><span class="o">(</span><span class="n">1</span><span class="o">,....</span>
+           <span class="k">this</span><span class="o">.</span><span class="na">eventLoopGroupSelector</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NioEventLoopGroup</span><span class="o">(</span><span class="n">nettyServerConfig</span><span class="o">.</span><span class="na">getServerSelectorThreads</span><span class="o">(),...</span>
+       <span class="o">}</span>
+       <span class="n">loadSslContext</span><span class="o">();</span>
+   <span class="o">}</span> 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bnetty启动开始start方法">b.netty启动开始,start方法</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">@Override
+ public void start() {
+     // 1.创建ChannelHandler处理线程组，用于解密或者编码等等....
+     this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(nettyServerConfig.getServerWorkerThreads()....
+     // 2.创建共享ChannelHandler
+     prepareSharableHandlers();
+     // 3.配置netty 配置信息，已经添加ChannelHandler
+     ServerBootstrap childHandler =
+         this.serverBootstrap.group(this.eventLoopGroupBoss, this.eventLoopGroupSelector)...
+             .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
+                 @Override
+                 public void initChannel(SocketChannel ch) throws Exception {
+                     //用defaultEventExecutorGroup处理相应的ChannelHandler
+                     ch.pipeline()
+                         .addLast(defaultEventExecutorGroup, HANDSHAKE_HANDLER_NAME, handshakeHandler)
+                         .addLast(defaultEventExecutorGroup,
+                             encoder,
+                             new NettyDecoder(),
+                             new IdleStateHandler(0, 0, nettyServerConfig.getServerChannelMaxIdleTimeSeconds()),
+                             connectionManageHandler,
+                             serverHandler
+                         );
+                 }
+             });
+     //  创建内存池管理
+     if (nettyServerConfig.isServerPooledByteBufAllocatorEnable()) {
+         childHandler.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+     }
+     // 4.启动netty server服务；
+     try {
+         ChannelFuture sync = this.serverBootstrap.bind().sync();
+         InetSocketAddress addr = (InetSocketAddress) sync.channel().localAddress();
+         this.port = addr.getPort();
+     } ...
+     // 5.启动channelEvent线程，用于channelEventListener
+     if (this.channelEventListener != null) {
+         this.nettyEventExecutor.start();
+     }
+     // 6.每1秒钟扫描超时请求触发终止操作。
+     this.timer.scheduleAtFixedRate(new TimerTask() {
+
+         @Override
+         public void run() {
+             try {
+                 NettyRemotingServer.this.scanResponseTable();
+             } catch (Throwable e) {
+                 log.error(&#34;scanResponseTable exception&#34;, e);
+             }
+         }
+     }, 1000 * 3, 1000);
+ }
+
+ private void prepareSharableHandlers() {
+     handshakeHandler = new HandshakeHandler(TlsSystemConfig.tlsMode);
+     //编码协议
+     encoder = new NettyEncoder();
+     connectionManageHandler = new NettyConnectManageHandler();
+     //request和reposne核心处理
+     serverHandler = new NettyServerHandler();
+ }   
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="cwhy-useepoll这样判断呢nio在liunx系统默认实现epoll归根到底原因epoll的水平触发和边沿触发模式nio未实现边沿触发模式netty自己开发这块实现提高性能">c.why useEpoll()这样判断呢？Nio在liunx系统默认实现epoll,归根到底原因epoll的水平触发和边沿触发模式，Nio未实现边沿触发模式，Netty自己开发这块实现,提高性能;</h4>
+<p><a href="https://blog.csdn.net/fengxinlinux/article/details/75331567?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-19&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-19">水平触发和边沿触发模式区别</a></p>
+<h4 id="d根据上面netty启动分析线程模型如下">d.根据上面netty启动分析，线程模型如下</h4>
+<p><img src="/rocketmq/rocketmq_design_6.png" alt=""></p>
+<h3 id="3rpc中定义协议很重要如何定义协议nettyencoder编码协议和nettydecoder解码协议分析">(3).RPC中定义协议很重要，如何定义协议？NettyEncoder编码协议和NettyDecoder解码协议分析</h3>
+<h4 id="anettyencoder编码实现messagetobyteencoder">a.NettyEncoder编码,实现MessageToByteEncoder；</h4>
+<p>MessageToByteEncoder是netty工具自己实现编码类，消息类<!-- raw HTML omitted -->型转换byte;</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   @Override
+   public void encode(ChannelHandlerContext ctx, RemotingCommand remotingCommand, ByteBuf out)
+       throws Exception {
+       try {
+           // 1.编码Header信息
+           ByteBuffer header = remotingCommand.encodeHeader();
+           out.writeBytes(header);
+          // 2.编码Header信息
+           byte[] body = remotingCommand.getBody();
+           if (body != null) {
+               out.writeBytes(body);
+           }
+       }....
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bnettydecoder解码实现lengthfieldbasedframedecoder">b.NettyDecoder解码,实现LengthFieldBasedFrameDecoder</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   @Override
+   public Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
+       ByteBuf frame = null;
+       try {
+           frame = (ByteBuf) super.decode(ctx, in);
+           if (null == frame) {
+               return null;
+           }
+
+           ByteBuffer byteBuffer = frame.nioBuffer();
+           //解密
+           return RemotingCommand.decode(byteBuffer);
+       } ....
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><p>协议的编码或者解码;最终RemotingCommand类处理协议规范操作；</p>
+<h4 id="cremotingcommand结构">c.RemotingCommand结构</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">      //请求操作码或者应答响应码
+      private int code;
+      private LanguageCode language = LanguageCode.JAVA;
+      private int version = 0;
+      //请求ID
+      private int opaque = requestId.getAndIncrement();
+      // 从右到左开始，第1bit，标识请求类型 第2bit,rpc类型，异步,同步和单工
+      private int flag = 0;
+      private String remark;
+      private HashMap&lt;String, String&gt; extFields;
+      private transient CommandCustomHeader customHeader;
+  
+      private SerializeType serializeTypeCurrentRPC = serializeTypeConfigInThisServer;
+  
+      private transient byte[] body;
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="dremotingcommand编码和解码协议跟上面协议定义">d.RemotingCommand编码和解码协议跟上面协议定义</h4>
+<p>看看是怎么编码以及解码呢？</p>
+<h5 id="1encode编码">1).encode(编码)</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  public ByteBuffer encode() {
+      // 1&gt; header length size
+      int length = 4;
+
+      // 2&gt; header data length
+      byte[] headerData = this.headerEncode();
+      length += headerData.length;
+
+      // 3&gt; body data length
+      if (this.body != null) {
+          length += body.length;
+      }
+      //创建 ByteBuffer
+      ByteBuffer result = ByteBuffer.allocate(4 + length);
+
+      // length
+      result.putInt(length);
+
+      // header length
+      result.put(markProtocolType(headerData.length, serializeTypeCurrentRPC));
+
+      // header data
+      result.put(headerData);
+
+      // body data;
+      if (this.body != null) {
+          result.put(this.body);
+      }
+
+      result.flip();
+
+      return result;
+  }  
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="2headerencodehead编码">2).headerEncode(head编码)</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private byte[] headerEncode() {
+       //把customHeader的属性存放到extFields的Map中，这样编码存在一个问题，实现类的属性只能基本数据类型，RocketMq支持类型：
+       //int,long,dubbo,bool已经相应的封装基本类型和String
+       this.makeCustomHeaderToNet();
+       if (SerializeType.ROCKETMQ == serializeTypeCurrentRPC) {
+           return RocketMQSerializable.rocketMQProtocolEncode(this);
+       } else {
+           return RemotingSerializable.encode(this);
+       }
+   }
+   public void makeCustomHeaderToNet() {
+       if (this.customHeader != null) {
+           Field[] fields = getClazzFields(customHeader.getClass());
+           if (null == this.extFields) {
+               this.extFields = new HashMap&lt;String, String&gt;();
+           }
+           for (Field field : fields) {
+               if (!Modifier.isStatic(field.getModifiers())) {
+                   String name = field.getName();
+                   if (!name.startsWith(&#34;this&#34;)) {
+                       Object value = null;
+                       try {
+                           field.setAccessible(true);
+                           value = field.get(this.customHeader);
+                       }...
+                       if (value != null) {
+                           this.extFields.put(name, value.toString());
+                       }
+                   }
+               }
+           }
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="3decode解码就是把字节反序列化remotingcommand其次很简单在看看decodecommandcustomheader">3).decode(解码)就是把字节反序列化RemotingCommand，其次很简单；在看看decodeCommandCustomHeader</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public CommandCustomHeader decodeCommandCustomHeader(
+       Class&lt;? extends CommandCustomHeader&gt; classHeader) throws RemotingCommandException {
+       CommandCustomHeader objectHeader;
+       try {
+           objectHeader = classHeader.newInstance();
+       }...
+
+       if (this.extFields != null) {
+           Field[] fields = getClazzFields(classHeader);
+           for (Field field : fields) {
+               if (!Modifier.isStatic(field.getModifiers())) {
+                   String fieldName = field.getName();
+                   if (!fieldName.startsWith(&#34;this&#34;)) {
+                       try {
+                           String value = this.extFields.get(fieldName);
+                           if (null == value) {
+                               //@CFNotNull主键验证操作
+                               if (!isFieldNullable(field)) {
+                                  ...
+                               }
+                               continue;
+                           }
+                           field.setAccessible(true);
+                           String type = getCanonicalName(field.getType());
+                           Object valueParsed;
+                           if (type.equals(STRING_CANONICAL_NAME)) {
+                               valueParsed = value;
+                           } else if (type.equals(INTEGER_CANONICAL_NAME_1) || type.equals(INTEGER_CANONICAL_NAME_2)) {
+                               valueParsed = Integer.parseInt(value);
+                           } else if (type.equals(LONG_CANONICAL_NAME_1) || type.equals(LONG_CANONICAL_NAME_2)) {
+                               valueParsed = Long.parseLong(value);
+                           } else if (type.equals(BOOLEAN_CANONICAL_NAME_1) || type.equals(BOOLEAN_CANONICAL_NAME_2)) {
+                               valueParsed = Boolean.parseBoolean(value);
+                           } else if (type.equals(DOUBLE_CANONICAL_NAME_1) || type.equals(DOUBLE_CANONICAL_NAME_2)) {
+                               valueParsed = Double.parseDouble(value);
+                           } else {
+                               ...
+                           }
+                           field.set(objectHeader, valueParsed);
+                       }...
+                   }
+               }
+           }
+           objectHeader.checkFields();
+       }
+       return objectHeader;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><p>decodeCommandCustomHeader方法很简单，很容易理解反序列化CommandCustomHeader；实现简单容易理解，问题CommandCustomHeader实现类字段属性多，这块序列化字节占一定内存；</p>
+<h3 id="4rpc协议定义好数据传输操作发送操作">(4).RPC协议定义好，数据传输操作，发送操作</h3>
+<h4 id="a发送消息有返回结果是怎么确定该发送消息结果呢-具体看看invokesync同步发送消息方法">a.发送消息，有返回结果，是怎么确定该发送消息结果呢？ 具体看看invokeSync同步发送消息方法</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> @Override
+   public RemotingCommand invokeSync(final Channel channel, final RemotingCommand request, final long timeoutMillis)
+       throws InterruptedException, RemotingSendRequestException, RemotingTimeoutException {
+       return this.invokeSyncImpl(channel, request, timeoutMillis);
+   }
+ public RemotingCommand invokeSyncImpl(final Channel channel, final RemotingCommand request,
+       final long timeoutMillis)
+       throws InterruptedException, RemotingSendRequestException, RemotingTimeoutException {
+       final int opaque = request.getOpaque();
+
+       try {
+           // 1.(request.getOpaque(),responseFuture)缓存到responseTable;
+           final ResponseFuture responseFuture = new ResponseFuture(channel, opaque, timeoutMillis, null, null);
+           this.responseTable.put(opaque, responseFuture);
+           final SocketAddress addr = channel.remoteAddress();
+           channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
+               @Override
+               public void operationComplete(ChannelFuture f) throws Exception {
+                   if (f.isSuccess()) {
+                     //发送数据成功操作，
+                       responseFuture.setSendRequestOK(true);
+                       return;
+                   } else {
+                       responseFuture.setSendRequestOK(false);
+                   }
+                   //发送失败操作
+                   responseTable.remove(opaque);
+                   responseFuture.setCause(f.cause());
+                   responseFuture.putResponse(null);
+                   log.warn(&#34;send a request command to channel &lt;&#34; + addr + &#34;&gt; failed.&#34;);
+               }
+           });
+           // 2.等待返回结果操作
+           RemotingCommand responseCommand = responseFuture.waitResponse(timeoutMillis);
+           if (null == responseCommand) {
+               if (responseFuture.isSendRequestOK()) {
+                   throw new RemotingTimeoutException(RemotingHelper.parseSocketAddressAddr(addr), timeoutMillis,
+                       responseFuture.getCause());
+               } else {
+                   throw new RemotingSendRequestException(RemotingHelper.parseSocketAddressAddr(addr), responseFuture.getCause());
+               }
+           }
+
+           return responseCommand;
+       } finally {
+           // 3.移除 ResponseFuture
+           this.responseTable.remove(opaque);
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="1回到上面问题是怎么确定返回消息">1).回到上面问题，是怎么确定返回消息；</h5>
+<ul>
+<li>
+<p>先按(request.getOpaque(),responseFuture)缓存到responseTable;</p>
+</li>
+<li>
+<p>返回结果中opaque跟请求一样子ID值，responseTable找到相应ResponseFuture,ResponseFuture做相应处理；</p>
+</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    /**
+     * This map caches all on-going requests.
+     * 缓存正在进行的请求等待返回结果
+     */
+    protected final ConcurrentMap&lt;Integer /* opaque */, ResponseFuture&gt; responseTable =
+        new ConcurrentHashMap&lt;Integer, ResponseFuture&gt;(256);
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="2responsetable缓存存在问题同步好说请求或者超时都会删除该请求缓存异步发送一直缓存没有返回结果缓存会刷爆">2).responseTable缓存存在问题?同步好说，请求或者超时都会删除该请求缓存；异步发送，一直缓存没有返回结果，缓存会刷爆；</h5>
+<p>在Netty start启动方法中有个每秒调度扫描responseTable缓存超时处理；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  public void scanResponseTable() {
+      final List&lt;ResponseFuture&gt; rfList = new LinkedList&lt;ResponseFuture&gt;();
+      Iterator&lt;Entry&lt;Integer, ResponseFuture&gt;&gt; it = this.responseTable.entrySet().iterator();
+      while (it.hasNext()) {
+          Entry&lt;Integer, ResponseFuture&gt; next = it.next();
+          ResponseFuture rep = next.getValue();
+          // 超时判断
+          if ((rep.getBeginTimestamp() + rep.getTimeoutMillis() + 1000) &lt;= System.currentTimeMillis()) {
+              rep.release();
+              it.remove();
+              rfList.add(rep);
+              log.warn(&#34;remove timeout request, &#34; + rep);
+          }
+      }
+
+      for (ResponseFuture rf : rfList) {
+          try {
+            //异步处理 executeInvokeCallback；
+              executeInvokeCallback(rf);
+          } catch (Throwable e) {
+              log.warn(&#34;scanResponseTable, operationComplete Exception&#34;, e);
+          }
+      }
+  }  
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bresponsefuture实现异步操作">b.ResponseFuture实现异步操作</h4>
+<h5 id="1结构">1).结构</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   // 请求id
+   private final int opaque;
+   private final Channel processChannel;
+   private final long timeoutMillis;
+   //回调操作
+   private final InvokeCallback invokeCallback;
+   private final long beginTimestamp = System.currentTimeMillis();
+   //控制线程等待操作
+   private final CountDownLatch countDownLatch = new CountDownLatch(1);
+   //用于异步发送或者单工有流量限制，释放资源；AtomicBoolean控制只准一次；
+   private final SemaphoreReleaseOnlyOnce once;
+
+   private final AtomicBoolean executeCallbackOnlyOnce = new AtomicBoolean(false);
+   // 返回结果
+   private volatile RemotingCommand responseCommand;
+   private volatile boolean sendRequestOK = true;
+   private volatile Throwable cause; 
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="2线程等待">2).线程等待</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    public RemotingCommand waitResponse(final long timeoutMillis) throws InterruptedException {
+        this.countDownLatch.await(timeoutMillis, TimeUnit.MILLISECONDS);
+        return this.responseCommand;
+    }
+
+    public void putResponse(final RemotingCommand responseCommand) {
+        this.responseCommand = responseCommand;
+        this.countDownLatch.countDown();
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="cinvokeasync异步发送消息">c.invokeAsync异步发送消息</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   @Override
+   public void invokeAsync(Channel channel, RemotingCommand request, long timeoutMillis, InvokeCallback invokeCallback)
+       throws InterruptedException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException {
+       this.invokeAsyncImpl(channel, request, timeoutMillis, invokeCallback);
+   }
+public void invokeAsyncImpl(final Channel channel, final RemotingCommand request, final long timeoutMillis,final InvokeCallback invokeCallback)...{
+       long beginStartTime = System.currentTimeMillis();
+       final int opaque = request.getOpaque();
+        //Semaphore控制异步发送消息数据
+       boolean acquired = this.semaphoreAsync.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);
+       if (acquired) {
+           final SemaphoreReleaseOnlyOnce once = new SemaphoreReleaseOnlyOnce(this.semaphoreAsync);
+           long costTime = System.currentTimeMillis() - beginStartTime;
+           if (timeoutMillis &lt; costTime) {
+               once.release();
+               throw new RemotingTimeoutException(&#34;invokeAsyncImpl call timeout&#34;);
+           }
+
+           final ResponseFuture responseFuture = new ResponseFuture(channel, opaque, timeoutMillis - costTime, invokeCallback, once);
+           this.responseTable.put(opaque, responseFuture);
+           try {
+               channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
+                   @Override
+                   public void operationComplete(ChannelFuture f) throws Exception {
+                       if (f.isSuccess()) {
+                           responseFuture.setSendRequestOK(true);
+                           return;
+                       }
+                       requestFail(opaque);
+                       log.warn(&#34;send a request command to channel &lt;{}&gt; failed.&#34;, RemotingHelper.parseChannelRemoteAddr(channel));
+                   }
+               });
+           }...
+       }...
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="dinvokeoneway">d.invokeOneway</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public void invokeOnewayImpl(final Channel channel, final RemotingCommand request, final long timeoutMillis)... {
+       request.markOnewayRPC();
+       // semaphoreOneway信号控制发送频率
+       boolean acquired = this.semaphoreOneway.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);
+       if (acquired) {
+           final SemaphoreReleaseOnlyOnce once = new SemaphoreReleaseOnlyOnce(this.semaphoreOneway);
+           try {
+               channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
+                   @Override
+                   public void operationComplete(ChannelFuture f) throws Exception {
+                       once.release();
+                       if (!f.isSuccess()) {
+                           log.warn(&#34;send a request command to channel &lt;&#34; + channel.remoteAddress() + &#34;&gt; failed.&#34;);
+                       }
+                   }
+               });
+           } ...
+       } ...
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="5rpc协议定义好数据传输操作读操作nettyserverhandler处理相应这块逻辑">(5).RPC协议定义好，数据传输操作，读操作，NettyServerHandler处理相应这块逻辑</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    @ChannelHandler.Sharable
+    class NettyServerHandler extends SimpleChannelInboundHandler&lt;RemotingCommand&gt; {
+
+        @Override
+        protected void channelRead0(ChannelHandlerContext ctx, RemotingCommand msg) throws Exception {
+            processMessageReceived(ctx, msg);
+        }
+    }
+   //接受数据处理，请求数据和返回结果数据处理
+    public void processMessageReceived(ChannelHandlerContext ctx, RemotingCommand msg) throws Exception {
+        final RemotingCommand cmd = msg;
+        if (cmd != null) {
+            switch (cmd.getType()) {
+                case REQUEST_COMMAND:
+                    processRequestCommand(ctx, cmd);
+                    break;
+                case RESPONSE_COMMAND:
+                    processResponseCommand(ctx, cmd);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="a-processrequestcommand请求数据处理">a. processRequestCommand请求数据处理</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  public void processRequestCommand(final ChannelHandlerContext ctx, final RemotingCommand cmd) {
+         //1.根据 RemotingCommand的code获取相应NettyRequestProcessor，未获取到，使用默认；
+         final Pair&lt;NettyRequestProcessor, ExecutorService&gt; matched = this.processorTable.get(cmd.getCode());
+         final Pair&lt;NettyRequestProcessor, ExecutorService&gt; pair = null == matched ? this.defaultRequestProcessor : matched;
+         final int opaque = cmd.getOpaque();
+         //2.创建任务，线程池处理NettyRequestProcessor
+         if (pair != null) {
+             Runnable run = new Runnable() {
+                 @Override
+                 public void run() {
+                     try {
+                         //调用RpcHooks方法，执行前或者执行后
+                         doBeforeRpcHooks(RemotingHelper.parseChannelRemoteAddr(ctx.channel()), cmd);
+                         //最终调用的方法 
+                         final RemotingCommand response = pair.getObject1().processRequest(ctx, cmd);
+                         doAfterRpcHooks(RemotingHelper.parseChannelRemoteAddr(ctx.channel()), cmd, response);
+                         //判断是否是单工请求
+                         if (!cmd.isOnewayRPC()) {
+                             if (response != null) {
+                                 response.setOpaque(opaque);
+                                 response.markResponseType();
+                                 try {
+                                     ctx.writeAndFlush(response);
+                                 } ....
+                             } else {
+ 
+                             }
+                         }
+                     } ....
+                 }
+             };
+             // 3.拒绝要求判断操作
+             if (pair.getObject1().rejectRequest()) {
+                 final RemotingCommand response = RemotingCommand.createResponseCommand(RemotingSysResponseCode.SYSTEM_BUSY,
+                     &#34;[REJECTREQUEST]system busy, start flow control for a while&#34;);
+                 response.setOpaque(opaque);
+                 ctx.writeAndFlush(response);
+                 return;
+             }
+ 
+             try {
+                 final RequestTask requestTask = new RequestTask(run, ctx.channel(), cmd);
+             // 4.线程池提交任务   
+                 pair.getObject2().submit(requestTask);
+             } ...
+         } ...
+     }
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="b-processresponsecommand-返回数据处理">b. processResponseCommand 返回数据处理</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public void processResponseCommand(ChannelHandlerContext ctx, RemotingCommand cmd) {
+       final int opaque = cmd.getOpaque();
+       // ResponseFuture完成操作，已经相应回调操作
+       final ResponseFuture responseFuture = responseTable.get(opaque);
+       if (responseFuture != null) {
+           responseFuture.setResponseCommand(cmd);
+
+           responseTable.remove(opaque);
+
+           if (responseFuture.getInvokeCallback() != null) {
+               executeInvokeCallback(responseFuture);
+           } else {
+               responseFuture.putResponse(cmd);
+               responseFuture.release();
+           }
+       } ...
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="6nettyrequestprocessor实现接口处理相应业务逻辑">(6).NettyRequestProcessor实现接口处理相应业务逻辑；</h3>
+<h4 id="anettyremotingabstract管理nettyrequestprocessor">a.NettyRemotingAbstract管理NettyRequestProcessor</h4>
+<p>NettyRemotingAbstract这个类看起来很别扭，一般不是Abstract写在前面吗？</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   /**
+    * This container holds all processors per request code, aka, for each incoming request, we may look up the
+    * responding processor in this map to handle the request.
+    */
+   protected final HashMap&lt;Integer/* request code */, Pair&lt;NettyRequestProcessor, ExecutorService&gt;&gt; processorTable =
+       new HashMap&lt;Integer, Pair&lt;NettyRequestProcessor, ExecutorService&gt;&gt;(64); 
+   /**
+    * The default request processor to use in case there is no exact match in {@link #processorTable} per request code.
+    */
+   protected Pair&lt;NettyRequestProcessor, ExecutorService&gt; defaultRequestProcessor;
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bnettyremotingserver注册nettyrequestprocessor">b.NettyRemotingServer注册NettyRequestProcessor</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  @Override
+  public void registerProcessor(int requestCode, NettyRequestProcessor processor, ExecutorService executor) {
+      ExecutorService executorThis = executor;
+      if (null == executor) {
+          executorThis = this.publicExecutor;
+      }
+
+      Pair&lt;NettyRequestProcessor, ExecutorService&gt; pair = new Pair&lt;NettyRequestProcessor, ExecutorService&gt;(processor, executorThis);
+      this.processorTable.put(requestCode, pair);
+  }
+
+  @Override
+  public void registerDefaultProcessor(NettyRequestProcessor processor, ExecutorService executor) {
+      this.defaultRequestProcessor = new Pair&lt;NettyRequestProcessor, ExecutorService&gt;(processor, executor);
+  }  
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3nettyremotingclient-rpc客服端实现">3.NettyRemotingClient RPC客服端实现</h2>
+<h3 id="1实现类图结构-1">(1).实现类图结构</h3>
+<p><img src="/rocketmq/rocketmq03.png" alt=""></p>
+<h3 id="2如何实现netty创建链接">(2).如何实现Netty创建链接?</h3>
+<h4 id="astart">a.start()</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">private final Bootstrap bootstrap = new Bootstrap(); 
+
+   @Override
+   public void start() {
+       this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(nettyClientConfig.getClientWorkerThreads()...
+
+       Bootstrap handler = this.bootstrap.group(this.eventLoopGroupWorker).channel(NioSocketChannel.class)
+           ...
+           .handler(new ChannelInitializer&lt;SocketChannel&gt;() {
+               @Override
+               public void initChannel(SocketChannel ch) throws Exception {
+                   ChannelPipeline pipeline = ch.pipeline();
+                   if (nettyClientConfig.isUseTLS()) {
+                       if (null != sslContext) {
+                           pipeline.addFirst(defaultEventExecutorGroup, &#34;sslHandler&#34;, sslContext.newHandler(ch.alloc()));
+                           log.info(&#34;Prepend SSL handler&#34;);
+                       } else {
+                           log.warn(&#34;Connections are insecure as SSLContext is null!&#34;);
+                       }
+                   }
+                   pipeline.addLast(
+                       defaultEventExecutorGroup,
+                       new NettyEncoder(),
+                       new NettyDecoder(),
+                       new IdleStateHandler(0, 0, nettyClientConfig.getClientChannelMaxIdleTimeSeconds()),
+                       new NettyConnectManageHandler(),
+                       new NettyClientHandler());
+               }
+           });
+      //扫描请求返回结果超时
+       this.timer.scheduleAtFixedRate(new TimerTask() {
+           @Override
+           public void run() {
+               try {
+                   NettyRemotingClient.this.scanResponseTable();
+               } catch (Throwable e) {
+                   log.error(&#34;scanResponseTable exception&#34;, e);
+               }
+           }
+       }, 1000 * 3, 1000);
+
+       if (this.channelEventListener != null) {
+           this.nettyEventExecutor.start();
+       }
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bcreatechannelfinal-string-addr-创建链接">b.createChannel(final String addr) 创建链接</h4>
+<p>channelTables缓存中存在Channel，先关闭重新创建一个链接Channel</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private Channel createChannel(final String addr) throws InterruptedException {
+       ChannelWrapper cw = this.channelTables.get(addr);
+       if (cw != null &amp;&amp; cw.isOK()) {
+           cw.getChannel().close();
+           channelTables.remove(addr);
+       }
+      
+       if (this.lockChannelTables.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+           try {
+               boolean createNewConnection;
+               cw = this.channelTables.get(addr);
+               if (cw != null) {
+
+                   if (cw.isOK()) {
+                       cw.getChannel().close();
+                       this.channelTables.remove(addr);
+                       createNewConnection = true;
+                   } else if (!cw.getChannelFuture().isDone()) {
+                       createNewConnection = false;
+                   } else {
+                       this.channelTables.remove(addr);
+                       createNewConnection = true;
+                   }
+               } else {
+                   createNewConnection = true;
+               }
+
+               if (createNewConnection) {
+                   //创建链接，ChannelFuture缓存channelTables
+                   ChannelFuture channelFuture = this.bootstrap.connect(RemotingHelper.string2SocketAddress(addr));
+                   log.info(&#34;createChannel: begin to connect remote host[{}] asynchronously&#34;, addr);
+                   cw = new ChannelWrapper(channelFuture);
+                   this.channelTables.put(addr, cw);
+               }
+           }...
+           finally {
+               this.lockChannelTables.unlock();
+           }
+       }...
+
+       if (cw != null) {
+           ChannelFuture channelFuture = cw.getChannelFuture();
+           if (channelFuture.awaitUninterruptibly(this.nettyClientConfig.getConnectTimeoutMillis())) {
+               if (cw.isOK()) {
+                   log.info(&#34;createChannel: connect remote host[{}] success, {}&#34;, addr, channelFuture.toString());
+                   return cw.getChannel();
+               } ...
+           }...
+       }
+
+       return null;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3发送消息">(3).发送消息</h3>
+<h4 id="ainvokesync同步发送消息">a.invokeSync同步发送消息</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   @Override
+   public RemotingCommand invokeSync(String addr, final RemotingCommand request, long timeoutMillis)... {
+       long beginStartTime = System.currentTimeMillis();
+       //1.按地址获取Channel，地址为空，获取NameServerChannel
+       final Channel channel = this.getAndCreateChannel(addr);
+       if (channel != null &amp;&amp; channel.isActive()) {
+           try {
+               doBeforeRpcHooks(addr, request);
+               long costTime = System.currentTimeMillis() - beginStartTime;
+               if (timeoutMillis &lt; costTime) {
+                   throw new RemotingTimeoutException(&#34;invokeSync call timeout&#34;);
+               }
+               //调用Netty Server相同处理结果
+               RemotingCommand response = this.invokeSyncImpl(channel, request, timeoutMillis - costTime);
+               doAfterRpcHooks(RemotingHelper.parseChannelRemoteAddr(channel), request, response);
+               return response;
+           } ....
+       }...
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bgetandcreatechannel获取channel">b.getAndCreateChannel获取Channel</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private Channel getAndCreateChannel(final String addr) throws InterruptedException {
+       if (null == addr) {
+          // 地址为空，获取NameServerChannel
+          // namesrvAddrList集合中随机创建Channel
+           return getAndCreateNameserverChannel();
+       }
+
+       ChannelWrapper cw = this.channelTables.get(addr);
+       if (cw != null &amp;&amp; cw.isOK()) {
+           return cw.getChannel();
+       }
+       //创建新的Channel
+       return this.createChannel(addr);
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="cinvokeasyncinvokeoneway跟invokesync类同最终调用相应netty-server相同处理方法这里不做具体分析">c.invokeAsync,invokeOneway跟invokeSync类同，最终调用相应Netty Server相同处理方法，这里不做具体分析；</h4>
+<h3 id="4接受消息nettyclienthandler核心类">(4).接受消息，NettyClientHandler核心类</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   class NettyClientHandler extends SimpleChannelInboundHandler&lt;RemotingCommand&gt; {
+
+       @Override
+       protected void channelRead0(ChannelHandlerContext ctx, RemotingCommand msg) throws Exception {
+           processMessageReceived(ctx, msg);
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4channeleventlistener-在服务端以及客服端构造方法中都有这个参数来了解作用">4.ChannelEventListener 在服务端以及客服端构造方法中都有这个参数，来了解作用</h2>
+<h3 id="1结构展示出来">(1).结构展示出来</h3>
+<p><img src="/rocketmq/rocketmq04.png" alt=""></p>
+<p>上图ChannelEventListener接口方法描述就是Channel的生命周期事件触发；</p>
+<h3 id="2服务端或者客户端start">(2).服务端或者客户端start()</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">       // 5.启动channelEvent线程，用于channelEventListener
+       if (this.channelEventListener != null) {
+           this.nettyEventExecutor.start();
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><p>NettyEventExecutor触发事件点，NettyEventExecutor是线程；NettyEventExecutor实现简单生产者消费者模式；下面解析NettyEventExecutor;</p>
+<h4 id="a生产者消费者模式必须有消息事件channeleventlistener相当于消费在接口中参数类似于我们消息封装成nettyevent">a.生产者消费者模式必须有消息事件，ChannelEventListener相当于消费，在接口中参数类似于我们消息，封装成NettyEvent</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> public class NettyEvent {
+   private final NettyEventType type;
+   private final String remoteAddr;
+   private final Channel channel;
+ }
+
+public enum NettyEventType {
+   CONNECT,
+   CLOSE,
+   IDLE,
+   EXCEPTION
+}
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bnettyeventexecutor构造就启动线程调用nettyeventexecutorrun方法从堵塞队列中拿数据根据相应事件类型调用相应channeleventlistener方法">b.NettyEventExecutor构造就启动线程，调用NettyEventExecutor.run方法；从堵塞队列中拿数据，根据相应事件类型调用相应ChannelEventListener方法</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">      @Override
+      public void run() {
+         ...
+          final ChannelEventListener listener = NettyRemotingAbstract.this.getChannelEventListener();
+          while (!this.isStopped()) {
+              try {
+                  //从堵塞队列中拿数据
+                  NettyEvent event = this.eventQueue.poll(3000, TimeUnit.MILLISECONDS);
+                  if (event != null &amp;&amp; listener != null) {
+                      switch (event.getType()) {
+                          case IDLE:
+                              listener.onChannelIdle(event.getRemoteAddr(), event.getChannel());
+                              break;
+                          case CLOSE:
+                              listener.onChannelClose(event.getRemoteAddr(), event.getChannel());
+                              break;
+                          case CONNECT:
+                              listener.onChannelConnect(event.getRemoteAddr(), event.getChannel());
+                              break;
+                          case EXCEPTION:
+                              listener.onChannelException(event.getRemoteAddr(), event.getChannel());
+                              break;
+                          default:
+                              break;
+
+                      }
+                  }
+   ....
+      }  
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="cputnettyevent发布事件">c.putNettyEvent发布事件</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">       //有界堵塞队列  
+       private final LinkedBlockingQueue&lt;NettyEvent&gt; eventQueue = new LinkedBlockingQueue&lt;NettyEvent&gt;();
+       private final int maxSize = 10000;
+
+       public void putNettyEvent(final NettyEvent event) {
+          //队列数量达到1万，该事件忽略掉
+           if (this.eventQueue.size() &lt;= maxSize) {
+               this.eventQueue.add(event);
+           } else {
+               log.warn(&#34;event queue size[{}] enough, so drop this event {}&#34;, this.eventQueue.size(), event.toString());
+           }
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="d在哪里生产这个事件呢服务端以及客户端对应nettyconnectmanagehandler的channelhandler处理相应发布事件">d.在哪里生产这个事件呢？服务端以及客户端对应NettyConnectManageHandler的ChannelHandler处理相应发布事件</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  // 如下服务端代码，客户端不列出来，都类同;
+   @ChannelHandler.Sharable
+   class NettyConnectManageHandler extends ChannelDuplexHandler {
+        ....
+
+       @Override
+       public void channelActive(ChannelHandlerContext ctx) throws Exception {
+           ...
+           if (NettyRemotingServer.this.channelEventListener != null) {
+               NettyRemotingServer.this.putNettyEvent(new NettyEvent(NettyEventType.CONNECT, remoteAddress, ctx.channel()));
+           }
+       }
+
+       @Override
+       public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+           ....
+           if (NettyRemotingServer.this.channelEventListener != null) {
+               NettyRemotingServer.this.putNettyEvent(new NettyEvent(NettyEventType.CLOSE, remoteAddress, ctx.channel()));
+           }
+       }
+
+       @Override
+       public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+           if (evt instanceof IdleStateEvent) {
+               IdleStateEvent event = (IdleStateEvent) evt;
+               if (event.state().equals(IdleState.ALL_IDLE)) {
+                   final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
+                   ...
+                   RemotingUtil.closeChannel(ctx.channel());
+                   if (NettyRemotingServer.this.channelEventListener != null) {
+                       NettyRemotingServer.this
+                           .putNettyEvent(new NettyEvent(NettyEventType.IDLE, remoteAddress, ctx.channel()));
+                   }
+               }
+           }
+           ctx.fireUserEventTriggered(evt);
+       }
+
+       @Override
+       public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+           ...
+           if (NettyRemotingServer.this.channelEventListener != null) {
+               NettyRemotingServer.this.putNettyEvent(new NettyEvent(NettyEventType.EXCEPTION, remoteAddress, ctx.channel()));
+           }
+           RemotingUtil.closeChannel(ctx.channel());
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="五配置">五、配置</h2>
+<h3 id="1nettyserverconfig-看看server配置做相应优化操作">1.NettyServerConfig 看看Server配置做相应优化操作</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  //编码或者解密,心跳以及触发RequestProcessor任务 
+  private int serverWorkerThreads = 8;
+  //默认4，RequestProcessor为配置线程池，就用到这个配置线程池
+  private int serverCallbackExecutorThreads = 0;
+  private int serverSelectorThreads = 3;
+  private int serverOnewaySemaphoreValue = 256;
+  private int serverAsyncSemaphoreValue = 64;
+  private int serverSocketSndBufSize = NettySystemConfig.socketSndbufSize;
+  private int serverSocketRcvBufSize = NettySystemConfig.socketRcvbufSize;  
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2nettyclientconfig-看看client配置做相应优化操作">2.NettyClientConfig 看看Client配置做相应优化操作</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private int clientWorkerThreads = 4;
+   private int clientCallbackExecutorThreads = Runtime.getRuntime().availableProcessors();
+   //65535
+   private int clientOnewaySemaphoreValue = NettySystemConfig.CLIENT_ONEWAY_SEMAPHORE_VALUE;
+   //65535
+   private int clientAsyncSemaphoreValue = NettySystemConfig.CLIENT_ASYNC_SEMAPHORE_VALUE;
+   private int connectTimeoutMillis = 3000;
+   private long channelNotActiveInterval = 1000 * 60;
+
+   /**
+    * IdleStateEvent will be triggered when neither read nor write was performed for
+    * the specified period of this time. Specify {@code 0} to disable
+    */
+   private int clientChannelMaxIdleTimeSeconds = 120;
+
+   private int clientSocketSndBufSize = NettySystemConfig.socketSndbufSize;
+   private int clientSocketRcvBufSize = NettySystemConfig.socketRcvbufSize; 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="六总结">六、总结</h2>
+<ul>
+<li>
+<p>基于Netty实现网络层，自定义自己协议；</p>
+</li>
+<li>
+<p>NettyRequestProcessor接口实现相应请求业务逻辑；根据code区分NettyRequestProcessor；</p>
+</li>
+<li>
+<p>基于Netty线程模式，在创建两个线程池，一个解码或者编码，一个处理NettyRequestProcessor线程池，提高性能；</p>
+</li>
+</ul>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2020-05-02 20:08
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/rocketmq/">rocketmq</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      
+      <a class="next" href="/post/rocketmq/1.rocketmq%E8%83%8C%E6%99%AF/">
+        <span class="next-text nav-default">1.Rocketmq背景</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

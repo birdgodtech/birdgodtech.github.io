@@ -1,0 +1,67 @@
+.icon-juejin, .icon-cnblogs, .icon-v2ex {
+    background-size: 100%;
+    background-repeat: no-repeat;
+}
+
+.icon-juejin {
+    top: 2px;
+    background-image: url(/images/juejin.svg);
+    width: 35px;
+    height: 35px;
+}
+
+a.iconfont {
+    position: relative;
+}
+
+/*a.iconfont:hover::after {
+    content: attr(data-title);
+    position: absolute;
+    top: -35px;
+    color: #34495e;
+    left: 0;
+}*/
+
+.icon-cnblogs {
+    background-image: url(/images/cnblogs.svg);
+    width: 30px;
+    height: 30px;
+}
+
+.icon-v2ex {
+    background-image: url(/images/v2ex.svg);
+    width: 30px;
+    height: 30px;
+}
+
+body .icon-email:before {
+    content: "\e605";
+}
+
+body .icon-github:before {
+    content: "\e606";
+}
+
+body .footer .social-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.site-title {
+    font-size: 25px;
+    display: inline-block;
+}
+
+html .post .post-reward .qr-code .image {
+    width: unset;
+}
+
+html body {
+    border-top: 0;
+}
+
+.label-style {
+    font-size: 30px;
+    color: #34495e;
+}

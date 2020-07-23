@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>disruptor on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/disruptor/</link>
+    <description>Recent content in disruptor on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Mon, 20 Aug 2018 18:18:08 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/disruptor/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>ForkJoin1.8 模式分析</title>
+      <link>https://birdgodtech.github.io/post/concurrent/jdk1.8/ForkJoin1.8%E6%A8%A1%E5%BC%8F%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 20 Aug 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/jdk1.8/ForkJoin1.8%E6%A8%A1%E5%BC%8F%E5%88%86%E6%9E%90/</guid>
+      <description>ForkJoin模式分析 简介 Fork/Join框架介绍不错博客，阿里方腾飞写 Fork/Join使用两个类来完成以上两件事情： ForkJoin</description>
+    </item>
+    
+    <item>
+      <title>神奇的缓存行填充</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/%E7%BC%93%E5%AD%98%E8%A1%8C%E5%A1%AB%E5%85%85cache-line-padding/</link>
+      <pubDate>Wed, 15 Aug 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/%E7%BC%93%E5%AD%98%E8%A1%8C%E5%A1%AB%E5%85%85cache-line-padding/</guid>
+      <description>神奇的缓存行填充 原文地址 计算机入门 我喜欢在LMAX工作的原因之一是，在这里工作让我明白从大学和A Level Computing所学的东西实际上还是有意</description>
+    </item>
+    
+    <item>
+      <title>揭秘内存屏障</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9Cmemory-barriers/</link>
+      <pubDate>Wed, 01 Aug 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9Cmemory-barriers/</guid>
+      <description>揭秘内存屏障 原文地址 什么是内存屏障？ 它是一个CPU指令。没错，又一次，我们在讨论CPU级别的东西，以便获得我们想要的性能（Martin著名的</description>
+    </item>
+    
+    <item>
+      <title>伪共享(False Sharing)</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/%E4%BC%AA%E5%85%B1%E4%BA%ABFalse-Sharing/</link>
+      <pubDate>Wed, 25 Jul 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/%E4%BC%AA%E5%85%B1%E4%BA%ABFalse-Sharing/</guid>
+      <description>伪共享(False Sharing) 原文地址 缓存系统中是以缓存行（cache line）为单位存储的。缓存行是2的整数幂个连续字节，一般为32-256个字节。</description>
+    </item>
+    
+    <item>
+      <title>Disruptor</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/8.Disruptor%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 16 Jul 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/8.Disruptor%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>Disruptor框架源码分析 简介 Disruptor中的一些重要组件和组件的运行方式，也通过手动组合这些组件的方式给出了一些基本的用例。框架</description>
+    </item>
+    
+    <item>
+      <title>EventProcessor</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/7.EventProcessor%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 02 Jul 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/7.EventProcessor%E5%88%86%E6%9E%90/</guid>
+      <description>EventProcessor分析 简介 EventProcessor 持有特定消费者(Consumer)的 Sequence，并提供用于调用事件处理实现的事件循环(Event</description>
+    </item>
+    
+    <item>
+      <title>RingBuffer</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/6.RingBuffer%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 25 Jun 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/6.RingBuffer%E5%88%86%E6%9E%90/</guid>
+      <description>RingBuffer分析 简介 环形的缓冲区。曾经 RingBuffer 是 Disruptor 中的最主要的对象，但从3.0版本开始，其职责被简化为仅仅负责对通过 Disruptor 进行交换的数据（事件</description>
+    </item>
+    
+    <item>
+      <title>WaitStrategy</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/5.WaitStrategy%E5%88%86%E6%9E%90/</link>
+      <pubDate>Wed, 20 Jun 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/5.WaitStrategy%E5%88%86%E6%9E%90/</guid>
+      <description>WaitStrategy分析 简介 定义 Consumer 如何进行等待下一个事件的策略。 （注：Disruptor 定义了多种不同的策略，针对不同的场景，提供了不一</description>
+    </item>
+    
+    <item>
+      <title>SequenceBarrier</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/4.SequenceBarrier%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 15 May 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/4.SequenceBarrier%E5%88%86%E6%9E%90/</guid>
+      <description>SequenceBarrier分析 简介 序列屏障由序列发生器产生，包含对序列发生器的主要发布序列和任何相关消费者的序列的引用。它包含确定消费者</description>
+    </item>
+    
+    <item>
+      <title>Sequencer分析</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/3.Sequencer%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 15 May 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/3.Sequencer%E5%88%86%E6%9E%90/</guid>
+      <description>Sequencer分析 简介 Sequencer是Disruptor的真正核心。这个接口的2个实现（单生产者(SingleProducerSeq</description>
+    </item>
+    
+    <item>
+      <title>Sequence源码分析</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/2.Sequence%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 08 May 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/2.Sequence%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>Sequence源码分析 简介 Disruptor使用序列作为一种手段来确定特定组件的位置。每个消费者（EventProcessor）都像Dis</description>
+    </item>
+    
+    <item>
+      <title>disruptor介绍</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/1.disruptor%E4%BB%8B%E7%BB%8D/</link>
+      <pubDate>Sat, 05 May 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/1.disruptor%E4%BB%8B%E7%BB%8D/</guid>
+      <description>disruptor介绍 简介 从功能上来看，Disruptor 是实现了&amp;quot;队列&amp;quot;的功能，而且是一个有界队列。那么它的应用场景自</description>
+    </item>
+    
+  </channel>
+</rss>

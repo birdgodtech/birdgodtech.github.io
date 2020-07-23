@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Disruptor - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="Disruptor框架源码分析 简介 Disruptor中的一些重要组件和组件的运行方式，也通过手动组合这些组件的方式给出了一些基本的用例。框架" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/disruptor/8.Disruptor%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/disruptor/8.Disruptor%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/disruptor/8.Disruptor%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="Disruptor" />
+<meta property="og:description" content="Disruptor框架源码分析 简介 Disruptor中的一些重要组件和组件的运行方式，也通过手动组合这些组件的方式给出了一些基本的用例。框架" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/disruptor/8.Disruptor%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2018-07-16T18:18:08+00:00" />
+<meta property="article:modified_time" content="2018-07-16T18:18:08+00:00" />
+<meta itemprop="name" content="Disruptor">
+<meta itemprop="description" content="Disruptor框架源码分析 简介 Disruptor中的一些重要组件和组件的运行方式，也通过手动组合这些组件的方式给出了一些基本的用例。框架">
+<meta itemprop="datePublished" content="2018-07-16T18:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2018-07-16T18:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="1964">
+
+
+
+<meta itemprop="keywords" content="disruptor," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Disruptor"/>
+<meta name="twitter:description" content="Disruptor框架源码分析 简介 Disruptor中的一些重要组件和组件的运行方式，也通过手动组合这些组件的方式给出了一些基本的用例。框架"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">Disruptor</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2018-07-16 18:18 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 1964 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#一disruptor构造">一、Disruptor构造</a></li>
+    <li><a href="#二事件处理者">二、事件处理者</a></li>
+    <li><a href="#三start-启动">三、start 启动</a></li>
+    <li><a href="#四publishevent-发布事件">四、publishEvent 发布事件</a></li>
+    <li><a href="#五shutdown-停止">五、shutdown 停止</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2018-07-16T18:18:08" title="July 16, 2018">July 16, 2018</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="disruptor框架源码分析">Disruptor框架源码分析</h1>
+<h2 id="简介">简介</h2>
+<p>Disruptor中的一些重要组件和组件的运行方式，也通过手动组合这些组件的方式给出了一些基本的用例。框架也提供了一个DSL-style API，来帮助我们更容易的使用框架，
+屏蔽掉一些细节(比如怎么构建RingBuffer、怎么关联追踪序列等)，</p>
+<h2 id="一disruptor构造">一、Disruptor构造</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Disruptor</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span>
+<span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">RingBuffer</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">ringBuffer</span><span class="o">;</span> 
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Executor</span> <span class="n">executor</span><span class="o">;</span> 
+    <span class="c1">//事件处理仓库。
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">ConsumerRepository</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">consumerRepository</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ConsumerRepository</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;();</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">AtomicBoolean</span> <span class="n">started</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AtomicBoolean</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span> <span class="c1">//启动状态
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="n">ExceptionHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;</span> <span class="n">exceptionHandler</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ExceptionHandlerWrapper</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;();</span> <span class="c1">//异常处理
+</span><span class="c1"></span>
+    <span class="cm">/**
+</span><span class="cm">     * Create a new Disruptor. Will default to {@link com.lmax.disruptor.BlockingWaitStrategy} and
+</span><span class="cm">     * {@link ProducerType}.MULTI
+</span><span class="cm">     * 弃用
+</span><span class="cm">     * @deprecated Use a {@link ThreadFactory} instead of an {@link Executor} as a the ThreadFactory
+</span><span class="cm">     * is able to report errors when it is unable to construct a thread to run a producer.
+</span><span class="cm">     *
+</span><span class="cm">     * @param eventFactory   the factory to create events in the ring buffer.
+</span><span class="cm">     * @param ringBufferSize the size of the ring buffer.
+</span><span class="cm">     * @param executor       an {@link Executor} to execute event processors.
+</span><span class="cm">     */</span>
+    <span class="nd">@Deprecated</span>
+    <span class="kd">public</span> <span class="nf">Disruptor</span><span class="o">(</span><span class="kd">final</span> <span class="n">EventFactory</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">eventFactory</span><span class="o">,</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">ringBufferSize</span><span class="o">,</span> <span class="kd">final</span> <span class="n">Executor</span> <span class="n">executor</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span><span class="n">RingBuffer</span><span class="o">.</span><span class="na">createMultiProducer</span><span class="o">(</span><span class="n">eventFactory</span><span class="o">,</span> <span class="n">ringBufferSize</span><span class="o">),</span> <span class="n">executor</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Create a new Disruptor.
+</span><span class="cm">     *
+</span><span class="cm">     * @deprecated Use a {@link ThreadFactory} instead of an {@link Executor} as a the ThreadFactory
+</span><span class="cm">     * is able to report errors when it is unable to construct a thread to run a producer.
+</span><span class="cm">     * 弃用
+</span><span class="cm">     * @param eventFactory   the factory to create events in the ring buffer.
+</span><span class="cm">     * @param ringBufferSize the size of the ring buffer, must be power of 2.
+</span><span class="cm">     * @param executor       an {@link Executor} to execute event processors.
+</span><span class="cm">     * @param producerType   the claim strategy to use for the ring buffer.
+</span><span class="cm">     * @param waitStrategy   the wait strategy to use for the ring buffer.
+</span><span class="cm">     */</span>
+    <span class="nd">@Deprecated</span>
+    <span class="kd">public</span> <span class="nf">Disruptor</span><span class="o">(</span>
+        <span class="kd">final</span> <span class="n">EventFactory</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">eventFactory</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="n">ringBufferSize</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Executor</span> <span class="n">executor</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">ProducerType</span> <span class="n">producerType</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">WaitStrategy</span> <span class="n">waitStrategy</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span><span class="n">RingBuffer</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="n">producerType</span><span class="o">,</span> <span class="n">eventFactory</span><span class="o">,</span> <span class="n">ringBufferSize</span><span class="o">,</span> <span class="n">waitStrategy</span><span class="o">),</span> <span class="n">executor</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Create a new Disruptor. Will default to {@link com.lmax.disruptor.BlockingWaitStrategy} and
+</span><span class="cm">     * {@link ProducerType}.MULTI
+</span><span class="cm">     *
+</span><span class="cm">     * @param eventFactory   the factory to create events in the ring buffer.
+</span><span class="cm">     * @param ringBufferSize the size of the ring buffer.
+</span><span class="cm">     * @param threadFactory  a {@link ThreadFactory} to create threads to for processors.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">Disruptor</span><span class="o">(</span><span class="kd">final</span> <span class="n">EventFactory</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">eventFactory</span><span class="o">,</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">ringBufferSize</span><span class="o">,</span> <span class="kd">final</span> <span class="n">ThreadFactory</span> <span class="n">threadFactory</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span><span class="n">RingBuffer</span><span class="o">.</span><span class="na">createMultiProducer</span><span class="o">(</span><span class="n">eventFactory</span><span class="o">,</span> <span class="n">ringBufferSize</span><span class="o">),</span> <span class="k">new</span> <span class="n">BasicExecutor</span><span class="o">(</span><span class="n">threadFactory</span><span class="o">));</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Create a new Disruptor.
+</span><span class="cm">     *
+</span><span class="cm">     * @param eventFactory   the factory to create events in the ring buffer.
+</span><span class="cm">     * @param ringBufferSize the size of the ring buffer, must be power of 2.
+</span><span class="cm">     * @param threadFactory  a {@link ThreadFactory} to create threads for processors.
+</span><span class="cm">     * @param producerType   the claim strategy to use for the ring buffer.
+</span><span class="cm">     * @param waitStrategy   the wait strategy to use for the ring buffer.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">Disruptor</span><span class="o">(</span>
+            <span class="kd">final</span> <span class="n">EventFactory</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">eventFactory</span><span class="o">,</span>
+            <span class="kd">final</span> <span class="kt">int</span> <span class="n">ringBufferSize</span><span class="o">,</span>
+            <span class="kd">final</span> <span class="n">ThreadFactory</span> <span class="n">threadFactory</span><span class="o">,</span>
+            <span class="kd">final</span> <span class="n">ProducerType</span> <span class="n">producerType</span><span class="o">,</span>
+            <span class="kd">final</span> <span class="n">WaitStrategy</span> <span class="n">waitStrategy</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span>
+            <span class="n">RingBuffer</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="n">producerType</span><span class="o">,</span> <span class="n">eventFactory</span><span class="o">,</span> <span class="n">ringBufferSize</span><span class="o">,</span> <span class="n">waitStrategy</span><span class="o">),</span>
+            <span class="k">new</span> <span class="n">BasicExecutor</span><span class="o">(</span><span class="n">threadFactory</span><span class="o">));</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Private constructor helper
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="nf">Disruptor</span><span class="o">(</span><span class="kd">final</span> <span class="n">RingBuffer</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">ringBuffer</span><span class="o">,</span> <span class="kd">final</span> <span class="n">Executor</span> <span class="n">executor</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">ringBuffer</span> <span class="o">=</span> <span class="n">ringBuffer</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">executor</span> <span class="o">=</span> <span class="n">executor</span><span class="o">;</span>
+    <span class="o">}</span>
+ <span class="o">}</span>   
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二事件处理者">二、事件处理者</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * &lt;p&gt;Set up event handlers to handle events from the ring buffer. These handlers will process events
+</span><span class="cm">     * as soon as they become available, in parallel.&lt;/p&gt;
+</span><span class="cm">     *
+</span><span class="cm">     * &lt;p&gt;This method can be used as the start of a chain. For example if the handler &lt;code&gt;A&lt;/code&gt; must
+</span><span class="cm">     * process events before handler &lt;code&gt;B&lt;/code&gt;:&lt;/p&gt;
+</span><span class="cm">     * &lt;pre&gt;&lt;code&gt;dw.handleEventsWith(A).then(B);&lt;/code&gt;&lt;/pre&gt;
+</span><span class="cm">     *
+</span><span class="cm">     * @param handlers the event handlers that will process events.
+</span><span class="cm">     * @return a {@link EventHandlerGroup} that can be used to chain dependencies.
+</span><span class="cm">     */</span>
+    <span class="nd">@SuppressWarnings</span><span class="o">(</span><span class="s">&#34;varargs&#34;</span><span class="o">)</span>
+    <span class="kd">public</span> <span class="n">EventHandlerGroup</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">handleEventsWith</span><span class="o">(</span><span class="kd">final</span> <span class="n">EventHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;...</span> <span class="n">handlers</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">createEventProcessors</span><span class="o">(</span><span class="k">new</span> <span class="n">Sequence</span><span class="o">[</span><span class="n">0</span><span class="o">],</span> <span class="n">handlers</span><span class="o">);</span>
+    <span class="o">}</span>
+        
+       <span class="n">EventHandlerGroup</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">createEventProcessors</span><span class="o">(</span>
+           <span class="kd">final</span> <span class="n">Sequence</span><span class="o">[]</span> <span class="n">barrierSequences</span><span class="o">,</span>
+           <span class="kd">final</span> <span class="n">EventHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;[]</span> <span class="n">eventHandlers</span><span class="o">)</span>
+       <span class="o">{</span>
+           <span class="n">checkNotStarted</span><span class="o">();</span>
+   
+           <span class="kd">final</span> <span class="n">Sequence</span><span class="o">[]</span> <span class="n">processorSequences</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Sequence</span><span class="o">[</span><span class="n">eventHandlers</span><span class="o">.</span><span class="na">length</span><span class="o">];</span>
+           <span class="kd">final</span> <span class="n">SequenceBarrier</span> <span class="n">barrier</span> <span class="o">=</span> <span class="n">ringBuffer</span><span class="o">.</span><span class="na">newBarrier</span><span class="o">(</span><span class="n">barrierSequences</span><span class="o">);</span>
+   
+           <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">,</span> <span class="n">eventHandlersLength</span> <span class="o">=</span> <span class="n">eventHandlers</span><span class="o">.</span><span class="na">length</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">eventHandlersLength</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span>
+           <span class="o">{</span>
+               <span class="kd">final</span> <span class="n">EventHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;</span> <span class="n">eventHandler</span> <span class="o">=</span> <span class="n">eventHandlers</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+   
+               <span class="kd">final</span> <span class="n">BatchEventProcessor</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">batchEventProcessor</span> <span class="o">=</span>
+                   <span class="k">new</span> <span class="n">BatchEventProcessor</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;(</span><span class="n">ringBuffer</span><span class="o">,</span> <span class="n">barrier</span><span class="o">,</span> <span class="n">eventHandler</span><span class="o">);</span>
+   
+               <span class="k">if</span> <span class="o">(</span><span class="n">exceptionHandler</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+               <span class="o">{</span>
+                   <span class="n">batchEventProcessor</span><span class="o">.</span><span class="na">setExceptionHandler</span><span class="o">(</span><span class="n">exceptionHandler</span><span class="o">);</span>
+               <span class="o">}</span>
+   
+               <span class="n">consumerRepository</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">batchEventProcessor</span><span class="o">,</span> <span class="n">eventHandler</span><span class="o">,</span> <span class="n">barrier</span><span class="o">);</span>
+               <span class="n">processorSequences</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="n">batchEventProcessor</span><span class="o">.</span><span class="na">getSequence</span><span class="o">();</span>
+           <span class="o">}</span>
+   
+           <span class="n">updateGatingSequencesForNextInChain</span><span class="o">(</span><span class="n">barrierSequences</span><span class="o">,</span> <span class="n">processorSequences</span><span class="o">);</span>
+   
+           <span class="k">return</span> <span class="k">new</span> <span class="n">EventHandlerGroup</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;(</span><span class="k">this</span><span class="o">,</span> <span class="n">consumerRepository</span><span class="o">,</span> <span class="n">processorSequences</span><span class="o">);</span>
+       <span class="o">}</span>
+     <span class="kd">private</span> <span class="kt">void</span> <span class="nf">updateGatingSequencesForNextInChain</span><span class="o">(</span><span class="kd">final</span> <span class="n">Sequence</span><span class="o">[]</span> <span class="n">barrierSequences</span><span class="o">,</span> <span class="kd">final</span> <span class="n">Sequence</span><span class="o">[]</span> <span class="n">processorSequences</span><span class="o">)</span>
+     <span class="o">{</span>
+         <span class="k">if</span> <span class="o">(</span><span class="n">processorSequences</span><span class="o">.</span><span class="na">length</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span>
+         <span class="o">{</span>
+             <span class="n">ringBuffer</span><span class="o">.</span><span class="na">addGatingSequences</span><span class="o">(</span><span class="n">processorSequences</span><span class="o">);</span>
+             <span class="k">for</span> <span class="o">(</span><span class="kd">final</span> <span class="n">Sequence</span> <span class="n">barrierSequence</span> <span class="o">:</span> <span class="n">barrierSequences</span><span class="o">)</span>
+             <span class="o">{</span>
+                 <span class="n">ringBuffer</span><span class="o">.</span><span class="na">removeGatingSequence</span><span class="o">(</span><span class="n">barrierSequence</span><span class="o">);</span>
+             <span class="o">}</span>
+             <span class="n">consumerRepository</span><span class="o">.</span><span class="na">unMarkEventProcessorsAsEndOfChain</span><span class="o">(</span><span class="n">barrierSequences</span><span class="o">);</span>
+         <span class="o">}</span>
+     <span class="o">}</span>      
+</code></pre></td></tr></table>
+</div>
+</div><p>Work模式</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Set up a {@link WorkerPool} to distribute an event to one of a pool of work handler threads.
+</span><span class="cm">     * Each event will only be processed by one of the work handlers.
+</span><span class="cm">     * The Disruptor will automatically start this processors when {@link #start()} is called.
+</span><span class="cm">     *
+</span><span class="cm">     * @param workHandlers the work handlers that will process events.
+</span><span class="cm">     * @return a {@link EventHandlerGroup} that can be used to chain dependencies.
+</span><span class="cm">     */</span>
+    <span class="nd">@SuppressWarnings</span><span class="o">(</span><span class="s">&#34;varargs&#34;</span><span class="o">)</span>
+    <span class="kd">public</span> <span class="n">EventHandlerGroup</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">handleEventsWithWorkerPool</span><span class="o">(</span><span class="kd">final</span> <span class="n">WorkHandler</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;...</span> <span class="n">workHandlers</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">createWorkerPool</span><span class="o">(</span><span class="k">new</span> <span class="n">Sequence</span><span class="o">[</span><span class="n">0</span><span class="o">],</span> <span class="n">workHandlers</span><span class="o">);</span>
+    <span class="o">}</span>
+  <span class="n">EventHandlerGroup</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">createWorkerPool</span><span class="o">(</span>
+        <span class="kd">final</span> <span class="n">Sequence</span><span class="o">[]</span> <span class="n">barrierSequences</span><span class="o">,</span> <span class="kd">final</span> <span class="n">WorkHandler</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">T</span><span class="o">&gt;[]</span> <span class="n">workHandlers</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">SequenceBarrier</span> <span class="n">sequenceBarrier</span> <span class="o">=</span> <span class="n">ringBuffer</span><span class="o">.</span><span class="na">newBarrier</span><span class="o">(</span><span class="n">barrierSequences</span><span class="o">);</span>
+        <span class="kd">final</span> <span class="n">WorkerPool</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">workerPool</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WorkerPool</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;(</span><span class="n">ringBuffer</span><span class="o">,</span> <span class="n">sequenceBarrier</span><span class="o">,</span> <span class="n">exceptionHandler</span><span class="o">,</span> <span class="n">workHandlers</span><span class="o">);</span>
+
+
+        <span class="n">consumerRepository</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">workerPool</span><span class="o">,</span> <span class="n">sequenceBarrier</span><span class="o">);</span>
+
+        <span class="kd">final</span> <span class="n">Sequence</span><span class="o">[]</span> <span class="n">workerSequences</span> <span class="o">=</span> <span class="n">workerPool</span><span class="o">.</span><span class="na">getWorkerSequences</span><span class="o">();</span>
+
+        <span class="n">updateGatingSequencesForNextInChain</span><span class="o">(</span><span class="n">barrierSequences</span><span class="o">,</span> <span class="n">workerSequences</span><span class="o">);</span>
+
+        <span class="k">return</span> <span class="k">new</span> <span class="n">EventHandlerGroup</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;(</span><span class="k">this</span><span class="o">,</span> <span class="n">consumerRepository</span><span class="o">,</span> <span class="n">workerSequences</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="三start-启动">三、start 启动</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * &lt;p&gt;Starts the event processors and returns the fully configured ring buffer.&lt;/p&gt;
+</span><span class="cm">     *
+</span><span class="cm">     * &lt;p&gt;The ring buffer is set up to prevent overwriting any entry that is yet to
+</span><span class="cm">     * be processed by the slowest event processor.&lt;/p&gt;
+</span><span class="cm">     *
+</span><span class="cm">     * &lt;p&gt;This method must only be called once after all event processors have been added.&lt;/p&gt;
+</span><span class="cm">     *
+</span><span class="cm">     * @return the configured ring buffer.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">RingBuffer</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">start</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="n">checkOnlyStartedOnce</span><span class="o">();</span>
+        <span class="k">for</span> <span class="o">(</span><span class="kd">final</span> <span class="n">ConsumerInfo</span> <span class="n">consumerInfo</span> <span class="o">:</span> <span class="n">consumerRepository</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="n">consumerInfo</span><span class="o">.</span><span class="na">start</span><span class="o">(</span><span class="n">executor</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="k">return</span> <span class="n">ringBuffer</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="四publishevent-发布事件">四、publishEvent 发布事件</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">     * Publish an event to the ring buffer.
+</span><span class="cm">     *
+</span><span class="cm">     * @param eventTranslator the translator that will load data into the event.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">publishEvent</span><span class="o">(</span><span class="kd">final</span> <span class="n">EventTranslator</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">eventTranslator</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">ringBuffer</span><span class="o">.</span><span class="na">publishEvent</span><span class="o">(</span><span class="n">eventTranslator</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Publish an event to the ring buffer.
+</span><span class="cm">     *
+</span><span class="cm">     * @param &lt;A&gt; Class of the user supplied argument.
+</span><span class="cm">     * @param eventTranslator the translator that will load data into the event.
+</span><span class="cm">     * @param arg             A single argument to load into the event
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="o">&lt;</span><span class="n">A</span><span class="o">&gt;</span> <span class="kt">void</span> <span class="nf">publishEvent</span><span class="o">(</span><span class="kd">final</span> <span class="n">EventTranslatorOneArg</span><span class="o">&lt;</span><span class="n">T</span><span class="o">,</span> <span class="n">A</span><span class="o">&gt;</span> <span class="n">eventTranslator</span><span class="o">,</span> <span class="kd">final</span> <span class="n">A</span> <span class="n">arg</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">ringBuffer</span><span class="o">.</span><span class="na">publishEvent</span><span class="o">(</span><span class="n">eventTranslator</span><span class="o">,</span> <span class="n">arg</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Publish a batch of events to the ring buffer.
+</span><span class="cm">     *
+</span><span class="cm">     * @param &lt;A&gt; Class of the user supplied argument.
+</span><span class="cm">     * @param eventTranslator the translator that will load data into the event.
+</span><span class="cm">     * @param arg             An array single arguments to load into the events. One Per event.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="o">&lt;</span><span class="n">A</span><span class="o">&gt;</span> <span class="kt">void</span> <span class="nf">publishEvents</span><span class="o">(</span><span class="kd">final</span> <span class="n">EventTranslatorOneArg</span><span class="o">&lt;</span><span class="n">T</span><span class="o">,</span> <span class="n">A</span><span class="o">&gt;</span> <span class="n">eventTranslator</span><span class="o">,</span> <span class="kd">final</span> <span class="n">A</span><span class="o">[]</span> <span class="n">arg</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">ringBuffer</span><span class="o">.</span><span class="na">publishEvents</span><span class="o">(</span><span class="n">eventTranslator</span><span class="o">,</span> <span class="n">arg</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Publish an event to the ring buffer.
+</span><span class="cm">     *
+</span><span class="cm">     * @param &lt;A&gt; Class of the user supplied argument.
+</span><span class="cm">     * @param &lt;B&gt; Class of the user supplied argument.
+</span><span class="cm">     * @param eventTranslator the translator that will load data into the event.
+</span><span class="cm">     * @param arg0            The first argument to load into the event
+</span><span class="cm">     * @param arg1            The second argument to load into the event
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="o">&lt;</span><span class="n">A</span><span class="o">,</span> <span class="n">B</span><span class="o">&gt;</span> <span class="kt">void</span> <span class="nf">publishEvent</span><span class="o">(</span><span class="kd">final</span> <span class="n">EventTranslatorTwoArg</span><span class="o">&lt;</span><span class="n">T</span><span class="o">,</span> <span class="n">A</span><span class="o">,</span> <span class="n">B</span><span class="o">&gt;</span> <span class="n">eventTranslator</span><span class="o">,</span> <span class="kd">final</span> <span class="n">A</span> <span class="n">arg0</span><span class="o">,</span> <span class="kd">final</span> <span class="n">B</span> <span class="n">arg1</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">ringBuffer</span><span class="o">.</span><span class="na">publishEvent</span><span class="o">(</span><span class="n">eventTranslator</span><span class="o">,</span> <span class="n">arg0</span><span class="o">,</span> <span class="n">arg1</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Publish an event to the ring buffer.
+</span><span class="cm">     *
+</span><span class="cm">     * @param eventTranslator the translator that will load data into the event.
+</span><span class="cm">     * @param &lt;A&gt; Class of the user supplied argument.
+</span><span class="cm">     * @param &lt;B&gt; Class of the user supplied argument.
+</span><span class="cm">     * @param &lt;C&gt; Class of the user supplied argument.
+</span><span class="cm">     * @param arg0            The first argument to load into the event
+</span><span class="cm">     * @param arg1            The second argument to load into the event
+</span><span class="cm">     * @param arg2            The third argument to load into the event
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="o">&lt;</span><span class="n">A</span><span class="o">,</span> <span class="n">B</span><span class="o">,</span> <span class="n">C</span><span class="o">&gt;</span> <span class="kt">void</span> <span class="nf">publishEvent</span><span class="o">(</span><span class="kd">final</span> <span class="n">EventTranslatorThreeArg</span><span class="o">&lt;</span><span class="n">T</span><span class="o">,</span> <span class="n">A</span><span class="o">,</span> <span class="n">B</span><span class="o">,</span> <span class="n">C</span><span class="o">&gt;</span> <span class="n">eventTranslator</span><span class="o">,</span> <span class="kd">final</span> <span class="n">A</span> <span class="n">arg0</span><span class="o">,</span> <span class="kd">final</span> <span class="n">B</span> <span class="n">arg1</span><span class="o">,</span> <span class="kd">final</span> <span class="n">C</span> <span class="n">arg2</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">ringBuffer</span><span class="o">.</span><span class="na">publishEvent</span><span class="o">(</span><span class="n">eventTranslator</span><span class="o">,</span> <span class="n">arg0</span><span class="o">,</span> <span class="n">arg1</span><span class="o">,</span> <span class="n">arg2</span><span class="o">);</span>
+    <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="五shutdown-停止">五、shutdown 停止</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">     * &lt;p&gt;Waits until all events currently in the disruptor have been processed by all event processors
+</span><span class="cm">     * and then halts the processors.  It is critical that publishing to the ring buffer has stopped
+</span><span class="cm">     * before calling this method, otherwise it may never return.&lt;/p&gt;
+</span><span class="cm">     *
+</span><span class="cm">     * &lt;p&gt;This method will not shutdown the executor, nor will it await the final termination of the
+</span><span class="cm">     * processor threads.&lt;/p&gt;
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">shutdown</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">try</span>
+        <span class="o">{</span>
+            <span class="n">shutdown</span><span class="o">(-</span><span class="n">1</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">catch</span> <span class="o">(</span><span class="kd">final</span> <span class="n">TimeoutException</span> <span class="n">e</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="n">exceptionHandler</span><span class="o">.</span><span class="na">handleOnShutdownException</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * &lt;p&gt;Waits until all events currently in the disruptor have been processed by all event processors
+</span><span class="cm">     * and then halts the processors.&lt;/p&gt;
+</span><span class="cm">     *
+</span><span class="cm">     * &lt;p&gt;This method will not shutdown the executor, nor will it await the final termination of the
+</span><span class="cm">     * processor threads.&lt;/p&gt;
+</span><span class="cm">     *
+</span><span class="cm">     * @param timeout  the amount of time to wait for all events to be processed. &lt;code&gt;-1&lt;/code&gt; will give an infinite timeout
+</span><span class="cm">     * @param timeUnit the unit the timeOut is specified in
+</span><span class="cm">     * @throws TimeoutException if a timeout occurs before shutdown completes.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">shutdown</span><span class="o">(</span><span class="kd">final</span> <span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="kd">final</span> <span class="n">TimeUnit</span> <span class="n">timeUnit</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TimeoutException</span>
+    <span class="o">{</span>
+        <span class="kd">final</span> <span class="kt">long</span> <span class="n">timeOutAt</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">()</span> <span class="o">+</span> <span class="n">timeUnit</span><span class="o">.</span><span class="na">toMillis</span><span class="o">(</span><span class="n">timeout</span><span class="o">);</span>
+        <span class="k">while</span> <span class="o">(</span><span class="n">hasBacklog</span><span class="o">())</span>
+        <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">timeout</span> <span class="o">&gt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">()</span> <span class="o">&gt;</span> <span class="n">timeOutAt</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="k">throw</span> <span class="n">TimeoutException</span><span class="o">.</span><span class="na">INSTANCE</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="c1">// Busy spin
+</span><span class="c1"></span>        <span class="o">}</span>
+        <span class="n">halt</span><span class="o">();</span>
+    <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * Calls {@link com.lmax.disruptor.EventProcessor#halt()} on all of the event processors created via this disruptor.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">halt</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">for</span> <span class="o">(</span><span class="kd">final</span> <span class="n">ConsumerInfo</span> <span class="n">consumerInfo</span> <span class="o">:</span> <span class="n">consumerRepository</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="n">consumerInfo</span><span class="o">.</span><span class="na">halt</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+  
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2018-07-16 18:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/disruptor/">disruptor</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/disruptor/%E4%BC%AA%E5%85%B1%E4%BA%ABFalse-Sharing/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">伪共享(False Sharing)</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/disruptor/7.EventProcessor%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">EventProcessor</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

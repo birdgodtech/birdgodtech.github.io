@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>HashSet on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/HashSet/</link>
+    <description>Recent content in HashSet on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Wed, 01 Mar 2017 21:30:11 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/HashSet/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>HashSet</title>
+      <link>https://birdgodtech.github.io/post/collection/14.HashSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Wed, 01 Mar 2017 21:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/14.HashSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>HashSet源码分析 简介 HashSet实现Set接口，由哈希表（实际上是一个HashMap实例）支持。它不保证set 的迭代顺序；特别是它不</description>
+    </item>
+    
+  </channel>
+</rss>

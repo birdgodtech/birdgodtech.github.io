@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>netty on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/categories/netty/</link>
+    <description>Recent content in netty on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Wed, 01 May 2019 22:18:08 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/categories/netty/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>TrafficShaping</title>
+      <link>https://birdgodtech.github.io/post/netty/14.TrafficShaping/</link>
+      <pubDate>Wed, 01 May 2019 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/14.TrafficShaping/</guid>
+      <description>一、介绍 流量整形（Traffic Shaping）是一种主动调整流量输出速率的措施。流量整形与流量监管的主要区别在于，流量整形对流量监管中需要</description>
+    </item>
+    
+    <item>
+      <title>HashedWheelTimer</title>
+      <link>https://birdgodtech.github.io/post/netty/13.HashedWheelTimer/</link>
+      <pubDate>Thu, 25 Apr 2019 23:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/13.HashedWheelTimer/</guid>
+      <description>一、介绍 由于netty管理100w+的连接，用IdleStateHandler心跳检测存在问题： 毋庸置疑占用IO线程； 超时间不精准，例如:N</description>
+    </item>
+    
+    <item>
+      <title>Codec</title>
+      <link>https://birdgodtech.github.io/post/netty/11.Codec/</link>
+      <pubDate>Thu, 25 Apr 2019 21:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/11.Codec/</guid>
+      <description>一、ByteToMessageDecoder 1.Cumulator累加器 1 2 3 4 5 6 7 8 9 10 11 /** * 累积ByteBuf */ public interface Cumulator { /** * Cumulate the given {@link ByteBuf}s</description>
+    </item>
+    
+    <item>
+      <title>IdleStateHandler</title>
+      <link>https://birdgodtech.github.io/post/netty/12.IdleStateHandler/</link>
+      <pubDate>Sat, 20 Apr 2019 22:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/12.IdleStateHandler/</guid>
+      <description>一、介绍 Netty提供的心跳机制 当连接的空闲时间（读或者写）太长时，将会触发一个 IdleStateEvent 事件。 然后，你可以通过你的 ChannelInboundHandler 中重写 userEventTrigged 方法来处理该事件。 如果</description>
+    </item>
+    
+    <item>
+      <title>FastThreadLocal</title>
+      <link>https://birdgodtech.github.io/post/netty/09.FastThreadLocal/</link>
+      <pubDate>Mon, 15 Apr 2019 21:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/09.FastThreadLocal/</guid>
+      <description>一、介绍 Netty为了提高性能，Java的ThreadLocal不用，自己创建FastThreadLocal，屌爆ThreadLocal； T</description>
+    </item>
+    
+    <item>
+      <title>Future和Promise</title>
+      <link>https://birdgodtech.github.io/post/netty/08.Future%E5%92%8CPromise/</link>
+      <pubDate>Wed, 10 Apr 2019 21:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/08.Future%E5%92%8CPromise/</guid>
+      <description>一、io.netty.util.concurrent.Future Future的UML图 io.netty.util.concurrent.F</description>
+    </item>
+    
+    <item>
+      <title>Bootstrap</title>
+      <link>https://birdgodtech.github.io/post/netty/07.Bootstrap/</link>
+      <pubDate>Tue, 09 Apr 2019 22:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/07.Bootstrap/</guid>
+      <description>一、介绍 Bootstrap和ServerBootstrap的类图 Bootstrap是客服端实现，ServerBootstrap服务端实现 二、</description>
+    </item>
+    
+    <item>
+      <title>EventLoop</title>
+      <link>https://birdgodtech.github.io/post/netty/06.EventLoop/</link>
+      <pubDate>Thu, 04 Apr 2019 22:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/06.EventLoop/</guid>
+      <description>一、线程模型 Netty线程模型 这个博客写不错； 二、NioEventLoopGroup线程池分析 1.NioEventLoopGroup的类图结</description>
+    </item>
+    
+    <item>
+      <title>Channelpipeline</title>
+      <link>https://birdgodtech.github.io/post/netty/05.ChannelPipeline/</link>
+      <pubDate>Sat, 23 Mar 2019 23:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/05.ChannelPipeline/</guid>
+      <description>一、介绍 Channelpipeline是 Channelhandler的容器,它负责 Channelhandler的管理和事件拦截与调度。 事件如</description>
+    </item>
+    
+    <item>
+      <title>Channel</title>
+      <link>https://birdgodtech.github.io/post/netty/04.Channel/</link>
+      <pubDate>Sun, 17 Mar 2019 21:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/04.Channel/</guid>
+      <description>一、介绍 Channel是 Netty抽象出来的网络I/O读写相关的接口,为什么不使用JDK NIO原生的Channel而要另起炉灶呢 主要原因如下</description>
+    </item>
+    
+    <item>
+      <title>Recycler对象池</title>
+      <link>https://birdgodtech.github.io/post/netty/03.Recycler%E5%AF%B9%E8%B1%A1%E6%B1%A0/</link>
+      <pubDate>Tue, 12 Mar 2019 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/03.Recycler%E5%AF%B9%E8%B1%A1%E6%B1%A0/</guid>
+      <description>一、简介 博客 Recyclers是本地线程堆栈的轻量级对象池，是抽象方法；Recycler主要提供了3个方法： get():获取一个对象。 new</description>
+    </item>
+    
+    <item>
+      <title>PooledByteBuf内存池</title>
+      <link>https://birdgodtech.github.io/post/netty/02.PooledByteBuf%E5%86%85%E5%AD%98%E6%B1%A0/</link>
+      <pubDate>Thu, 07 Mar 2019 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/02.PooledByteBuf%E5%86%85%E5%AD%98%E6%B1%A0/</guid>
+      <description>一、简介 Netty内存池了解几个概念： jemalloc一致的内存分配算法 jemalloc这块博客写不错; http://people.freebsd.org/~jasone/jemalloc/bsdcan2006/jemalloc.pdf https://www.facebook.com/notes/facebook-engineering/scalable-memory-allocation-using-jemalloc/480222803919 buddy allocation buddy slab allocation slav 1.核心类介绍 Poo</description>
+    </item>
+    
+    <item>
+      <title>ByteBuf工作原理</title>
+      <link>https://birdgodtech.github.io/post/netty/01.Bytebuf/</link>
+      <pubDate>Sat, 02 Mar 2019 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/01.Bytebuf/</guid>
+      <description>一、ByteBuf工作原理 1.为什么Netty扩展NIO中ByteBuffer类？ 主要原因ByteBuffer设计不足几点： ByteBuff</description>
+    </item>
+    
+  </channel>
+</rss>

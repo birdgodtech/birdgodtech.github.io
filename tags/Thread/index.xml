@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Thread on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/Thread/</link>
+    <description>Recent content in Thread on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Wed, 15 Mar 2017 21:00:11 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/Thread/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Thread的interrupt</title>
+      <link>https://birdgodtech.github.io/post/concurrent/03.Thread%E7%9A%84interrupt%E8%AF%A6%E8%A7%A3/</link>
+      <pubDate>Wed, 15 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/03.Thread%E7%9A%84interrupt%E8%AF%A6%E8%A7%A3/</guid>
+      <description>Java Thread的interrupt详解 一、概述： 1、没有任何语言方面的需求一个被中断的线程应该终止。中断一个线程只是为了引起该线程的注意，被</description>
+    </item>
+    
+  </channel>
+</rss>

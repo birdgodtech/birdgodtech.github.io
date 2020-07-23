@@ -1,0 +1,3023 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>dubbo引用服务 - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="一、dubbo引用服务 1.Spring afterPropertiesSet()执行方法发布服务 ReferenceBean.getObject()-&amp;gt;ReferenceConfig.get()-&amp;gt;init()-&amp;gt;createProxy() (1).createProxy创建暴露服务接口的代理对象，" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/dubbo/03.dubbo%E5%BC%95%E7%94%A8%E6%9C%8D%E5%8A%A1/" />
+<link href="/post/dubbo/03.dubbo%E5%BC%95%E7%94%A8%E6%9C%8D%E5%8A%A1/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/dubbo/03.dubbo%E5%BC%95%E7%94%A8%E6%9C%8D%E5%8A%A1/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="dubbo引用服务" />
+<meta property="og:description" content="一、dubbo引用服务 1.Spring afterPropertiesSet()执行方法发布服务 ReferenceBean.getObject()-&gt;ReferenceConfig.get()-&gt;init()-&gt;createProxy() (1).createProxy创建暴露服务接口的代理对象，" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/dubbo/03.dubbo%E5%BC%95%E7%94%A8%E6%9C%8D%E5%8A%A1/" />
+<meta property="article:published_time" content="2018-12-20T20:18:08+00:00" />
+<meta property="article:modified_time" content="2018-12-20T20:18:08+00:00" />
+<meta itemprop="name" content="dubbo引用服务">
+<meta itemprop="description" content="一、dubbo引用服务 1.Spring afterPropertiesSet()执行方法发布服务 ReferenceBean.getObject()-&gt;ReferenceConfig.get()-&gt;init()-&gt;createProxy() (1).createProxy创建暴露服务接口的代理对象，">
+<meta itemprop="datePublished" content="2018-12-20T20:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2018-12-20T20:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="8792">
+
+
+
+<meta itemprop="keywords" content="dubbo," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="dubbo引用服务"/>
+<meta name="twitter:description" content="一、dubbo引用服务 1.Spring afterPropertiesSet()执行方法发布服务 ReferenceBean.getObject()-&gt;ReferenceConfig.get()-&gt;init()-&gt;createProxy() (1).createProxy创建暴露服务接口的代理对象，"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">dubbo引用服务</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2018-12-20 20:18 </span>
+      <div class="post-category">
+        <a href="/categories/dubbo/"> dubbo </a>
+        </div>
+      <span class="more-meta"> 约 8792 字 </span>
+      <span class="more-meta"> 预计阅读 18 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1spring-afterpropertiesset执行方法发布服务">1.Spring afterPropertiesSet()执行方法发布服务</a>
+      <ul>
+        <li><a href="#1createproxy创建暴露服务接口的代理对象就是invoker代理对象">(1).createProxy创建暴露服务接口的代理对象，就是Invoker代理对象</a></li>
+        <li><a href="#2protocolfilterwrapperrefer">(2).ProtocolFilterWrapper#refer</a></li>
+        <li><a href="#3protocollistenerwrapperrefer">(3).ProtocolListenerWrapper#refer</a></li>
+        <li><a href="#4registryprotocolrefer">(4).RegistryProtocol#refer</a></li>
+      </ul>
+    </li>
+    <li><a href="#2directory-作用用于服务发现">2.Directory 作用用于服务发现</a>
+      <ul>
+        <li><a href="#1实现类关系">(1).实现类关系</a></li>
+        <li><a href="#2abstractdirectorylist">(2).AbstractDirectory#list</a></li>
+        <li><a href="#3staticdirectory手动设置集合">(3).StaticDirectory手动设置集合</a></li>
+        <li><a href="#4registrydirectory从注册中心获取invoker集合支持实时">(4).RegistryDirectory从注册中心获取Invoker集合，支持实时</a></li>
+      </ul>
+    </li>
+    <li><a href="#3cluster集群处理">3.Cluster集群处理</a>
+      <ul>
+        <li><a href="#1mockclusterwrapper创建mockclusterinvoker">(1).MockClusterWrapper创建MockClusterInvoker</a></li>
+        <li><a href="#2failovercluster创建failoverclusterinvoker">(2).FailoverCluster创建FailoverClusterInvoker</a></li>
+        <li><a href="#3forkingcluster创建forkingclusterinvoker-并发操作">(3).ForkingCluster创建ForkingClusterInvoker 并发操作</a></li>
+        <li><a href="#4mergeablecluster创建mergeableclusterinvoker-并发操作">(4).MergeableCluster创建MergeableClusterInvoker 并发操作</a></li>
+      </ul>
+    </li>
+    <li><a href="#4loadbalance负载均衡">4.LoadBalance负载均衡</a>
+      <ul>
+        <li><a href="#1abstractloadbalance抽象类几个负载均衡继承抽象类几个公用方法">(1).AbstractLoadBalance抽象类，几个负载均衡继承抽象类，几个公用方法</a></li>
+        <li><a href="#2randomloadbalance加权随机算法">(2).RandomLoadBalance加权随机算法</a></li>
+        <li><a href="#3roundrobinloadbalancedoselect-加权轮询负载均衡">(3).RoundRobinLoadBalance#doSelect 加权轮询负载均衡</a></li>
+        <li><a href="#4leastactiveloadbalance最小活跃数负载均衡">(4).LeastActiveLoadBalance最小活跃数负载均衡</a></li>
+        <li><a href="#5consistenthashloadbalance一致性hash算法">(5).ConsistentHashLoadBalance一致性hash算法</a></li>
+      </ul>
+    </li>
+    <li><a href="#5代理暴露接口调用方法">5.代理暴露接口调用方法</a>
+      <ul>
+        <li></li>
+        <li><a href="#1dubboinvokerdoinvoke">(1).DubboInvoker#doInvoke</a></li>
+        <li><a href="#2exchangeclientrequest返回defaultfuture">(2).ExchangeClient#request返回DefaultFuture</a></li>
+      </ul>
+    </li>
+    <li><a href="#6nettyclient">6.NettyClient</a>
+      <ul>
+        <li><a href="#1构造">(1).构造</a></li>
+        <li><a href="#2doopen-这里是客户端链接netty配置">(2).doOpen 这里是客户端链接netty配置</a></li>
+        <li><a href="#2abstractclientconnectnettyclientdoconnect正在链接">(2).AbstractClient#connect=&gt;NettyClient#doConnect正在链接</a></li>
+        <li><a href="#3nettyhandler委托处理channelhandler具体不说明">(3).NettyHandler委托处理ChannelHandler，具体不说明</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2018-12-20T20:18:08" title="December 20, 2018">December 20, 2018</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="一dubbo引用服务">一、dubbo引用服务</h1>
+<h2 id="1spring-afterpropertiesset执行方法发布服务">1.Spring afterPropertiesSet()执行方法发布服务</h2>
+<p>ReferenceBean.getObject()-&gt;ReferenceConfig.get()-&gt;init()-&gt;createProxy()</p>
+<h3 id="1createproxy创建暴露服务接口的代理对象就是invoker代理对象">(1).createProxy创建暴露服务接口的代理对象，就是Invoker代理对象</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@SuppressWarnings</span><span class="o">({</span><span class="s">&#34;unchecked&#34;</span><span class="o">,</span> <span class="s">&#34;rawtypes&#34;</span><span class="o">,</span> <span class="s">&#34;deprecation&#34;</span><span class="o">})</span>
+    <span class="kd">private</span> <span class="n">T</span> <span class="nf">createProxy</span><span class="o">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">map</span><span class="o">)</span> <span class="o">{</span>
+            <span class="o">...</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">urls</span><span class="o">.</span><span class="na">size</span><span class="o">()</span> <span class="o">==</span> <span class="n">1</span><span class="o">)</span> <span class="o">{</span>
+                <span class="c1">//创建Invoke
+</span><span class="c1"></span>                <span class="n">invoker</span> <span class="o">=</span> <span class="n">refprotocol</span><span class="o">.</span><span class="na">refer</span><span class="o">(</span><span class="n">interfaceClass</span><span class="o">,</span> <span class="n">urls</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">0</span><span class="o">));</span><span class="c1">//ProtocolFilterWrapper-&gt;ProtocolListenerWrapper-&gt;RegistryProtocol
+</span><span class="c1"></span>            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="n">List</span><span class="o">&lt;</span><span class="n">Invoker</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">invokers</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Invoker</span><span class="o">&lt;?&gt;&gt;();</span>
+                <span class="n">URL</span> <span class="n">registryURL</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="k">for</span> <span class="o">(</span><span class="n">URL</span> <span class="n">url</span> <span class="o">:</span> <span class="n">urls</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">invokers</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">refprotocol</span><span class="o">.</span><span class="na">refer</span><span class="o">(</span><span class="n">interfaceClass</span><span class="o">,</span> <span class="n">url</span><span class="o">));</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">REGISTRY_PROTOCOL</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">url</span><span class="o">.</span><span class="na">getProtocol</span><span class="o">()))</span> <span class="o">{</span>
+                        <span class="n">registryURL</span> <span class="o">=</span> <span class="n">url</span><span class="o">;</span> <span class="c1">// use last registry url
+</span><span class="c1"></span>                    <span class="o">}</span>
+                <span class="o">}</span>
+                 <span class="c1">//多个注册中心，引用cluster概念，创建StaticDirectory
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">registryURL</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span> <span class="c1">// registry url is available
+</span><span class="c1"></span>                    <span class="c1">// use AvailableCluster only when register&#39;s cluster is available
+</span><span class="c1"></span>                    <span class="n">URL</span> <span class="n">u</span> <span class="o">=</span> <span class="n">registryURL</span><span class="o">.</span><span class="na">addParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">CLUSTER_KEY</span><span class="o">,</span> <span class="n">AvailableCluster</span><span class="o">.</span><span class="na">NAME</span><span class="o">);</span>
+                    <span class="n">invoker</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="na">join</span><span class="o">(</span><span class="k">new</span> <span class="n">StaticDirectory</span><span class="o">(</span><span class="n">u</span><span class="o">,</span> <span class="n">invokers</span><span class="o">));</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span> <span class="c1">// not a registry url
+</span><span class="c1"></span>                    <span class="n">invoker</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="na">join</span><span class="o">(</span><span class="k">new</span> <span class="n">StaticDirectory</span><span class="o">(</span><span class="n">invokers</span><span class="o">));</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="o">...</span>
+        <span class="c1">// create service proxy
+</span><span class="c1"></span>        <span class="k">return</span> <span class="o">(</span><span class="n">T</span><span class="o">)</span> <span class="n">proxyFactory</span><span class="o">.</span><span class="na">getProxy</span><span class="o">(</span><span class="n">invoker</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2protocolfilterwrapperrefer">(2).ProtocolFilterWrapper#refer</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-JAVA" data-lang="JAVA">    <span class="kd">public</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">refer</span><span class="o">(</span><span class="n">Class</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">type</span><span class="o">,</span> <span class="n">URL</span> <span class="n">url</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">RpcException</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">REGISTRY_PROTOCOL</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">url</span><span class="o">.</span><span class="na">getProtocol</span><span class="o">()))</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">protocol</span><span class="o">.</span><span class="na">refer</span><span class="o">(</span><span class="n">type</span><span class="o">,</span> <span class="n">url</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="c1">//这里buildInvokerChain跟exporter一样，创建Filter处理链
+</span><span class="c1"></span>        <span class="c1">//protocol.refer(type, url)=&gt;ProtocolListenerWrapper.refer=&gt;DubboProtocol.refer 处理Filter
+</span><span class="c1"></span>        <span class="k">return</span> <span class="n">buildInvokerChain</span><span class="o">(</span><span class="n">protocol</span><span class="o">.</span><span class="na">refer</span><span class="o">(</span><span class="n">type</span><span class="o">,</span> <span class="n">url</span><span class="o">),</span> <span class="n">Constants</span><span class="o">.</span><span class="na">REFERENCE_FILTER_KEY</span><span class="o">,</span> <span class="n">Constants</span><span class="o">.</span><span class="na">CONSUMER</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>默认情况grop:Constants.CONSUMER和key:Constants.REFERENCE_FILTER_KEY进行筛选</p>
+<p><img src="/duboo/dubbo15.png" alt=""></p>
+<p>FutureFilter 返回结果处理</p>
+<h3 id="3protocollistenerwrapperrefer">(3).ProtocolListenerWrapper#refer</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">public</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">refer</span><span class="o">(</span><span class="n">Class</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">type</span><span class="o">,</span> <span class="n">URL</span> <span class="n">url</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">RpcException</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">REGISTRY_PROTOCOL</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">url</span><span class="o">.</span><span class="na">getProtocol</span><span class="o">()))</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">protocol</span><span class="o">.</span><span class="na">refer</span><span class="o">(</span><span class="n">type</span><span class="o">,</span> <span class="n">url</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">ListenerInvokerWrapper</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;(</span><span class="n">protocol</span><span class="o">.</span><span class="na">refer</span><span class="o">(</span><span class="n">type</span><span class="o">,</span> <span class="n">url</span><span class="o">),</span>
+                <span class="n">Collections</span><span class="o">.</span><span class="na">unmodifiableList</span><span class="o">(</span>
+                        <span class="n">ExtensionLoader</span><span class="o">.</span><span class="na">getExtensionLoader</span><span class="o">(</span><span class="n">InvokerListener</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
+                                <span class="o">.</span><span class="na">getActivateExtension</span><span class="o">(</span><span class="n">url</span><span class="o">,</span> <span class="n">Constants</span><span class="o">.</span><span class="na">INVOKER_LISTENER_KEY</span><span class="o">)));</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>触发InvokerListener监听，的dubbo未做处理</p>
+<h3 id="4registryprotocolrefer">(4).RegistryProtocol#refer</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@SuppressWarnings</span><span class="o">(</span><span class="s">&#34;unchecked&#34;</span><span class="o">)</span>
+    <span class="kd">public</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">refer</span><span class="o">(</span><span class="n">Class</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">type</span><span class="o">,</span> <span class="n">URL</span> <span class="n">url</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">RpcException</span> <span class="o">{</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="na">setProtocol</span><span class="o">(</span><span class="n">url</span><span class="o">.</span><span class="na">getParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">REGISTRY_KEY</span><span class="o">,</span> <span class="n">Constants</span><span class="o">.</span><span class="na">DEFAULT_REGISTRY</span><span class="o">)).</span><span class="na">removeParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">REGISTRY_KEY</span><span class="o">);</span>
+        <span class="c1">//链接注册中心
+</span><span class="c1"></span>        <span class="n">Registry</span> <span class="n">registry</span> <span class="o">=</span> <span class="n">registryFactory</span><span class="o">.</span><span class="na">getRegistry</span><span class="o">(</span><span class="n">url</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">RegistryService</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">type</span><span class="o">))</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">proxyFactory</span><span class="o">.</span><span class="na">getInvoker</span><span class="o">((</span><span class="n">T</span><span class="o">)</span> <span class="n">registry</span><span class="o">,</span> <span class="n">type</span><span class="o">,</span> <span class="n">url</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="c1">// group=&#34;a,b&#34; or group=&#34;*&#34;
+</span><span class="c1"></span>        <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">qs</span> <span class="o">=</span> <span class="n">StringUtils</span><span class="o">.</span><span class="na">parseQueryString</span><span class="o">(</span><span class="n">url</span><span class="o">.</span><span class="na">getParameterAndDecoded</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">REFER_KEY</span><span class="o">));</span>
+        <span class="n">String</span> <span class="n">group</span> <span class="o">=</span> <span class="n">qs</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">GROUP_KEY</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">group</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">group</span><span class="o">.</span><span class="na">length</span><span class="o">()</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">((</span><span class="n">Constants</span><span class="o">.</span><span class="na">COMMA_SPLIT_PATTERN</span><span class="o">.</span><span class="na">split</span><span class="o">(</span><span class="n">group</span><span class="o">)).</span><span class="na">length</span> <span class="o">&gt;</span> <span class="n">1</span>
+                    <span class="o">||</span> <span class="s">&#34;*&#34;</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">group</span><span class="o">))</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="n">doRefer</span><span class="o">(</span><span class="n">getMergeableCluster</span><span class="o">(),</span> <span class="n">registry</span><span class="o">,</span> <span class="n">type</span><span class="o">,</span> <span class="n">url</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">doRefer</span><span class="o">(</span><span class="n">cluster</span><span class="o">,</span> <span class="n">registry</span><span class="o">,</span> <span class="n">type</span><span class="o">,</span> <span class="n">url</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="a-dorefer">(a). doRefer</h4>
+<ul>
+<li>创建Directory</li>
+<li>订阅Constants.PROVIDERS_CATEGORY服务提供信息，Constants.CONFIGURATORS_CATEGORY系统配置，Constants.ROUTERS_CATEGORY路由配置信息</li>
+<li>Cluster#join=&gt;Invoker</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="kd">private</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">doRefer</span><span class="o">(</span><span class="n">Cluster</span> <span class="n">cluster</span><span class="o">,</span> <span class="n">Registry</span> <span class="n">registry</span><span class="o">,</span> <span class="n">Class</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">type</span><span class="o">,</span> <span class="n">URL</span> <span class="n">url</span><span class="o">)</span> <span class="o">{</span>
+       <span class="c1">//创建RegistryDirectory
+</span><span class="c1"></span>        <span class="n">RegistryDirectory</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">directory</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RegistryDirectory</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;(</span><span class="n">type</span><span class="o">,</span> <span class="n">url</span><span class="o">);</span>
+        <span class="n">directory</span><span class="o">.</span><span class="na">setRegistry</span><span class="o">(</span><span class="n">registry</span><span class="o">);</span>
+        <span class="n">directory</span><span class="o">.</span><span class="na">setProtocol</span><span class="o">(</span><span class="n">protocol</span><span class="o">);</span>
+        <span class="c1">// all attributes of REFER_KEY
+</span><span class="c1"></span>        <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">parameters</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;(</span><span class="n">directory</span><span class="o">.</span><span class="na">getUrl</span><span class="o">().</span><span class="na">getParameters</span><span class="o">());</span>
+        <span class="n">URL</span> <span class="n">subscribeUrl</span> <span class="o">=</span> <span class="k">new</span> <span class="n">URL</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">CONSUMER_PROTOCOL</span><span class="o">,</span> <span class="n">parameters</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">REGISTER_IP_KEY</span><span class="o">),</span> <span class="n">0</span><span class="o">,</span> <span class="n">type</span><span class="o">.</span><span class="na">getName</span><span class="o">(),</span> <span class="n">parameters</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">Constants</span><span class="o">.</span><span class="na">ANY_VALUE</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">url</span><span class="o">.</span><span class="na">getServiceInterface</span><span class="o">())</span>
+                <span class="o">&amp;&amp;</span> <span class="n">url</span><span class="o">.</span><span class="na">getParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">REGISTER_KEY</span><span class="o">,</span> <span class="kc">true</span><span class="o">))</span> <span class="o">{</span>
+            <span class="c1">//客服端往注册中心注册信息
+</span><span class="c1"></span>            <span class="c1">//例如/dubbo/com.alibaba.dubbo.demo.DemoService/consumers/consumer%3A%2F....
+</span><span class="c1"></span>            <span class="n">registry</span><span class="o">.</span><span class="na">register</span><span class="o">(</span><span class="n">subscribeUrl</span><span class="o">.</span><span class="na">addParameters</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">CATEGORY_KEY</span><span class="o">,</span> <span class="n">Constants</span><span class="o">.</span><span class="na">CONSUMERS_CATEGORY</span><span class="o">,</span>
+                    <span class="n">Constants</span><span class="o">.</span><span class="na">CHECK_KEY</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="kc">false</span><span class="o">)));</span>
+        <span class="o">}</span>
+        <span class="c1">//订阅Constants.PROVIDERS_CATEGORY服务提供信息，Constants.CONFIGURATORS_CATEGORY系统配置，Constants.ROUTERS_CATEGORY路由配置信息
+</span><span class="c1"></span>        <span class="n">directory</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">subscribeUrl</span><span class="o">.</span><span class="na">addParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">CATEGORY_KEY</span><span class="o">,</span>
+                <span class="n">Constants</span><span class="o">.</span><span class="na">PROVIDERS_CATEGORY</span>
+                        <span class="o">+</span> <span class="s">&#34;,&#34;</span> <span class="o">+</span> <span class="n">Constants</span><span class="o">.</span><span class="na">CONFIGURATORS_CATEGORY</span>
+                        <span class="o">+</span> <span class="s">&#34;,&#34;</span> <span class="o">+</span> <span class="n">Constants</span><span class="o">.</span><span class="na">ROUTERS_CATEGORY</span><span class="o">));</span>
+        <span class="n">Invoker</span> <span class="n">invoker</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="na">join</span><span class="o">(</span><span class="n">directory</span><span class="o">);</span>
+        <span class="n">ProviderConsumerRegTable</span><span class="o">.</span><span class="na">registerConsuemr</span><span class="o">(</span><span class="n">invoker</span><span class="o">,</span> <span class="n">url</span><span class="o">,</span> <span class="n">subscribeUrl</span><span class="o">,</span> <span class="n">directory</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">invoker</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2directory-作用用于服务发现">2.Directory 作用用于服务发现</h2>
+<p><img src="/duboo/dubbo18.png" alt=""></p>
+<h3 id="1实现类关系">(1).实现类关系</h3>
+<p><img src="/duboo/dubbo19.png" alt=""></p>
+<ul>
+<li>StaticDirectory静态发现服务，作用于多个注册中心时；</li>
+<li>RegistryDirectory 注册中心发现服务</li>
+</ul>
+<h3 id="2abstractdirectorylist">(2).AbstractDirectory#list</h3>
+<p>根据Router获取Invoker集合</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public List&lt;Invoker&lt;T&gt;&gt; list(Invocation invocation) throws RpcException {
+       ...
+       List&lt;Invoker&lt;T&gt;&gt; invokers = doList(invocation);
+       List&lt;Router&gt; localRouters = this.routers; // local reference
+       if (localRouters != null &amp;&amp; localRouters.size() &gt; 0) {
+           for (Router router : localRouters) {
+               try {
+                   if (router.getUrl() == null || router.getUrl().getParameter(Constants.RUNTIME_KEY, false)) {
+                       invokers = router.route(invokers, getConsumerUrl(), invocation);
+                   }
+               }...
+           }
+       }
+       return invokers;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3staticdirectory手动设置集合">(3).StaticDirectory手动设置集合</h3>
+<h3 id="4registrydirectory从注册中心获取invoker集合支持实时">(4).RegistryDirectory从注册中心获取Invoker集合，支持实时</h3>
+<h4 id="adirectorysubscribe-调用registrydirectorynotify">a.directory.subscribe 调用RegistryDirectory.notify</h4>
+<p>配置，路由规则以及服务集合变化都通知</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="kd">synchronized</span> <span class="kt">void</span> <span class="nf">notify</span><span class="o">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">URL</span><span class="o">&gt;</span> <span class="n">urls</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">URL</span><span class="o">&gt;</span> <span class="n">invokerUrls</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">URL</span><span class="o">&gt;();</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">URL</span><span class="o">&gt;</span> <span class="n">routerUrls</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">URL</span><span class="o">&gt;();</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">URL</span><span class="o">&gt;</span> <span class="n">configuratorUrls</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">URL</span><span class="o">&gt;();</span>
+        <span class="k">for</span> <span class="o">(</span><span class="n">URL</span> <span class="n">url</span> <span class="o">:</span> <span class="n">urls</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">String</span> <span class="n">protocol</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="na">getProtocol</span><span class="o">();</span>
+            <span class="n">String</span> <span class="n">category</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="na">getParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">CATEGORY_KEY</span><span class="o">,</span> <span class="n">Constants</span><span class="o">.</span><span class="na">DEFAULT_CATEGORY</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">ROUTERS_CATEGORY</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">category</span><span class="o">)</span>
+                    <span class="o">||</span> <span class="n">Constants</span><span class="o">.</span><span class="na">ROUTE_PROTOCOL</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">protocol</span><span class="o">))</span> <span class="o">{</span>
+                <span class="n">routerUrls</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">url</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">CONFIGURATORS_CATEGORY</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">category</span><span class="o">)</span>
+                    <span class="o">||</span> <span class="n">Constants</span><span class="o">.</span><span class="na">OVERRIDE_PROTOCOL</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">protocol</span><span class="o">))</span> <span class="o">{</span>
+                <span class="n">configuratorUrls</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">url</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">PROVIDERS_CATEGORY</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">category</span><span class="o">))</span> <span class="o">{</span>
+                <span class="n">invokerUrls</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">url</span><span class="o">);</span>
+            <span class="o">}</span> <span class="o">...</span>
+        <span class="o">}</span>
+        <span class="c1">// configurators 配置
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">configuratorUrls</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">configuratorUrls</span><span class="o">.</span><span class="na">size</span><span class="o">()</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">configurators</span> <span class="o">=</span> <span class="n">toConfigurators</span><span class="o">(</span><span class="n">configuratorUrls</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="c1">// routers 路由
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">routerUrls</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">routerUrls</span><span class="o">.</span><span class="na">size</span><span class="o">()</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">List</span><span class="o">&lt;</span><span class="n">Router</span><span class="o">&gt;</span> <span class="n">routers</span> <span class="o">=</span> <span class="n">toRouters</span><span class="o">(</span><span class="n">routerUrls</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">routers</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span> <span class="c1">// null - do nothing
+</span><span class="c1"></span>                <span class="n">setRouters</span><span class="o">(</span><span class="n">routers</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">Configurator</span><span class="o">&gt;</span> <span class="n">localConfigurators</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">configurators</span><span class="o">;</span> <span class="c1">// local reference
+</span><span class="c1"></span>        <span class="c1">// merge override parameters
+</span><span class="c1"></span>        <span class="k">this</span><span class="o">.</span><span class="na">overrideDirectoryUrl</span> <span class="o">=</span> <span class="n">directoryUrl</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">localConfigurators</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">localConfigurators</span><span class="o">.</span><span class="na">size</span><span class="o">()</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">for</span> <span class="o">(</span><span class="n">Configurator</span> <span class="n">configurator</span> <span class="o">:</span> <span class="n">localConfigurators</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">this</span><span class="o">.</span><span class="na">overrideDirectoryUrl</span> <span class="o">=</span> <span class="n">configurator</span><span class="o">.</span><span class="na">configure</span><span class="o">(</span><span class="n">overrideDirectoryUrl</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="c1">// providers 提供服务
+</span><span class="c1"></span>        <span class="n">refreshInvoker</span><span class="o">(</span><span class="n">invokerUrls</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="btorouters-url转化为router">b.toRouters URL转化为Router</h4>
+<ul>
+<li>根据RouterFactory路由工厂创建路由规则</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private List&lt;Router&gt; toRouters(List&lt;URL&gt; urls) {
+       List&lt;Router&gt; routers = new ArrayList&lt;Router&gt;();
+       ...
+       if (urls != null &amp;&amp; urls.size() &gt; 0) {
+           for (URL url : urls) {
+               if (Constants.EMPTY_PROTOCOL.equals(url.getProtocol())) {
+                   continue;
+               }
+               String routerType = url.getParameter(Constants.ROUTER_KEY);
+               if (routerType != null &amp;&amp; routerType.length() &gt; 0) {
+                   url = url.setProtocol(routerType);
+               }
+               try {
+                   Router router = routerFactory.getRouter(url);
+                   if (!routers.contains(router))
+                       routers.add(router);
+               }...
+           }
+       }
+       return routers;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="csetrouters-设置路由">c.setRouters 设置路由</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">setRouters</span><span class="o">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">Router</span><span class="o">&gt;</span> <span class="n">routers</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// copy list
+</span><span class="c1"></span>        <span class="n">routers</span> <span class="o">=</span> <span class="n">routers</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">?</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Router</span><span class="o">&gt;()</span> <span class="o">:</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Router</span><span class="o">&gt;(</span><span class="n">routers</span><span class="o">);</span>
+        <span class="c1">// url手动配置路由
+</span><span class="c1"></span>        <span class="n">String</span> <span class="n">routerkey</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="na">getParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">ROUTER_KEY</span><span class="o">);</span>
+       <span class="c1">// 根据
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">routerkey</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">routerkey</span><span class="o">.</span><span class="na">length</span><span class="o">()</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">RouterFactory</span> <span class="n">routerFactory</span> <span class="o">=</span> <span class="n">ExtensionLoader</span><span class="o">.</span><span class="na">getExtensionLoader</span><span class="o">(</span><span class="n">RouterFactory</span><span class="o">.</span><span class="na">class</span><span class="o">).</span><span class="na">getExtension</span><span class="o">(</span><span class="n">routerkey</span><span class="o">);</span>
+            <span class="n">routers</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">routerFactory</span><span class="o">.</span><span class="na">getRouter</span><span class="o">(</span><span class="n">url</span><span class="o">));</span>
+        <span class="o">}</span>
+        <span class="c1">// 最后添加MockInvokersSelector
+</span><span class="c1"></span>        <span class="c1">// 降级处理
+</span><span class="c1"></span>        <span class="n">routers</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">MockInvokersSelector</span><span class="o">());</span>
+        <span class="n">Collections</span><span class="o">.</span><span class="na">sort</span><span class="o">(</span><span class="n">routers</span><span class="o">);</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">routers</span> <span class="o">=</span> <span class="n">routers</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="drouterfactory工厂创建router">d.RouterFactory工厂创建Router</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@SPI</span>
+<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">RouterFactory</span> <span class="o">{</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Create router.
+</span><span class="cm">     *
+</span><span class="cm">     * @param url
+</span><span class="cm">     * @return router
+</span><span class="cm">     */</span>
+    <span class="nd">@Adaptive</span><span class="o">(</span><span class="s">&#34;protocol&#34;</span><span class="o">)</span>
+    <span class="n">Router</span> <span class="nf">getRouter</span><span class="o">(</span><span class="n">URL</span> <span class="n">url</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><img src="/duboo/dubbo13.png" alt=""></p>
+<ul>
+<li>ConditionRouterFactory创建ConditionRouter</li>
+</ul>
+<h5 id="irouter-路由">i.Router 路由</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">public interface Router extends Comparable&lt;Router&gt; {
+
+   /**
+    * get the router url.
+    *
+    * @return url
+    */
+   URL getUrl();
+
+   /**
+    * route.
+    *
+    * @param invokers
+    * @param url        refer url
+    * @param invocation
+    * @return routed invokers
+    * @throws RpcException
+    */
+   &lt;T&gt; List&lt;Invoker&lt;T&gt;&gt; route(List&lt;Invoker&lt;T&gt;&gt; invokers, URL url, Invocation invocation) throws RpcException;
+
+} 
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="iiconditionrouter条件路由">ii.ConditionRouter条件路由</h5>
+<p>看看你页面操作</p>
+<p><img src="/duboo/dubbo14.png" alt=""></p>
+<h6 id="1属性">1).属性</h6>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   //优先级
+   private final int priority;
+   private final boolean force;
+   //host = 10.20.153.10 =&gt; host = 10.20.153.11
+   //消费者
+   private final Map&lt;String, MatchPair&gt; whenCondition;
+   //提供者
+   private final Map&lt;String, MatchPair&gt; thenCondition; 
+
+   private static final class MatchPair {
+       final Set&lt;String&gt; matches = new HashSet&lt;String&gt;();
+       final Set&lt;String&gt; mismatches = new HashSet&lt;String&gt;();
+   ... 
+</code></pre></td></tr></table>
+</div>
+</div><h6 id="2route路由规则选择">2).route路由规则选择</h6>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public &lt;T&gt; List&lt;Invoker&lt;T&gt;&gt; route(List&lt;Invoker&lt;T&gt;&gt; invokers, URL url, Invocation invocation)
+           throws RpcException {
+       if (invokers == null || invokers.size() == 0) {
+           return invokers;
+       }
+       try {
+           //消费者验证
+           if (!matchWhen(url, invocation)) {
+               return invokers;
+           }
+           List&lt;Invoker&lt;T&gt;&gt; result = new ArrayList&lt;Invoker&lt;T&gt;&gt;();
+           if (thenCondition == null) {
+               ...                
+               return result;
+           }
+           //提供者过滤操作
+           for (Invoker&lt;T&gt; invoker : invokers) {
+               if (matchThen(invoker.getUrl(), url)) {
+                   result.add(invoker);
+               }
+           }
+           if (result.size() &gt; 0) {
+               return result;
+           } else if (force) {
+              ...                
+             return result;
+           }
+       }...
+       return invokers;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="erefreshinvoker刷新invoker">e.refreshInvoker刷新Invoker</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">     private void refreshInvoker(List&lt;URL&gt; invokerUrls) {
+            ...
+            this.forbidden = false; // Allow to access
+            Map&lt;String, Invoker&lt;T&gt;&gt; oldUrlInvokerMap = this.urlInvokerMap; // local reference
+            if (invokerUrls.size() == 0 &amp;&amp; this.cachedInvokerUrls != null) {
+                invokerUrls.addAll(this.cachedInvokerUrls);
+            } else {
+                this.cachedInvokerUrls = new HashSet&lt;URL&gt;();
+                this.cachedInvokerUrls.addAll(invokerUrls);//Cached invoker urls, convenient for comparison
+            }
+            if (invokerUrls.size() == 0) {
+                return;
+            }
+            Map&lt;String, Invoker&lt;T&gt;&gt; newUrlInvokerMap = toInvokers(invokerUrls);// Translate url list to Invoker map
+            Map&lt;String, List&lt;Invoker&lt;T&gt;&gt;&gt; newMethodInvokerMap = toMethodInvokers(newUrlInvokerMap); // Change method name to map Invoker Map
+            ...
+            this.methodInvokerMap = multiGroup ? toMergeMethodInvokerMap(newMethodInvokerMap) : newMethodInvokerMap;
+            this.urlInvokerMap = newUrlInvokerMap;
+            try {
+                //destroy操作；下线操作
+                destroyUnusedInvokers(oldUrlInvokerMap, newUrlInvokerMap); // Close the unused Invoker
+            } catch (Exception e) {
+                logger.warn(&#34;destroyUnusedInvokers error. &#34;, e);
+            }
+        }
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="ftoinvokers-url转化为invokerdelegate">f.toInvokers URL转化为InvokerDelegate</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;&gt;</span> <span class="nf">toInvokers</span><span class="o">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">URL</span><span class="o">&gt;</span> <span class="n">urls</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;&gt;</span> <span class="n">newUrlInvokerMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;&gt;();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">urls</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">urls</span><span class="o">.</span><span class="na">size</span><span class="o">()</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">newUrlInvokerMap</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="n">Set</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">keys</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashSet</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;();</span>
+        <span class="n">String</span> <span class="n">queryProtocols</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">queryMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">PROTOCOL_KEY</span><span class="o">);</span>
+        <span class="k">for</span> <span class="o">(</span><span class="n">URL</span> <span class="n">providerUrl</span> <span class="o">:</span> <span class="n">urls</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// If protocol is configured at the reference side, only the matching protocol is selected
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(</span><span class="n">queryProtocols</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">queryProtocols</span><span class="o">.</span><span class="na">length</span><span class="o">()</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kt">boolean</span> <span class="n">accept</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                <span class="n">String</span><span class="o">[]</span> <span class="n">acceptProtocols</span> <span class="o">=</span> <span class="n">queryProtocols</span><span class="o">.</span><span class="na">split</span><span class="o">(</span><span class="s">&#34;,&#34;</span><span class="o">);</span>
+                <span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="n">acceptProtocol</span> <span class="o">:</span> <span class="n">acceptProtocols</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">providerUrl</span><span class="o">.</span><span class="na">getProtocol</span><span class="o">().</span><span class="na">equals</span><span class="o">(</span><span class="n">acceptProtocol</span><span class="o">))</span> <span class="o">{</span>
+                        <span class="n">accept</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                        <span class="k">break</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">(!</span><span class="n">accept</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="k">continue</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">EMPTY_PROTOCOL</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">providerUrl</span><span class="o">.</span><span class="na">getProtocol</span><span class="o">()))</span> <span class="o">{</span>
+                <span class="k">continue</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="o">...</span>
+            <span class="c1">//合并参数
+</span><span class="c1"></span>            <span class="n">URL</span> <span class="n">url</span> <span class="o">=</span> <span class="n">mergeUrl</span><span class="o">(</span><span class="n">providerUrl</span><span class="o">);</span>
+            <span class="c1">//只要配置有改动就要重新创建Invoker
+</span><span class="c1"></span>            <span class="n">String</span> <span class="n">key</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="na">toFullString</span><span class="o">();</span> <span class="c1">// The parameter urls are sorted
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(</span><span class="n">keys</span><span class="o">.</span><span class="na">contains</span><span class="o">(</span><span class="n">key</span><span class="o">))</span> <span class="o">{</span> <span class="c1">// Repeated url
+</span><span class="c1"></span>                <span class="k">continue</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="n">keys</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+            <span class="c1">//缓存
+</span><span class="c1"></span>            <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;&gt;</span> <span class="n">localUrlInvokerMap</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">urlInvokerMap</span><span class="o">;</span> <span class="c1">// local reference
+</span><span class="c1"></span>            <span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">invoker</span> <span class="o">=</span> <span class="n">localUrlInvokerMap</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">?</span> <span class="kc">null</span> <span class="o">:</span> <span class="n">localUrlInvokerMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">invoker</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span> <span class="c1">// Not in the cache, refer again
+</span><span class="c1"></span>                <span class="k">try</span> <span class="o">{</span>
+                    <span class="kt">boolean</span> <span class="n">enabled</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                   <span class="c1">//这里一般处理服务禁用操作
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">url</span><span class="o">.</span><span class="na">hasParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">DISABLED_KEY</span><span class="o">))</span> <span class="o">{</span>
+                        <span class="n">enabled</span> <span class="o">=</span> <span class="o">!</span><span class="n">url</span><span class="o">.</span><span class="na">getParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">DISABLED_KEY</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                        <span class="n">enabled</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="na">getParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">ENABLED_KEY</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+                    <span class="o">}</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">enabled</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="c1">//ProtocolFilterWrapper-&gt;ProtocolListenerWrapper=&gt;DubboProtocol
+</span><span class="c1"></span>                        <span class="n">invoker</span> <span class="o">=</span> <span class="k">new</span> <span class="n">InvokerDelegate</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;(</span><span class="n">protocol</span><span class="o">.</span><span class="na">refer</span><span class="o">(</span><span class="n">serviceType</span><span class="o">,</span> <span class="n">url</span><span class="o">),</span> <span class="n">url</span><span class="o">,</span> <span class="n">providerUrl</span><span class="o">);</span>
+                    <span class="o">}</span>
+                <span class="o">}...</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">invoker</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span> <span class="c1">// Put new invoker in cache
+</span><span class="c1"></span>                    <span class="n">newUrlInvokerMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">invoker</span><span class="o">);</span>
+                <span class="o">}</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="n">newUrlInvokerMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">invoker</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="n">keys</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+        <span class="k">return</span> <span class="n">newUrlInvokerMap</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="gdubboprotocolrefer创建dubboinvoker">g.DubboProtocol#refer创建DubboInvoker</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="kd">public</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">refer</span><span class="o">(</span><span class="n">Class</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">serviceType</span><span class="o">,</span> <span class="n">URL</span> <span class="n">url</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">RpcException</span> <span class="o">{</span>
+        <span class="n">optimizeSerialization</span><span class="o">(</span><span class="n">url</span><span class="o">);</span>
+        <span class="c1">// create rpc invoker.
+</span><span class="c1"></span>        <span class="c1">//getClients 创建ExchangeClient
+</span><span class="c1"></span>        <span class="n">DubboInvoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">invoker</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DubboInvoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;(</span><span class="n">serviceType</span><span class="o">,</span> <span class="n">url</span><span class="o">,</span> <span class="n">getClients</span><span class="o">(</span><span class="n">url</span><span class="o">),</span> <span class="n">invokers</span><span class="o">);</span>
+        <span class="n">invokers</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">invoker</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">invoker</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="1getclients创建exchangeclient">(1).getClients创建ExchangeClient</h5>
+<p>ExchangeClient的时实现类HeaderExchangeClient</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="cm">/**
+</span><span class="cm">     * Create new connection
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="n">ExchangeClient</span> <span class="nf">initClient</span><span class="o">(</span><span class="n">URL</span> <span class="n">url</span><span class="o">)</span> <span class="o">{</span>
+
+        <span class="c1">// client type setting.
+</span><span class="c1"></span>        <span class="n">String</span> <span class="n">str</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="na">getParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">CLIENT_KEY</span><span class="o">,</span> <span class="n">url</span><span class="o">.</span><span class="na">getParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">SERVER_KEY</span><span class="o">,</span> <span class="n">Constants</span><span class="o">.</span><span class="na">DEFAULT_REMOTING_CLIENT</span><span class="o">));</span>
+
+        <span class="n">String</span> <span class="n">version</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="na">getParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">DUBBO_VERSION_KEY</span><span class="o">);</span>
+        <span class="kt">boolean</span> <span class="n">compatible</span> <span class="o">=</span> <span class="o">(</span><span class="n">version</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">version</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">&#34;1.0.&#34;</span><span class="o">));</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="na">addParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">CODEC_KEY</span><span class="o">,</span> <span class="n">DubboCodec</span><span class="o">.</span><span class="na">NAME</span><span class="o">);</span>
+        <span class="c1">// enable heartbeat by default
+</span><span class="c1"></span>        <span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="na">addParameterIfAbsent</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">HEARTBEAT_KEY</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">DEFAULT_HEARTBEAT</span><span class="o">));</span>
+        <span class="o">...</span> 
+        <span class="n">ExchangeClient</span> <span class="n">client</span><span class="o">;</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="c1">// 懒载创建客户端
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(</span><span class="n">url</span><span class="o">.</span><span class="na">getParameter</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">LAZY_CONNECT_KEY</span><span class="o">,</span> <span class="kc">false</span><span class="o">))</span> <span class="o">{</span>
+                <span class="n">client</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LazyConnectExchangeClient</span><span class="o">(</span><span class="n">url</span><span class="o">,</span> <span class="n">requestHandler</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="c1">//ExtensionLoader.getExtensionLoader(Exchanger.class).getExtension(type).connect
+</span><span class="c1"></span>                <span class="c1">// HeaderExchanger.connect
+</span><span class="c1"></span>                <span class="n">client</span> <span class="o">=</span> <span class="n">Exchangers</span><span class="o">.</span><span class="na">connect</span><span class="o">(</span><span class="n">url</span><span class="o">,</span> <span class="n">requestHandler</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}...</span>
+        <span class="k">return</span> <span class="n">client</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="3lazyconnectexchangeclient懒载创建客户端请求创建链接">(3).LazyConnectExchangeClient懒载创建客户端,请求创建链接</h5>
+<h5 id="2headerexchangerconnect">(2).HeaderExchanger#connect</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">HeaderExchanger</span> <span class="kd">implements</span> <span class="n">Exchanger</span> <span class="o">{</span>
+
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">NAME</span> <span class="o">=</span> <span class="s">&#34;header&#34;</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="n">ExchangeClient</span> <span class="nf">connect</span><span class="o">(</span><span class="n">URL</span> <span class="n">url</span><span class="o">,</span> <span class="n">ExchangeHandler</span> <span class="n">handler</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">RemotingException</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">HeaderExchangeClient</span><span class="o">(</span><span class="n">Transporters</span><span class="o">.</span><span class="na">connect</span><span class="o">(</span><span class="n">url</span><span class="o">,</span> <span class="k">new</span> <span class="n">DecodeHandler</span><span class="o">(</span><span class="k">new</span> <span class="n">HeaderExchangeHandler</span><span class="o">(</span><span class="n">handler</span><span class="o">))),</span> <span class="kc">true</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3cluster集群处理">3.Cluster集群处理</h2>
+<p><img src="/duboo/dubbo20.png" alt=""></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@SPI</span><span class="o">(</span><span class="n">FailoverCluster</span><span class="o">.</span><span class="na">NAME</span><span class="o">)</span>
+<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Cluster</span> <span class="o">{</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Merge the directory invokers to a virtual invoker.
+</span><span class="cm">     *
+</span><span class="cm">     * @param &lt;T&gt;
+</span><span class="cm">     * @param directory
+</span><span class="cm">     * @return cluster invoker
+</span><span class="cm">     * @throws RpcException
+</span><span class="cm">     */</span>
+    <span class="nd">@Adaptive</span>
+    <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">join</span><span class="o">(</span><span class="n">Directory</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">directory</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">RpcException</span><span class="o">;</span> 
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><img src="/duboo/dubbo11.png" alt=""></p>
+<ul>
+<li>MockClusterWrapper - 包装类降级处理 -&gt; 创建MockClusterInvoker</li>
+<li>FailoverCluster - 失败自动切换      -&gt; FailoverInvoker</li>
+<li>FailfastCluster - 快速失败         -&gt; 下面类同</li>
+<li>FailsafeCluster - 失败安全</li>
+<li>FailbackCluster - 失败自动恢复</li>
+<li>ForkingCluster - 并行调用多个服务提供者</li>
+<li>BroadcastCluster - 广播</li>
+<li>MergeableCluster - 合并</li>
+</ul>
+<p>默认MockClusterWrapper-&gt;FailoverCluster</p>
+<h3 id="1mockclusterwrapper创建mockclusterinvoker">(1).MockClusterWrapper创建MockClusterInvoker</h3>
+<p>MockClusterInvoker是服务降级处理</p>
+<ul>
+<li><code>mock=force:return+null</code> 表示消费方对该服务的方法调用都直接返回 null 值，不发起远程调用。用来屏蔽不重要服务不可用时对调用方的影响。</li>
+<li>还可以改为 <code>mock=fail:return+null</code> 表示消费方对该服务的方法调用在失败后，再返回 null 值，不抛异常。用来容忍不重要服务不稳定时对调用方的影响。</li>
+</ul>
+<h4 id="ainvoke">a.invoke</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public Result invoke(Invocation invocation) throws RpcException {
+       Result result = null;
+
+       String value = directory.getUrl().getMethodParameter(invocation.getMethodName(), Constants.MOCK_KEY, Boolean.FALSE.toString()).trim();
+       if (value.length() == 0 || value.equalsIgnoreCase(&#34;false&#34;)) {
+           //no mock
+           result = this.invoker.invoke(invocation);
+       } else if (value.startsWith(&#34;force&#34;)) {
+           ...
+           //force:direct mock
+           result = doMockInvoke(invocation, null);
+       } else {
+           //fail-mock
+           try {
+               result = this.invoker.invoke(invocation);
+           } catch (RpcException e) {
+               if (e.isBiz()) {
+                   throw e;
+               } else {
+                   ...
+                   result = doMockInvoke(invocation, e);
+               }
+           }
+       }
+       return result;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bdomockinvoke">b.doMockInvoke</h4>
+<p>创建MockInvoker处理降级处理</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private Result doMockInvoke(Invocation invocation, RpcException e) {
+       Result result = null;
+       Invoker&lt;T&gt; minvoker;
+
+       List&lt;Invoker&lt;T&gt;&gt; mockInvokers = selectMockInvoker(invocation);
+       if (mockInvokers == null || mockInvokers.size() == 0) {
+           minvoker = (Invoker&lt;T&gt;) new MockInvoker(directory.getUrl());
+       } else {
+           minvoker = mockInvokers.get(0);
+       }
+       try {
+           result = minvoker.invoke(invocation);
+       }...
+       return result;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2failovercluster创建failoverclusterinvoker">(2).FailoverCluster创建FailoverClusterInvoker</h3>
+<h4 id="a调用abstractclusterinvokerinvoke">a.调用AbstractClusterInvoker.invoke</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="kd">public</span> <span class="n">Result</span> <span class="nf">invoke</span><span class="o">(</span><span class="kd">final</span> <span class="n">Invocation</span> <span class="n">invocation</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">RpcException</span> <span class="o">{</span>
+       <span class="o">...</span>
+       <span class="n">LoadBalance</span> <span class="n">loadbalance</span><span class="o">;</span>
+       <span class="c1">//directory.list(invocation);
+</span><span class="c1"></span>       <span class="n">List</span><span class="o">&lt;</span><span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;&gt;</span> <span class="n">invokers</span> <span class="o">=</span> <span class="n">list</span><span class="o">(</span><span class="n">invocation</span><span class="o">);</span>
+       <span class="c1">//负载均衡操作
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="n">invokers</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">invokers</span><span class="o">.</span><span class="na">size</span><span class="o">()</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">loadbalance</span> <span class="o">=</span> <span class="n">ExtensionLoader</span><span class="o">.</span><span class="na">getExtensionLoader</span><span class="o">(</span><span class="n">LoadBalance</span><span class="o">.</span><span class="na">class</span><span class="o">).</span><span class="na">getExtension</span><span class="o">(</span><span class="n">invokers</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">0</span><span class="o">).</span><span class="na">getUrl</span><span class="o">()</span>
+                   <span class="o">.</span><span class="na">getMethodParameter</span><span class="o">(</span><span class="n">invocation</span><span class="o">.</span><span class="na">getMethodName</span><span class="o">(),</span> <span class="n">Constants</span><span class="o">.</span><span class="na">LOADBALANCE_KEY</span><span class="o">,</span> <span class="n">Constants</span><span class="o">.</span><span class="na">DEFAULT_LOADBALANCE</span><span class="o">));</span>
+       <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+           <span class="n">loadbalance</span> <span class="o">=</span> <span class="n">ExtensionLoader</span><span class="o">.</span><span class="na">getExtensionLoader</span><span class="o">(</span><span class="n">LoadBalance</span><span class="o">.</span><span class="na">class</span><span class="o">).</span><span class="na">getExtension</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">DEFAULT_LOADBALANCE</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="n">RpcUtils</span><span class="o">.</span><span class="na">attachInvocationIdIfAsync</span><span class="o">(</span><span class="n">getUrl</span><span class="o">(),</span> <span class="n">invocation</span><span class="o">);</span>
+       <span class="k">return</span> <span class="n">doInvoke</span><span class="o">(</span><span class="n">invocation</span><span class="o">,</span> <span class="n">invokers</span><span class="o">,</span> <span class="n">loadbalance</span><span class="o">);</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bfailoverclusterinvokerdoinvoke">b.FailoverClusterInvoker.doInvoke</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public Result doInvoke(Invocation invocation, final List&lt;Invoker&lt;T&gt;&gt; invokers, LoadBalance loadbalance) throws RpcException {
+       List&lt;Invoker&lt;T&gt;&gt; copyinvokers = invokers;
+       checkInvokers(copyinvokers, invocation);
+       //获取重试机会
+       int len = getUrl().getMethodParameter(invocation.getMethodName(), Constants.RETRIES_KEY, Constants.DEFAULT_RETRIES) + 1;
+       if (len &lt;= 0) {
+           len = 1;
+       }
+       // retry loop.
+       RpcException le = null; // last exception.
+       List&lt;Invoker&lt;T&gt;&gt; invoked = new ArrayList&lt;Invoker&lt;T&gt;&gt;(copyinvokers.size()); // invoked invokers.
+       Set&lt;String&gt; providers = new HashSet&lt;String&gt;(len);
+       for (int i = 0; i &lt; len; i++) {
+           //Reselect before retry to avoid a change of candidate `invokers`.
+           //NOTE: if `invokers` changed, then `invoked` also lose accuracy.
+           if (i &gt; 0) {
+               checkWhetherDestroyed();
+               copyinvokers = list(invocation);
+               // check again
+               checkInvokers(copyinvokers, invocation);
+           }
+           Invoker&lt;T&gt; invoker = select(loadbalance, invocation, copyinvokers, invoked);
+           invoked.add(invoker);
+           RpcContext.getContext().setInvokers((List) invoked);
+           try {
+               Result result = invoker.invoke(invocation);
+               ...
+               return result;
+           } catch (RpcException e) {
+               if (e.isBiz()) { // biz exception.
+                   throw e;
+               }
+               le = e;
+           } catch (Throwable e) {
+               le = new RpcException(e.getMessage(), e);
+           } finally {
+               providers.add(invoker.getUrl().getAddress());
+           }
+       }
+       ...异常
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="c进行负载均衡abstractclusterinvokerdoselect">c.进行负载均衡AbstractClusterInvoker.doselect</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> private Invoker&lt;T&gt; doselect(LoadBalance loadbalance, Invocation invocation, List&lt;Invoker&lt;T&gt;&gt; invokers, List&lt;Invoker&lt;T&gt;&gt; selected) throws RpcException {
+       if (invokers == null || invokers.size() == 0)
+           return null;
+       if (invokers.size() == 1)
+           return invokers.get(0);
+       // 只有两个Invoker，进行轮询操作，不走LoadBalance逻辑
+       if (invokers.size() == 2 &amp;&amp; selected != null &amp;&amp; selected.size() &gt; 0) {
+           return selected.get(0) == invokers.get(0) ? invokers.get(1) : invokers.get(0);
+       }
+       //负载均衡操作
+       Invoker&lt;T&gt; invoker = loadbalance.select(invokers, getUrl(), invocation);
+       if ((selected != null &amp;&amp; selected.contains(invoker))
+               || (!invoker.isAvailable() &amp;&amp; getUrl() != null &amp;&amp; availablecheck)) {
+           try {
+               Invoker&lt;T&gt; rinvoker = reselect(loadbalance, invocation, invokers, selected, availablecheck);
+               if (rinvoker != null) {
+                   invoker = rinvoker;
+               } else {
+                   int index = invokers.indexOf(invoker);
+                   try {
+                       //Avoid collision
+                       invoker = index &lt; invokers.size() - 1 ? invokers.get(index + 1) : invoker;
+                   }...
+               }
+           }...
+       }
+       return invoker;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="d重新选择abstractclusterinvokerreselect">d.重新选择AbstractClusterInvoker.reselect</h4>
+<p>重新选择，首先使用不在“ selected”中的调用者，如果所有调用者都在“ selected”中，则使用负载均衡策略选择一个可用的调用者。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private Invoker&lt;T&gt; reselect(LoadBalance loadbalance, Invocation invocation,
+                               List&lt;Invoker&lt;T&gt;&gt; invokers, List&lt;Invoker&lt;T&gt;&gt; selected, boolean availablecheck)
+           throws RpcException {
+
+       //Allocating one in advance, this list is certain to be used.
+       List&lt;Invoker&lt;T&gt;&gt; reselectInvokers = new ArrayList&lt;Invoker&lt;T&gt;&gt;(invokers.size() &gt; 1 ? (invokers.size() - 1) : invokers.size());
+
+       //First, try picking a invoker not in `selected`.
+       if (availablecheck) { // invoker.isAvailable() should be checked
+           for (Invoker&lt;T&gt; invoker : invokers) {
+               if (invoker.isAvailable()) {
+                   if (selected == null || !selected.contains(invoker)) {
+                       reselectInvokers.add(invoker);
+                   }
+               }
+           }
+           if (reselectInvokers.size() &gt; 0) {
+               return loadbalance.select(reselectInvokers, getUrl(), invocation);
+           }
+       } else { // do not check invoker.isAvailable()
+           for (Invoker&lt;T&gt; invoker : invokers) {
+               if (selected == null || !selected.contains(invoker)) {
+                   reselectInvokers.add(invoker);
+               }
+           }
+           if (reselectInvokers.size() &gt; 0) {
+               return loadbalance.select(reselectInvokers, getUrl(), invocation);
+           }
+       }
+       // Just pick an available invoker using loadbalance policy
+       {
+           if (selected != null) {
+               for (Invoker&lt;T&gt; invoker : selected) {
+                   if ((invoker.isAvailable()) // available first
+                           &amp;&amp; !reselectInvokers.contains(invoker)) {
+                       reselectInvokers.add(invoker);
+                   }
+               }
+           }
+           if (reselectInvokers.size() &gt; 0) {
+               return loadbalance.select(reselectInvokers, getUrl(), invocation);
+           }
+       }
+       return null;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3forkingcluster创建forkingclusterinvoker-并发操作">(3).ForkingCluster创建ForkingClusterInvoker 并发操作</h3>
+<h4 id="aforkingclusterinvokerdoinvoke">a.ForkingClusterInvoker#doInvoke</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public Result doInvoke(final Invocation invocation, List&lt;Invoker&lt;T&gt;&gt; invokers, LoadBalance loadbalance) throws RpcException {
+       checkInvokers(invokers, invocation);
+       final List&lt;Invoker&lt;T&gt;&gt; selected;
+       //获取并发数量
+       final int forks = getUrl().getParameter(Constants.FORKS_KEY, Constants.DEFAULT_FORKS);
+       //超时处理
+       final int timeout = getUrl().getParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);
+       if (forks &lt;= 0 || forks &gt;= invokers.size()) {
+           selected = invokers;
+       } else {
+           selected = new ArrayList&lt;Invoker&lt;T&gt;&gt;();
+           for (int i = 0; i &lt; forks; i++) {
+               // TODO. Add some comment here, refer chinese version for more details.
+               Invoker&lt;T&gt; invoker = select(loadbalance, invocation, invokers, selected);
+               if (!selected.contains(invoker)) {//Avoid add the same invoker several times.
+                   selected.add(invoker);
+               }
+           }
+       }
+       RpcContext.getContext().setInvokers((List) selected);
+       final AtomicInteger count = new AtomicInteger();
+       final BlockingQueue&lt;Object&gt; ref = new LinkedBlockingQueue&lt;Object&gt;();
+       for (final Invoker&lt;T&gt; invoker : selected) {
+           //线程池执行，运用newCachedThreadPool
+           executor.execute(new Runnable() {
+               public void run() {
+                   try {
+                       Result result = invoker.invoke(invocation);
+                       ref.offer(result);
+                   }...
+               }
+           });
+       }
+       try {
+           //看谁处理最快；或者等待超时处理
+           Object ret = ref.poll(timeout, TimeUnit.MILLISECONDS);
+           if (ret instanceof Throwable) {
+               Throwable e = (Throwable) ret;
+               throw new RpcException(e instanceof RpcException ? ((RpcException) e).getCode() : 0, &#34;Failed to forking invoke provider &#34; + selected + &#34;, but no luck to perform the invocation. Last error is: &#34; + e.getMessage(), e.getCause() != null ? e.getCause() : e);
+           }
+           return (Result) ret;
+       }...
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4mergeablecluster创建mergeableclusterinvoker-并发操作">(4).MergeableCluster创建MergeableClusterInvoker 并发操作</h3>
+<h4 id="amergeableclusterinvokerinvoke">a.MergeableClusterInvoker#invoke</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> public Result invoke(final Invocation invocation) throws RpcException {
+       List&lt;Invoker&lt;T&gt;&gt; invokers = directory.list(invocation);
+       //获取merger
+       String merger = getUrl().getMethodParameter(invocation.getMethodName(), Constants.MERGER_KEY);
+       if (ConfigUtils.isEmpty(merger)) { // 如果某个方法没有合并，则仅调用一个invoker
+           for (final Invoker&lt;T&gt; invoker : invokers) {
+               if (invoker.isAvailable()) {
+                   return invoker.invoke(invocation);
+               }
+           }
+           return invokers.iterator().next().invoke(invocation);
+       }
+
+       Class&lt;?&gt; returnType;
+       try {
+           returnType = getInterface().getMethod(
+                   invocation.getMethodName(), invocation.getParameterTypes()).getReturnType();
+       }...
+
+       Map&lt;String, Future&lt;Result&gt;&gt; results = new HashMap&lt;String, Future&lt;Result&gt;&gt;();
+       for (final Invoker&lt;T&gt; invoker : invokers) {
+          //线程池执行，运用newCachedThreadPool
+           Future&lt;Result&gt; future = executor.submit(new Callable&lt;Result&gt;() {
+               public Result call() throws Exception {
+                   return invoker.invoke(new RpcInvocation(invocation, invoker));
+               }
+           });
+           results.put(invoker.getUrl().getServiceKey(), future);
+       }
+
+       Object result = null;
+
+       List&lt;Result&gt; resultList = new ArrayList&lt;Result&gt;(results.size());
+       //获取超时时间 
+       int timeout = getUrl().getMethodParameter(invocation.getMethodName(), Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);
+       for (Map.Entry&lt;String, Future&lt;Result&gt;&gt; entry : results.entrySet()) {
+           Future&lt;Result&gt; future = entry.getValue();
+           try {
+               Result r = future.get(timeout, TimeUnit.MILLISECONDS);
+               if (r.hasException()) {
+                   ...
+               } else {
+                   resultList.add(r);
+               }
+           } catch (Exception e) {
+              ...
+           }
+       }
+
+       if (resultList.size() == 0) {
+           return new RpcResult((Object) null);
+       } else if (resultList.size() == 1) {
+           return resultList.iterator().next();
+       }
+
+       if (returnType == void.class) {
+           return new RpcResult((Object) null);
+       }
+
+       if (merger.startsWith(&#34;.&#34;)) { //直接用反射处理合并结果的操作
+           merger = merger.substring(1);
+           Method method;
+           try {
+               method = returnType.getMethod(merger, returnType);
+           } catch (NoSuchMethodException e) {
+               ...
+           }
+           if (method != null) {
+               if (!Modifier.isPublic(method.getModifiers())) {
+                   method.setAccessible(true);
+               }
+               result = resultList.remove(0).getValue();
+               try {
+                   if (method.getReturnType() != void.class
+                           &amp;&amp; method.getReturnType().isAssignableFrom(result.getClass())) {
+                       for (Result r : resultList) {
+                           result = method.invoke(result, r.getValue());
+                       }
+                   } else {
+                       for (Result r : resultList) {
+                           method.invoke(result, r.getValue());
+                       }
+                   }
+               } ...
+           }...
+       } else {
+           Merger resultMerger;
+           // &#34;true&#34;.equalsIgnoreCase(value)|| &#34;default&#34;.equalsIgnoreCase(value);
+           if (ConfigUtils.isDefault(merger)) {
+               resultMerger = MergerFactory.getMerger(returnType);
+           } else {
+               resultMerger = ExtensionLoader.getExtensionLoader(Merger.class).getExtension(merger);
+           }
+           if (resultMerger != null) {
+               List&lt;Object&gt; rets = new ArrayList&lt;Object&gt;(resultList.size());
+               for (Result r : resultList) {
+                   rets.add(r.getValue());
+               }
+               result = resultMerger.merge(
+                       rets.toArray((Object[]) Array.newInstance(returnType, 0)));
+           }...
+       }
+       return new RpcResult(result);
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bmerger接口就一个方法merge">b.Merger接口就一个方法merge</h4>
+<h5 id="iintarraymerger-int数组操作">i.IntArrayMerger int数组操作</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">public class IntArrayMerger implements Merger&lt;int[]&gt; {
+
+   public int[] merge(int[]... items) {
+       int totalLen = 0;
+       for (int[] item : items) {
+           totalLen += item.length;
+       }
+       int[] result = new int[totalLen];
+       int index = 0;
+       for (int[] item : items) {
+           for (int i : item) {
+               result[index++] = i;
+           }
+       }
+       return result;
+   }
+
+} 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4loadbalance负载均衡">4.LoadBalance负载均衡</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="nd">@SPI</span><span class="o">(</span><span class="n">RandomLoadBalance</span><span class="o">.</span><span class="na">NAME</span><span class="o">)</span>
+ <span class="kd">public</span> <span class="kd">interface</span> <span class="nc">LoadBalance</span> <span class="o">{</span>
+ 
+     <span class="cm">/**
+</span><span class="cm">      * select one invoker in list.
+</span><span class="cm">      *
+</span><span class="cm">      * @param invokers   invokers.
+</span><span class="cm">      * @param url        refer url
+</span><span class="cm">      * @param invocation invocation.
+</span><span class="cm">      * @return selected invoker.
+</span><span class="cm">      */</span>
+     <span class="nd">@Adaptive</span><span class="o">(</span><span class="s">&#34;loadbalance&#34;</span><span class="o">)</span>
+     <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">select</span><span class="o">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;&gt;</span> <span class="n">invokers</span><span class="o">,</span> <span class="n">URL</span> <span class="n">url</span><span class="o">,</span> <span class="n">Invocation</span> <span class="n">invocation</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">RpcException</span><span class="o">;</span>
+ 
+ <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><img src="/duboo/dubbo12.png" alt=""></p>
+<ul>
+<li>默认负载均衡RandomLoadBalance</li>
+</ul>
+<h3 id="1abstractloadbalance抽象类几个负载均衡继承抽象类几个公用方法">(1).AbstractLoadBalance抽象类，几个负载均衡继承抽象类，几个公用方法</h3>
+<h4 id="aselect做基础验证最终调用子类实现doselect">a.select做基础验证，最终调用子类实现doSelect</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    public &lt;T&gt; Invoker&lt;T&gt; select(List&lt;Invoker&lt;T&gt;&gt; invokers, URL url, Invocation invocation) {
+        if (invokers == null || invokers.size() == 0)
+            return null;
+        if (invokers.size() == 1)
+            return invokers.get(0);
+        return doSelect(invokers, url, invocation);
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="b获取权重getweight">b.获取权重getWeight</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   protected int getWeight(Invoker&lt;?&gt; invoker, Invocation invocation) {
+       int weight = invoker.getUrl().getMethodParameter(invocation.getMethodName(), Constants.WEIGHT_KEY, Constants.DEFAULT_WEIGHT);
+       if (weight &gt; 0) {
+           //获取服务提供者启动时间
+           long timestamp = invoker.getUrl().getParameter(Constants.REMOTE_TIMESTAMP_KEY, 0L);
+           if (timestamp &gt; 0L) {
+               //获取服务提供者运行时间
+               int uptime = (int) (System.currentTimeMillis() - timestamp);
+               //获取服务预热时间，默认为10分钟
+               int warmup = invoker.getUrl().getParameter(Constants.WARMUP_KEY, Constants.DEFAULT_WARMUP);
+               if (uptime &gt; 0 &amp;&amp; uptime &lt; warmup) {
+                   //重新计算服务权重
+                   weight = calculateWarmupWeight(uptime, warmup, weight);
+               }
+           }
+       }
+       return weight;
+   } 
+  static int calculateWarmupWeight(int uptime, int warmup, int weight) {
+   // 计算权重，下面代码逻辑上形似于 (uptime / warmup) * weight。
+   // 随着服务运行时间 uptime 增大，权重计算值 ww 会慢慢接近配置值 weight
+   int ww = (int) ((float) uptime / ((float) warmup / (float) weight));
+   return ww &lt; 1 ? 1 : (ww &gt; weight ? weight : ww);
+ }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2randomloadbalance加权随机算法">(2).RandomLoadBalance加权随机算法</h3>
+<h4 id="adoselect">a.doSelect</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> protected &lt;T&gt; Invoker&lt;T&gt; doSelect(List&lt;Invoker&lt;T&gt;&gt; invokers, URL url, Invocation invocation) {
+       int length = invokers.size(); // Number of invokers
+       int totalWeight = 0; // The sum of weights
+       boolean sameWeight = true; // Every invoker has the same weight?
+       for (int i = 0; i &lt; length; i++) {
+           int weight = getWeight(invokers.get(i), invocation);
+           totalWeight += weight; // Sum
+           //sameWeight为true，说明weight都相同，就随机选择；不按权重选择随机选择
+           if (sameWeight &amp;&amp; i &gt; 0
+                   &amp;&amp; weight != getWeight(invokers.get(i - 1), invocation)) {
+               sameWeight = false;
+           }
+       }
+       if (totalWeight &gt; 0 &amp;&amp; !sameWeight) {
+           // 按权重值大小随机值，随机值遍历相减，减值为小于零，选择当前Invoker
+           int offset = random.nextInt(totalWeight);
+           // Return a invoker based on the random value.
+           for (int i = 0; i &lt; length; i++) {
+               offset -= getWeight(invokers.get(i), invocation);
+               if (offset &lt; 0) {
+                   return invokers.get(i);
+               }
+           }
+       }
+       // If all invokers have the same weight value or totalWeight=0, return evenly.
+       return invokers.get(random.nextInt(length));
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3roundrobinloadbalancedoselect-加权轮询负载均衡">(3).RoundRobinLoadBalance#doSelect 加权轮询负载均衡</h3>
+<h4 id="a轮询意思肯定缓存保存现在执行下标位置">a.轮询意思肯定缓存保存现在执行下标位置</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> private final ConcurrentMap&lt;String, AtomicPositiveInteger&gt; sequences = new ConcurrentHashMap&lt;String, AtomicPositiveInteger&gt;(); 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bdoselect">b.doSelect</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   protected &lt;T&gt; Invoker&lt;T&gt; doSelect(List&lt;Invoker&lt;T&gt;&gt; invokers, URL url, Invocation invocation) {
+       // key = 全限定类名 + &#34;.&#34; + 方法名，
+       String key = invokers.get(0).getUrl().getServiceKey() + &#34;.&#34; + invocation.getMethodName();
+       int length = invokers.size(); // Number of invokers
+       int maxWeight = 0; // The maximum weight
+       int minWeight = Integer.MAX_VALUE; // The minimum weight
+       final LinkedHashMap&lt;Invoker&lt;T&gt;, IntegerWrapper&gt; invokerToWeightMap = new LinkedHashMap&lt;Invoker&lt;T&gt;, IntegerWrapper&gt;();
+       int weightSum = 0;
+       for (int i = 0; i &lt; length; i++) {
+           int weight = getWeight(invokers.get(i), invocation);
+           maxWeight = Math.max(maxWeight, weight); // Choose the maximum weight
+           minWeight = Math.min(minWeight, weight); // Choose the minimum weight
+           if (weight &gt; 0) {
+               invokerToWeightMap.put(invokers.get(i), new IntegerWrapper(weight));
+               weightSum += weight;
+           }
+       }
+       AtomicPositiveInteger sequence = sequences.get(key);
+       if (sequence == null) {
+           sequences.putIfAbsent(key, new AtomicPositiveInteger());
+           sequence = sequences.get(key);
+       }
+       int currentSequence = sequence.getAndIncrement();
+       if (maxWeight &gt; 0 &amp;&amp; minWeight &lt; maxWeight) {
+           int mod = currentSequence % weightSum;
+           for (int i = 0; i &lt; maxWeight; i++) {
+               //轮询减mod
+               for (Map.Entry&lt;Invoker&lt;T&gt;, IntegerWrapper&gt; each : invokerToWeightMap.entrySet()) {
+                   final Invoker&lt;T&gt; k = each.getKey();
+                   final IntegerWrapper v = each.getValue();
+                   if (mod == 0 &amp;&amp; v.getValue() &gt; 0) {
+                       return k;
+                   }
+                   if (v.getValue() &gt; 0) {
+                       v.decrement();
+                       mod--;
+                   }
+               }
+           }
+       }
+       // Round robin
+       return invokers.get(currentSequence % length);
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4leastactiveloadbalance最小活跃数负载均衡">(4).LeastActiveLoadBalance最小活跃数负载均衡</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    protected &lt;T&gt; Invoker&lt;T&gt; doSelect(List&lt;Invoker&lt;T&gt;&gt; invokers, URL url, Invocation invocation) {
+        int length = invokers.size(); 
+        int leastActive = -1; // 最小的活跃数
+        int leastCount = 0; // 具有相同“最小活跃数”的服务者提供者(Invoker）数量
+        int[] leastIndexs = new int[length]; // leastIndexs 用于记录具有相同“最小活跃数”的 Invoker 在 invokers 列表中的下标信息
+        int totalWeight = 0; // 具有相同“最小活跃数”的总权重
+        int firstWeight = 0; // 具有相同“最小活跃数”，比较权重是否相同
+        boolean sameWeight = true; 
+        for (int i = 0; i &lt; length; i++) {
+            Invoker&lt;T&gt; invoker = invokers.get(i);
+            //活跃数
+            int active = RpcStatus.getStatus(invoker.getUrl(), invocation.getMethodName()).getActive(); 
+            int weight = invoker.getUrl().getMethodParameter(invocation.getMethodName(), Constants.WEIGHT_KEY, Constants.DEFAULT_WEIGHT); // Weight
+            if (leastActive == -1 || active &lt; leastActive) { // Restart, when find a invoker having smaller least active value.
+                leastActive = active; // Record the current least active value
+                leastCount = 1; // Reset leastCount, count again based on current leastCount
+                leastIndexs[0] = i; // Reset
+                totalWeight = weight; // Reset
+                firstWeight = weight; // Record the weight the first invoker
+                sameWeight = true; // Reset, every invoker has the same weight value?
+            } else if (active == leastActive) { // If current invoker&#39;s active value equals with leaseActive, then accumulating.
+                leastIndexs[leastCount++] = i; // Record index number of this invoker
+                totalWeight += weight; // Add this invoker&#39;s weight to totalWeight.
+                // If every invoker has the same weight?
+                if (sameWeight &amp;&amp; i &gt; 0
+                        &amp;&amp; weight != firstWeight) {
+                    sameWeight = false;
+                }
+            }
+        }
+        // assert(leastCount &gt; 0)
+        if (leastCount == 1) {
+            return invokers.get(leastIndexs[0]);
+        }
+        if (!sameWeight &amp;&amp; totalWeight &gt; 0) {
+            // 这里代码类同加权随机算法
+            int offsetWeight = random.nextInt(totalWeight);
+            // Return a invoker based on the random value.
+            for (int i = 0; i &lt; leastCount; i++) {
+                int leastIndex = leastIndexs[i];
+                offsetWeight -= getWeight(invokers.get(leastIndex), invocation);
+                if (offsetWeight &lt;= 0)
+                    return invokers.get(leastIndex);
+            }
+        }
+        // If all invokers have the same weight value or totalWeight=0, return evenly.
+        return invokers.get(leastIndexs[random.nextInt(leastCount)]);
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="5consistenthashloadbalance一致性hash算法">(5).ConsistentHashLoadBalance一致性hash算法</h3>
+<ul>
+<li>首先根据ip或者其他的信息为缓存节点生成一个hash，</li>
+<li>并将这个hash投射到[0,2^64-1]的圆环上。</li>
+<li>当有查询或写入请求时，则为根据相应规则生成的key，key生成一个hash值。然后查找第一个大于或等于该hash值的缓存节点;</li>
+<li>上一步查找节点挂了，则在下一次查询或写入缓存时，为缓存项查找另一个大于其hash值的缓存节点即可。</li>
+<li>数据倾斜问题：由于节点不够分散，导致大量请求落到了同一个节点上，而其他节点只会接收到了少量请求的情况。
+<ul>
+<li>虚拟节点</li>
+</ul>
+</li>
+</ul>
+<h4 id="adoselect-1">a.doSelect</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private final ConcurrentMap&lt;String, ConsistentHashSelector&lt;?&gt;&gt; selectors = new ConcurrentHashMap&lt;String, ConsistentHashSelector&lt;?&gt;&gt;();
+
+   @SuppressWarnings(&#34;unchecked&#34;)
+   @Override
+   protected &lt;T&gt; Invoker&lt;T&gt; doSelect(List&lt;Invoker&lt;T&gt;&gt; invokers, URL url, Invocation invocation) {
+       String key = invokers.get(0).getUrl().getServiceKey() + &#34;.&#34; + invocation.getMethodName();
+       int identityHashCode = System.identityHashCode(invokers);
+       ConsistentHashSelector&lt;T&gt; selector = (ConsistentHashSelector&lt;T&gt;) selectors.get(key);
+        // 如果 invokers 是一个新的 List 对象，意味着服务提供者数量发生了变化，可能新增也可能减少了。
+       // 此时 selector.identityHashCode != identityHashCode 条件成立
+       if (selector == null || selector.identityHashCode != identityHashCode) {
+           selectors.put(key, new ConsistentHashSelector&lt;T&gt;(invokers, invocation.getMethodName(), identityHashCode));
+           selector = (ConsistentHashSelector&lt;T&gt;) selectors.get(key);
+       }
+       return selector.select(invocation);
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="bconsistenthashselector一致性hash算法核心类">b.ConsistentHashSelector一致性hash算法核心类</h4>
+<h5 id="1构建0264-1的圆环数据结构">(1).构建[0,2^64-1]的圆环数据结构</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">private final TreeMap&lt;Long, Invoker&lt;T&gt;&gt; virtualInvokers;
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="2创建圆环数据结构以及虚拟节点数量">(2).创建圆环数据结构以及虚拟节点数量</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">        ConsistentHashSelector(List&lt;Invoker&lt;T&gt;&gt; invokers, String methodName, int identityHashCode) {
+            //圆环数据结构
+            this.virtualInvokers = new TreeMap&lt;Long, Invoker&lt;T&gt;&gt;();
+            this.identityHashCode = identityHashCode;
+            URL url = invokers.get(0).getUrl();
+            //获取虚拟节点数量
+            this.replicaNumber = url.getMethodParameter(methodName, &#34;hash.nodes&#34;, 160);
+            //获取请求生产key参数
+            String[] index = Constants.COMMA_SPLIT_PATTERN.split(url.getMethodParameter(methodName, &#34;hash.arguments&#34;, &#34;0&#34;));
+            argumentIndex = new int[index.length];
+            for (int i = 0; i &lt; index.length; i++) {
+                argumentIndex[i] = Integer.parseInt(index[i]);
+            }
+            //将节点地址hash投射圆环数据结构上
+            //还用md5加密操作
+            for (Invoker&lt;T&gt; invoker : invokers) {
+                String address = invoker.getUrl().getAddress();
+                for (int i = 0; i &lt; replicaNumber / 4; i++) {
+                    byte[] digest = md5(address + i);
+                    for (int h = 0; h &lt; 4; h++) {
+                        long m = hash(digest, h);
+                        virtualInvokers.put(m, invoker);
+                    }
+                }
+            }
+        }
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="3hash-运用位操作运行尽量hash分散">(3).hash 运用位操作运行，尽量hash分散</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">private long hash(byte[] digest, int number) {
+          return (((long) (digest[3 + number * 4] &amp; 0xFF) &lt;&lt; 24)
+                  | ((long) (digest[2 + number * 4] &amp; 0xFF) &lt;&lt; 16)
+                  | ((long) (digest[1 + number * 4] &amp; 0xFF) &lt;&lt; 8)
+                  | (digest[number * 4] &amp; 0xFF))
+                  &amp; 0xFFFFFFFFL;
+      }  
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="4查询select">(4).查询select</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">     public Invoker&lt;T&gt; select(Invocation invocation) { 
+           //组装请求key
+           String key = toKey(invocation.getArguments());
+           //进行MD5加密进行hash
+           byte[] digest = md5(key);
+           return selectForKey(hash(digest, 0));
+       }
+
+       private String toKey(Object[] args) {
+           StringBuilder buf = new StringBuilder();
+           for (int i : argumentIndex) {
+               if (i &gt;= 0 &amp;&amp; i &lt; args.length) {
+                   buf.append(args[i]);
+               }
+           }
+           return buf.toString();
+       }
+
+       private Invoker&lt;T&gt; selectForKey(long hash) {
+           Invoker&lt;T&gt; invoker;
+           Long key = hash;
+           if (!virtualInvokers.containsKey(key)) {//是否hash相同值
+               //获取hash大于key集合；从小到大排序
+               SortedMap&lt;Long, Invoker&lt;T&gt;&gt; tailMap = virtualInvokers.tailMap(key);
+               if (tailMap.isEmpty()) {
+                   key = virtualInvokers.firstKey();
+               } else {
+                   key = tailMap.firstKey();
+               }
+           }
+           invoker = virtualInvokers.get(key);
+           return invoker;
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="5代理暴露接口调用方法">5.代理暴露接口调用方法</h2>
+<p>用代理对象处理；最终调用JavassistProxyFactory.getProxy方法</p>
+<p>最终调用JavassistProxyFactory.getProxy方法</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="nd">@SuppressWarnings</span><span class="o">(</span><span class="s">&#34;unchecked&#34;</span><span class="o">)</span>
+    <span class="kd">public</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">T</span> <span class="nf">getProxy</span><span class="o">(</span><span class="n">Invoker</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">invoker</span><span class="o">,</span> <span class="n">Class</span><span class="o">&lt;?&gt;[]</span> <span class="n">interfaces</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="o">(</span><span class="n">T</span><span class="o">)</span> <span class="n">Proxy</span><span class="o">.</span><span class="na">getProxy</span><span class="o">(</span><span class="n">interfaces</span><span class="o">).</span><span class="na">newInstance</span><span class="o">(</span><span class="k">new</span> <span class="n">InvokerInvocationHandler</span><span class="o">(</span><span class="n">invoker</span><span class="o">));</span>
+    <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="ainvokerinvocationhandler-调用服务方法都要经过invokerinvocationhandler处理">a).InvokerInvocationHandler 调用服务方法都要经过InvokerInvocationHandler处理</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">InvokerInvocationHandler</span> <span class="kd">implements</span> <span class="n">InvocationHandler</span> <span class="o">{</span>
+
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Invoker</span><span class="o">&lt;?&gt;</span> <span class="n">invoker</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="nf">InvokerInvocationHandler</span><span class="o">(</span><span class="n">Invoker</span><span class="o">&lt;?&gt;</span> <span class="n">handler</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">invoker</span> <span class="o">=</span> <span class="n">handler</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="n">Object</span> <span class="nf">invoke</span><span class="o">(</span><span class="n">Object</span> <span class="n">proxy</span><span class="o">,</span> <span class="n">Method</span> <span class="n">method</span><span class="o">,</span> <span class="n">Object</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
+        <span class="n">String</span> <span class="n">methodName</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="na">getName</span><span class="o">();</span>
+        <span class="n">Class</span><span class="o">&lt;?&gt;[]</span> <span class="n">parameterTypes</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="na">getParameterTypes</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">method</span><span class="o">.</span><span class="na">getDeclaringClass</span><span class="o">()</span> <span class="o">==</span> <span class="n">Object</span><span class="o">.</span><span class="na">class</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">method</span><span class="o">.</span><span class="na">invoke</span><span class="o">(</span><span class="n">invoker</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">if</span> <span class="o">(</span><span class="s">&#34;toString&#34;</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">methodName</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="n">parameterTypes</span><span class="o">.</span><span class="na">length</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">invoker</span><span class="o">.</span><span class="na">toString</span><span class="o">();</span>
+        <span class="o">}</span>
+        <span class="k">if</span> <span class="o">(</span><span class="s">&#34;hashCode&#34;</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">methodName</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="n">parameterTypes</span><span class="o">.</span><span class="na">length</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">invoker</span><span class="o">.</span><span class="na">hashCode</span><span class="o">();</span>
+        <span class="o">}</span>
+        <span class="k">if</span> <span class="o">(</span><span class="s">&#34;equals&#34;</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">methodName</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="n">parameterTypes</span><span class="o">.</span><span class="na">length</span> <span class="o">==</span> <span class="n">1</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">invoker</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">args</span><span class="o">[</span><span class="n">0</span><span class="o">]);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">invoker</span><span class="o">.</span><span class="na">invoke</span><span class="o">(</span><span class="k">new</span> <span class="n">RpcInvocation</span><span class="o">(</span><span class="n">method</span><span class="o">,</span> <span class="n">args</span><span class="o">)).</span><span class="na">recreate</span><span class="o">();</span>
+    <span class="o">}</span>
+
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>执行流程：</p>
+<ul>
+<li>MockClusterInvoker#invoke</li>
+<li>FailoverClusterInvoker#invoke</li>
+<li>Router#route</li>
+<li>LoadBalance#select</li>
+<li>DubboInvoker#doInvoke</li>
+<li>ExchangeClient#request</li>
+</ul>
+<h3 id="1dubboinvokerdoinvoke">(1).DubboInvoker#doInvoke</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="n">Result</span> <span class="nf">doInvoke</span><span class="o">(</span><span class="kd">final</span> <span class="n">Invocation</span> <span class="n">invocation</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
+        <span class="n">RpcInvocation</span> <span class="n">inv</span> <span class="o">=</span> <span class="o">(</span><span class="n">RpcInvocation</span><span class="o">)</span> <span class="n">invocation</span><span class="o">;</span>
+        <span class="kd">final</span> <span class="n">String</span> <span class="n">methodName</span> <span class="o">=</span> <span class="n">RpcUtils</span><span class="o">.</span><span class="na">getMethodName</span><span class="o">(</span><span class="n">invocation</span><span class="o">);</span>
+        <span class="n">inv</span><span class="o">.</span><span class="na">setAttachment</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">PATH_KEY</span><span class="o">,</span> <span class="n">getUrl</span><span class="o">().</span><span class="na">getPath</span><span class="o">());</span>
+        <span class="n">inv</span><span class="o">.</span><span class="na">setAttachment</span><span class="o">(</span><span class="n">Constants</span><span class="o">.</span><span class="na">VERSION_KEY</span><span class="o">,</span> <span class="n">version</span><span class="o">);</span>
+
+        <span class="n">ExchangeClient</span> <span class="n">currentClient</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">clients</span><span class="o">.</span><span class="na">length</span> <span class="o">==</span> <span class="n">1</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">currentClient</span> <span class="o">=</span> <span class="n">clients</span><span class="o">[</span><span class="n">0</span><span class="o">];</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="n">currentClient</span> <span class="o">=</span> <span class="n">clients</span><span class="o">[</span><span class="n">index</span><span class="o">.</span><span class="na">getAndIncrement</span><span class="o">()</span> <span class="o">%</span> <span class="n">clients</span><span class="o">.</span><span class="na">length</span><span class="o">];</span>
+        <span class="o">}</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="kt">boolean</span> <span class="n">isAsync</span> <span class="o">=</span> <span class="n">RpcUtils</span><span class="o">.</span><span class="na">isAsync</span><span class="o">(</span><span class="n">getUrl</span><span class="o">(),</span> <span class="n">invocation</span><span class="o">);</span>
+            <span class="kt">boolean</span> <span class="n">isOneway</span> <span class="o">=</span> <span class="n">RpcUtils</span><span class="o">.</span><span class="na">isOneway</span><span class="o">(</span><span class="n">getUrl</span><span class="o">(),</span> <span class="n">invocation</span><span class="o">);</span>
+            <span class="kt">int</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">getUrl</span><span class="o">().</span><span class="na">getMethodParameter</span><span class="o">(</span><span class="n">methodName</span><span class="o">,</span> <span class="n">Constants</span><span class="o">.</span><span class="na">TIMEOUT_KEY</span><span class="o">,</span> <span class="n">Constants</span><span class="o">.</span><span class="na">DEFAULT_TIMEOUT</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">isOneway</span><span class="o">)</span> <span class="o">{</span> <span class="c1">//单向处理
+</span><span class="c1"></span>                <span class="kt">boolean</span> <span class="n">isSent</span> <span class="o">=</span> <span class="n">getUrl</span><span class="o">().</span><span class="na">getMethodParameter</span><span class="o">(</span><span class="n">methodName</span><span class="o">,</span> <span class="n">Constants</span><span class="o">.</span><span class="na">SENT_KEY</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+                <span class="n">currentClient</span><span class="o">.</span><span class="na">send</span><span class="o">(</span><span class="n">inv</span><span class="o">,</span> <span class="n">isSent</span><span class="o">);</span>
+                <span class="n">RpcContext</span><span class="o">.</span><span class="na">getContext</span><span class="o">().</span><span class="na">setFuture</span><span class="o">(</span><span class="kc">null</span><span class="o">);</span>
+                <span class="k">return</span> <span class="k">new</span> <span class="n">RpcResult</span><span class="o">();</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">isAsync</span><span class="o">)</span> <span class="o">{</span> <span class="c1">//异步处理
+</span><span class="c1"></span>                <span class="n">ResponseFuture</span> <span class="n">future</span> <span class="o">=</span> <span class="n">currentClient</span><span class="o">.</span><span class="na">request</span><span class="o">(</span><span class="n">inv</span><span class="o">,</span> <span class="n">timeout</span><span class="o">);</span>
+                <span class="n">RpcContext</span><span class="o">.</span><span class="na">getContext</span><span class="o">().</span><span class="na">setFuture</span><span class="o">(</span><span class="k">new</span> <span class="n">FutureAdapter</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;(</span><span class="n">future</span><span class="o">));</span>
+                <span class="k">return</span> <span class="k">new</span> <span class="n">RpcResult</span><span class="o">();</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>   <span class="c1">//双向处理
+</span><span class="c1"></span>                <span class="n">RpcContext</span><span class="o">.</span><span class="na">getContext</span><span class="o">().</span><span class="na">setFuture</span><span class="o">(</span><span class="kc">null</span><span class="o">);</span>
+                <span class="k">return</span> <span class="o">(</span><span class="n">Result</span><span class="o">)</span> <span class="n">currentClient</span><span class="o">.</span><span class="na">request</span><span class="o">(</span><span class="n">inv</span><span class="o">,</span> <span class="n">timeout</span><span class="o">).</span><span class="na">get</span><span class="o">();</span><span class="c1">//等待结果
+</span><span class="c1"></span>            <span class="o">}</span>
+        <span class="o">}...</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2exchangeclientrequest返回defaultfuture">(2).ExchangeClient#request返回DefaultFuture</h3>
+<p>HeaderExchangeChannel</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">public</span> <span class="n">ResponseFuture</span> <span class="nf">request</span><span class="o">(</span><span class="n">Object</span> <span class="n">request</span><span class="o">,</span> <span class="kt">int</span> <span class="n">timeout</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">RemotingException</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">closed</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">RemotingException</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">getLocalAddress</span><span class="o">(),</span> <span class="kc">null</span><span class="o">,</span> <span class="s">&#34;Failed to send request &#34;</span> <span class="o">+</span> <span class="n">request</span> <span class="o">+</span> <span class="s">&#34;, cause: The channel &#34;</span> <span class="o">+</span> <span class="k">this</span> <span class="o">+</span> <span class="s">&#34; is closed!&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="c1">// create request.
+</span><span class="c1"></span>        <span class="n">Request</span> <span class="n">req</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Request</span><span class="o">();</span>
+        <span class="n">req</span><span class="o">.</span><span class="na">setVersion</span><span class="o">(</span><span class="s">&#34;2.0.0&#34;</span><span class="o">);</span>
+        <span class="n">req</span><span class="o">.</span><span class="na">setTwoWay</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+        <span class="n">req</span><span class="o">.</span><span class="na">setData</span><span class="o">(</span><span class="n">request</span><span class="o">);</span>
+        <span class="n">DefaultFuture</span> <span class="n">future</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DefaultFuture</span><span class="o">(</span><span class="n">channel</span><span class="o">,</span> <span class="n">req</span><span class="o">,</span> <span class="n">timeout</span><span class="o">);</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">channel</span><span class="o">.</span><span class="na">send</span><span class="o">(</span><span class="n">req</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">RemotingException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">future</span><span class="o">.</span><span class="na">cancel</span><span class="o">();</span>
+            <span class="k">throw</span> <span class="n">e</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">future</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="6nettyclient">6.NettyClient</h2>
+<h3 id="1构造">(1).构造</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  public NettyClient(final URL url, final ChannelHandler handler) throws RemotingException {
+      //   url = url.addParameterIfAbsent(Constants.THREADPOOL_KEY, Constants.DEFAULT_CLIENT_THREADPOOL);
+      //   new MultiMessageHandler(new HeartbeatHandler(ExtensionLoader.getExtensionLoader(Dispatcher.class)
+      //                  .getAdaptiveExtension().dispatch(handler, url)));
+       super(url, wrapChannelHandler(url, handler));
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>也运用的线程池，cached</li>
+</ul>
+<h3 id="2doopen-这里是客户端链接netty配置">(2).doOpen 这里是客户端链接netty配置</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    @Override
+    protected void doOpen() throws Throwable {
+        NettyHelper.setNettyLoggerFactory();
+        bootstrap = new ClientBootstrap(channelFactory);
+        // config
+        // @see org.jboss.netty.channel.socket.SocketChannelConfig
+        bootstrap.setOption(&#34;keepAlive&#34;, true);
+        bootstrap.setOption(&#34;tcpNoDelay&#34;, true);
+        bootstrap.setOption(&#34;connectTimeoutMillis&#34;, getTimeout());
+        final NettyHandler nettyHandler = new NettyHandler(getUrl(), this);
+        bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+            public ChannelPipeline getPipeline() {
+                NettyCodecAdapter adapter = new NettyCodecAdapter(getCodec(), getUrl(), NettyClient.this);
+                ChannelPipeline pipeline = Channels.pipeline();
+                pipeline.addLast(&#34;decoder&#34;, adapter.getDecoder());
+                pipeline.addLast(&#34;encoder&#34;, adapter.getEncoder());
+                pipeline.addLast(&#34;handler&#34;, nettyHandler);
+                return pipeline;
+            }
+        });
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2abstractclientconnectnettyclientdoconnect正在链接">(2).AbstractClient#connect=&gt;NettyClient#doConnect正在链接</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   protected void doConnect() throws Throwable {
+       long start = System.currentTimeMillis();
+       ChannelFuture future = bootstrap.connect(getConnectAddress());
+       try {
+           boolean ret = future.awaitUninterruptibly(3000, TimeUnit.MILLISECONDS);
+
+           if (ret &amp;&amp; future.isSuccess()) {
+               Channel newChannel = future.channel();
+               try {
+                   // Close old channel
+                   Channel oldChannel = NettyClient.this.channel; // copy reference
+                   ...
+               } finally {
+                   if (NettyClient.this.isClosed()) {
+                       try {
+                           if (logger.isInfoEnabled()) {
+                               logger.info(&#34;Close new netty channel &#34; + newChannel + &#34;, because the client closed.&#34;);
+                           }
+                           newChannel.close();
+                       } finally {
+                           NettyClient.this.channel = null;
+                           NettyChannel.removeChannelIfDisconnected(newChannel);
+                       }
+                   } else {
+                       //channel赋值
+                       NettyClient.this.channel = newChannel;
+                   }
+               }
+           }...
+       } finally {
+           if (!isConnected()) {
+               //future.cancel(true);
+           }
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3nettyhandler委托处理channelhandler具体不说明">(3).NettyHandler委托处理ChannelHandler，具体不说明</h3>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2018-12-20 20:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/dubbo/">dubbo</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/netty/01.Bytebuf/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">ByteBuf工作原理</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/dubbo/02.dubbo%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83/">
+        <span class="next-text nav-default">dubbo服务发布</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

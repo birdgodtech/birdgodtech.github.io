@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>DelayQueue on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/DelayQueue/</link>
+    <description>Recent content in DelayQueue on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Thu, 15 Jun 2017 18:11:08 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/DelayQueue/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>DelayQueue</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/04.DelayQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Thu, 15 Jun 2017 18:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/04.DelayQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>DelayQueue(延时队列)源码分析 简介 DelayQueue是一种无界的阻塞队列，队列里只允许放入可以&amp;quot;延期&amp;quot;的元素</description>
+    </item>
+    
+  </channel>
+</rss>

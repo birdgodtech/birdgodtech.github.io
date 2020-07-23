@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ApplicationContext源码解析 - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="ApplicationContext源码解析 一、ApplicationContext体系图 ApplicationContext接口,它由Be" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/spring/04.ApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" />
+<link href="/post/spring/04.ApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/spring/04.ApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="ApplicationContext源码解析" />
+<meta property="og:description" content="ApplicationContext源码解析 一、ApplicationContext体系图 ApplicationContext接口,它由Be" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/spring/04.ApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" />
+<meta property="article:published_time" content="2018-10-20T22:18:08+00:00" />
+<meta property="article:modified_time" content="2018-10-20T22:18:08+00:00" />
+<meta itemprop="name" content="ApplicationContext源码解析">
+<meta itemprop="description" content="ApplicationContext源码解析 一、ApplicationContext体系图 ApplicationContext接口,它由Be">
+<meta itemprop="datePublished" content="2018-10-20T22:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2018-10-20T22:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="4008">
+
+
+
+<meta itemprop="keywords" content="spring ApplicationContext," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="ApplicationContext源码解析"/>
+<meta name="twitter:description" content="ApplicationContext源码解析 一、ApplicationContext体系图 ApplicationContext接口,它由Be"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">ApplicationContext源码解析</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2018-10-20 22:18 </span>
+      <div class="post-category">
+        <a href="/categories/spring/"> spring </a>
+        </div>
+      <span class="more-meta"> 约 4008 字 </span>
+      <span class="more-meta"> 预计阅读 8 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#一applicationcontext体系图">一、ApplicationContext体系图</a></li>
+    <li><a href="#二applicationcontext-refresh操作">二、ApplicationContext refresh操作</a>
+      <ul>
+        <li><a href="#1国际化">1、国际化</a></li>
+        <li><a href="#2事件广播applicationeventmulticaster">2、事件广播(ApplicationEventMulticaster)</a></li>
+        <li><a href="#1添加addapplicationlistener">1.添加addApplicationListener</a></li>
+        <li><a href="#2multicastevent广播事件">2.multicastEvent广播事件</a></li>
+        <li><a href="#3getapplicationlisteners-按类型获取所有applicationlistener">3.getApplicationListeners 按类型获取所有ApplicationListener</a></li>
+        <li><a href="#4applicationcontext-publishevent">4.ApplicationContext publishEvent</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2018-10-20T22:18:08" title="October 20, 2018">October 20, 2018</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="applicationcontext源码解析">ApplicationContext源码解析</h1>
+<h2 id="一applicationcontext体系图">一、ApplicationContext体系图</h2>
+<p><img src="/spring//spring20.png" alt=""></p>
+<p>ApplicationContext接口,它由BeanFactory接口派生而来，因而提供BeanFactory所有的功能。ApplicationContext以一种更向面向框架的方式工作以及对上下文进行分层和实现继承，ApplicationContext包还提供了以下的功能：</p>
+<ul>
+<li>MessageSource, 提供国际化的消息访问</li>
+<li>资源访问，如URL和文件</li>
+<li>事件传播</li>
+</ul>
+<h2 id="二applicationcontext-refresh操作">二、ApplicationContext refresh操作</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">      <span class="n">FileSystemXmlApplicationContext</span> <span class="n">applicationContext</span><span class="o">=</span><span class="k">new</span> <span class="n">FileSystemXmlApplicationContext</span><span class="o">(</span><span class="s">&#34;classpath:aspect.xml&#34;</span><span class="o">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>FileSystemXmlApplicationContext</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="nf">FileSystemXmlApplicationContext</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">configLocations</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">refresh</span><span class="o">,</span> <span class="n">ApplicationContext</span> <span class="n">parent</span><span class="o">)</span>
+           <span class="kd">throws</span> <span class="n">BeansException</span> <span class="o">{</span>
+
+       <span class="kd">super</span><span class="o">(</span><span class="n">parent</span><span class="o">);</span>
+       <span class="c1">//配置bean配置地址
+</span><span class="c1"></span>       <span class="n">setConfigLocations</span><span class="o">(</span><span class="n">configLocations</span><span class="o">);</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">refresh</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">refresh</span><span class="o">();</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>AbstractApplicationContext</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="nd">@Override</span>
+       <span class="kd">public</span> <span class="kt">void</span> <span class="nf">refresh</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">BeansException</span><span class="o">,</span> <span class="n">IllegalStateException</span> <span class="o">{</span>
+           <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">startupShutdownMonitor</span><span class="o">)</span> <span class="o">{</span>
+               <span class="c1">// Prepare this context for refreshing.
+</span><span class="c1"></span>               <span class="c1">//准备此上下文以进行刷新，设置其启动日期和活动标志以及执行属性源的任何初始化。
+</span><span class="c1"></span>               <span class="n">prepareRefresh</span><span class="o">();</span>
+   
+               <span class="c1">// Tell the subclass to refresh the internal bean factory.
+</span><span class="c1"></span>               <span class="c1">// 创建BeanFactory,处理XML 解析一下bean操作
+</span><span class="c1"></span>               <span class="n">ConfigurableListableBeanFactory</span> <span class="n">beanFactory</span> <span class="o">=</span> <span class="n">obtainFreshBeanFactory</span><span class="o">();</span>
+   
+               <span class="c1">// Prepare the bean factory for use in this context.
+</span><span class="c1"></span>               <span class="c1">// 准备工作，例如类加载器、事件处理器等
+</span><span class="c1"></span>               <span class="n">prepareBeanFactory</span><span class="o">(</span><span class="n">beanFactory</span><span class="o">);</span>
+   
+               <span class="k">try</span> <span class="o">{</span>
+                   <span class="c1">// Allows post-processing of the bean factory in context subclasses.
+</span><span class="c1"></span>                   <span class="c1">//为容器的某些子类指定特殊的BeanPost事件处理器
+</span><span class="c1"></span>                   <span class="n">postProcessBeanFactory</span><span class="o">(</span><span class="n">beanFactory</span><span class="o">);</span>
+   
+                   <span class="c1">// Invoke factory processors registered as beans in the context.
+</span><span class="c1"></span>                   <span class="c1">//调用所有注册的BeanFactoryPostProcessor的Bean
+</span><span class="c1"></span>                   <span class="c1">// 先处理ApplicationContext中BeanFactoryPostProcessors集合BeanDefinitionRegistryPostProcessor.postProcessBeanDefinitionRegistry
+</span><span class="c1"></span>                   <span class="c1">// 在处理beanFactory中BeanFactoryPostProcessors集合BeanDefinitionRegistryPostProcessor.postProcessBeanDefinitionRegistry
+</span><span class="c1"></span>                   <span class="c1">// 在处理所有BeanFactoryPostProcessor.postProcessBeanFactory
+</span><span class="c1"></span>                   <span class="n">invokeBeanFactoryPostProcessors</span><span class="o">(</span><span class="n">beanFactory</span><span class="o">);</span>
+   
+                   <span class="c1">// Register bean processors that intercept bean creation.
+</span><span class="c1"></span>                   <span class="c1">//在beanFactory获取BeanPostProcessor对象，注册到beanFactory;
+</span><span class="c1"></span>                   <span class="c1">//BeanPostProcessor 优先级排序处理
+</span><span class="c1"></span>                   <span class="n">registerBeanPostProcessors</span><span class="o">(</span><span class="n">beanFactory</span><span class="o">);</span>
+   
+                   <span class="c1">// Initialize message source for this context.
+</span><span class="c1"></span>                   <span class="c1">//初始化信息源，和国际化相关.
+</span><span class="c1"></span>                   <span class="n">initMessageSource</span><span class="o">();</span>
+   
+                   <span class="c1">// Initialize event multicaster for this context.
+</span><span class="c1"></span>                   <span class="c1">// 初始化容器事件传播器.
+</span><span class="c1"></span>                   <span class="n">initApplicationEventMulticaster</span><span class="o">();</span>
+   
+                   <span class="c1">// Initialize other special beans in specific context subclasses.
+</span><span class="c1"></span>                   <span class="c1">//调用子类的某些特殊Bean初始化方法
+</span><span class="c1"></span>                   <span class="n">onRefresh</span><span class="o">();</span>
+   
+                   <span class="c1">// Check for listener beans and register them.
+</span><span class="c1"></span>                   <span class="c1">//为事件传播器注册事件监听器.
+</span><span class="c1"></span>                   <span class="c1">// 添加applicationListeners
+</span><span class="c1"></span>                   <span class="c1">// 从beanFactory查询ApplicationListener
+</span><span class="c1"></span>                   <span class="c1">// 广播earlyApplicationEvents集合
+</span><span class="c1"></span>                   <span class="n">registerListeners</span><span class="o">();</span>
+   
+                   <span class="c1">// Instantiate all remaining (non-lazy-init) singletons.
+</span><span class="c1"></span>                   <span class="c1">//初始化所有剩余的单态Bean.
+</span><span class="c1"></span>                   <span class="c1">//设置BeanFactory的ConversionService
+</span><span class="c1"></span>                   <span class="c1">//对配置了lazy-init属性的单态模式Bean进行预实例化处理
+</span><span class="c1"></span>                   <span class="n">finishBeanFactoryInitialization</span><span class="o">(</span><span class="n">beanFactory</span><span class="o">);</span>
+   
+                   <span class="c1">// Last step: publish corresponding event.
+</span><span class="c1"></span>                   <span class="c1">//初始化容器的生命周期事件处理器，并发布ContextRefreshedEvent事件
+</span><span class="c1"></span>                   <span class="n">finishRefresh</span><span class="o">();</span>
+               <span class="o">}</span>
+   
+               <span class="k">catch</span> <span class="o">(</span><span class="n">BeansException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">logger</span><span class="o">.</span><span class="na">isWarnEnabled</span><span class="o">())</span> <span class="o">{</span>
+                       <span class="n">logger</span><span class="o">.</span><span class="na">warn</span><span class="o">(</span><span class="s">&#34;Exception encountered during context initialization - &#34;</span> <span class="o">+</span>
+                               <span class="s">&#34;cancelling refresh attempt: &#34;</span> <span class="o">+</span> <span class="n">ex</span><span class="o">);</span>
+                   <span class="o">}</span>
+   
+                   <span class="c1">// Destroy already created singletons to avoid dangling resources.
+</span><span class="c1"></span>                   <span class="n">destroyBeans</span><span class="o">();</span>
+   
+                   <span class="c1">// Reset &#39;active&#39; flag.
+</span><span class="c1"></span>                   <span class="n">cancelRefresh</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+   
+                   <span class="c1">// Propagate exception to caller.
+</span><span class="c1"></span>                   <span class="k">throw</span> <span class="n">ex</span><span class="o">;</span>
+               <span class="o">}</span>
+   
+               <span class="k">finally</span> <span class="o">{</span>
+                   <span class="c1">// Reset common introspection caches in Spring&#39;s core, since we
+</span><span class="c1"></span>                   <span class="c1">// might not ever need metadata for singleton beans anymore...
+</span><span class="c1"></span>                   <span class="n">resetCommonCaches</span><span class="o">();</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1国际化">1、国际化</h3>
+<p><img src="/spring//spring21.png" alt=""></p>
+<ol>
+<li>DelegatingMessageSource： 消息源解析委派类（用户未指定时，SpringContext默认使用当前类),功能比较简单：将字符串和参数数组格式化为一个消息字符串</li>
+<li>ResourceBundleMessageSource 依托JDK自带ResourceBundle加载资源，支持绝对路径和工程路径，支持文件为.class文件和.properties。</li>
+<li>ReloadResourceBundleMessageSource依托spring的ResourceLoader加载Resource资源,功能更加强大，同时支持.properties和.xml文件。缓存时间;</li>
+</ol>
+<p>如例子:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="o">&lt;</span><span class="n">bean</span> <span class="n">id</span><span class="o">=</span><span class="s">&#34;messageSource&#34;</span>
+             <span class="n">class</span><span class="o">=</span><span class="s">&#34;org.springframework.context.support.ResourceBundleMessageSource&#34;</span><span class="o">&gt;</span>
+             <span class="o">&lt;</span><span class="n">property</span> <span class="n">name</span><span class="o">=</span><span class="s">&#34;basenames&#34;</span><span class="o">&gt;</span>
+                 <span class="o">&lt;</span><span class="n">list</span><span class="o">&gt;</span>
+                     <span class="o">&lt;</span><span class="n">value</span><span class="o">&gt;</span><span class="n">messages</span><span class="o">&lt;/</span><span class="n">value</span><span class="o">&gt;</span>
+                 <span class="o">&lt;/</span><span class="n">list</span><span class="o">&gt;</span>
+             <span class="o">&lt;/</span><span class="n">property</span><span class="o">&gt;</span>
+         <span class="o">&lt;/</span><span class="n">bean</span><span class="o">&gt;</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="1getmessagestring-code-object-args-locale-locale获取国际化对应值">(1)、getMessage(String code, Object[] args, Locale locale)获取国际化对应值</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+
+   <span class="kd">public</span> <span class="kd">final</span> <span class="n">String</span> <span class="nf">getMessage</span><span class="o">(</span><span class="n">String</span> <span class="n">code</span><span class="o">,</span> <span class="n">Object</span><span class="o">[]</span> <span class="n">args</span><span class="o">,</span> <span class="n">Locale</span> <span class="n">locale</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">NoSuchMessageException</span> <span class="o">{</span>
+       <span class="c1">//1.到messageSource内查找
+</span><span class="c1"></span>       <span class="n">String</span> <span class="n">msg</span> <span class="o">=</span> <span class="n">getMessageInternal</span><span class="o">(</span><span class="n">code</span><span class="o">,</span> <span class="n">args</span><span class="o">,</span> <span class="n">locale</span><span class="o">);</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">msg</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">return</span> <span class="n">msg</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="c1">//2.查找默认的Message
+</span><span class="c1"></span>       <span class="c1">//  useCodeAsDefaultMessage为true 返回code,
+</span><span class="c1"></span>       <span class="n">String</span> <span class="n">fallback</span> <span class="o">=</span> <span class="n">getDefaultMessage</span><span class="o">(</span><span class="n">code</span><span class="o">);</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">fallback</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">return</span> <span class="n">fallback</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="k">throw</span> <span class="k">new</span> <span class="n">NoSuchMessageException</span><span class="o">(</span><span class="n">code</span><span class="o">,</span> <span class="n">locale</span><span class="o">);</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2messagesource内查找">(2)、messageSource内查找</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="kd">protected</span> <span class="n">String</span> <span class="nf">getMessageInternal</span><span class="o">(</span><span class="n">String</span> <span class="n">code</span><span class="o">,</span> <span class="n">Object</span><span class="o">[]</span> <span class="n">args</span><span class="o">,</span> <span class="n">Locale</span> <span class="n">locale</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">code</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">locale</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">locale</span> <span class="o">=</span> <span class="n">Locale</span><span class="o">.</span><span class="na">getDefault</span><span class="o">();</span>
+       <span class="o">}</span>
+       <span class="n">Object</span><span class="o">[]</span> <span class="n">argsToUse</span> <span class="o">=</span> <span class="n">args</span><span class="o">;</span>
+  
+       <span class="k">if</span> <span class="o">(!</span><span class="n">isAlwaysUseMessageFormat</span><span class="o">()</span> <span class="o">&amp;&amp;</span> <span class="n">ObjectUtils</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">(</span><span class="n">args</span><span class="o">))</span> <span class="o">{</span>
+           <span class="c1">// Optimized resolution: no arguments to apply,
+</span><span class="c1"></span>           <span class="c1">// therefore no MessageFormat needs to be involved.
+</span><span class="c1"></span>           <span class="c1">//  优化的解决方案：没有要应用的参数，因此不需要涉及MessageFormat。
+</span><span class="c1"></span>           <span class="c1">// Note that the default implementation still uses MessageFormat;
+</span><span class="c1"></span>           <span class="c1">// this can be overridden in specific subclasses.
+</span><span class="c1"></span>           <span class="c1">// 请注意，默认实现仍使用MessageFormat; 这可以在特定的子类中重写。
+</span><span class="c1"></span>           <span class="n">String</span> <span class="n">message</span> <span class="o">=</span> <span class="n">resolveCodeWithoutArguments</span><span class="o">(</span><span class="n">code</span><span class="o">,</span> <span class="n">locale</span><span class="o">);</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">message</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+               <span class="k">return</span> <span class="n">message</span><span class="o">;</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+  
+       <span class="k">else</span> <span class="o">{</span>
+           <span class="c1">// Resolve arguments eagerly, for the case where the message
+</span><span class="c1"></span>           <span class="c1">// is defined in a parent MessageSource but resolvable arguments
+</span><span class="c1"></span>           <span class="c1">// are defined in the child MessageSource.
+</span><span class="c1"></span>           <span class="c1">//处理参数
+</span><span class="c1"></span>           <span class="c1">//  参数类型是MessageSourceResolvable，触发getMessage获取消息
+</span><span class="c1"></span>           <span class="n">argsToUse</span> <span class="o">=</span> <span class="n">resolveArguments</span><span class="o">(</span><span class="n">args</span><span class="o">,</span> <span class="n">locale</span><span class="o">);</span>
+  
+           <span class="n">MessageFormat</span> <span class="n">messageFormat</span> <span class="o">=</span> <span class="n">resolveCode</span><span class="o">(</span><span class="n">code</span><span class="o">,</span> <span class="n">locale</span><span class="o">);</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">messageFormat</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+               <span class="kd">synchronized</span> <span class="o">(</span><span class="n">messageFormat</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="k">return</span> <span class="n">messageFormat</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="n">argsToUse</span><span class="o">);</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+  
+       <span class="c1">// Check locale-independent common messages for the given message code.
+</span><span class="c1"></span>       <span class="c1">//从公共properties查询
+</span><span class="c1"></span>       <span class="n">Properties</span> <span class="n">commonMessages</span> <span class="o">=</span> <span class="n">getCommonMessages</span><span class="o">();</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">commonMessages</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">String</span> <span class="n">commonMessage</span> <span class="o">=</span> <span class="n">commonMessages</span><span class="o">.</span><span class="na">getProperty</span><span class="o">(</span><span class="n">code</span><span class="o">);</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">commonMessage</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+               <span class="c1">//MessageSourceSupport中把FormatMessage缓存起来；
+</span><span class="c1"></span>               <span class="k">return</span> <span class="n">formatMessage</span><span class="o">(</span><span class="n">commonMessage</span><span class="o">,</span> <span class="n">args</span><span class="o">,</span> <span class="n">locale</span><span class="o">);</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+  
+       <span class="c1">// Not found -&gt; check parent, if any.
+</span><span class="c1"></span>       <span class="c1">//往父类查找
+</span><span class="c1"></span>       <span class="k">return</span> <span class="n">getMessageFromParent</span><span class="o">(</span><span class="n">code</span><span class="o">,</span> <span class="n">argsToUse</span><span class="o">,</span> <span class="n">locale</span><span class="o">);</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="3-文件解析">(3)、 文件解析</h4>
+<p>配置文件解析过程为：</p>
+<ul>
+<li>
+<p>a)从baseNames的set中获取数据，</p>
+</li>
+<li>
+<p>b)然后依次调用java的ResourceBundle进行解析</p>
+</li>
+<li>
+<p>c)从解析的结果获取对应code的值</p>
+</li>
+</ul>
+<p>注：此处我们可以在AbstractResourceBasedMessageSource中找到此bean的注入参数主要有以下几个：
+basenameSet（文件列表set）、defaultEncoding（文件默认编码）、fallbackToSystemLocale（是否使用系统默认的编码）、cacheMillis（cache时间），</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">protected</span> <span class="n">MessageFormat</span> <span class="nf">resolveCode</span><span class="o">(</span><span class="n">String</span> <span class="n">code</span><span class="o">,</span> <span class="n">Locale</span> <span class="n">locale</span><span class="o">)</span> <span class="o">{</span>
+       <span class="n">Set</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">basenames</span> <span class="o">=</span> <span class="n">getBasenameSet</span><span class="o">();</span>
+       <span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="n">basename</span> <span class="o">:</span> <span class="n">basenames</span><span class="o">)</span> <span class="o">{</span>
+           <span class="c1">//判断是否设定了缓存时间，默认-1为永久保存ResourceBundle，如果大于0，直接重新获取；
+</span><span class="c1"></span>           <span class="n">ResourceBundle</span> <span class="n">bundle</span> <span class="o">=</span> <span class="n">getResourceBundle</span><span class="o">(</span><span class="n">basename</span><span class="o">,</span> <span class="n">locale</span><span class="o">);</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">bundle</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+               <span class="c1">//获取MessageFormat
+</span><span class="c1"></span>               <span class="c1">//先从map缓存中获取,无在中ResourceBundle获取，在保存缓存中；
+</span><span class="c1"></span>               <span class="n">MessageFormat</span> <span class="n">messageFormat</span> <span class="o">=</span> <span class="n">getMessageFormat</span><span class="o">(</span><span class="n">bundle</span><span class="o">,</span> <span class="n">code</span><span class="o">,</span> <span class="n">locale</span><span class="o">);</span>
+               <span class="k">if</span> <span class="o">(</span><span class="n">messageFormat</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="k">return</span> <span class="n">messageFormat</span><span class="o">;</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+       <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+   <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="4获取messageformat">(4)、获取MessageFormat</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">protected</span> <span class="n">MessageFormat</span> <span class="nf">getMessageFormat</span><span class="o">(</span><span class="n">ResourceBundle</span> <span class="n">bundle</span><span class="o">,</span> <span class="n">String</span> <span class="n">code</span><span class="o">,</span> <span class="n">Locale</span> <span class="n">locale</span><span class="o">)</span>
+           <span class="kd">throws</span> <span class="n">MissingResourceException</span> <span class="o">{</span>
+
+       <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">cachedBundleMessageFormats</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">Locale</span><span class="o">,</span> <span class="n">MessageFormat</span><span class="o">&gt;&gt;</span> <span class="n">codeMap</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">cachedBundleMessageFormats</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">bundle</span><span class="o">);</span>
+           <span class="n">Map</span><span class="o">&lt;</span><span class="n">Locale</span><span class="o">,</span> <span class="n">MessageFormat</span><span class="o">&gt;</span> <span class="n">localeMap</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">codeMap</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">localeMap</span> <span class="o">=</span> <span class="n">codeMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">code</span><span class="o">);</span>
+               <span class="k">if</span> <span class="o">(</span><span class="n">localeMap</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="n">MessageFormat</span> <span class="n">result</span> <span class="o">=</span> <span class="n">localeMap</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">locale</span><span class="o">);</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">result</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                       <span class="k">return</span> <span class="n">result</span><span class="o">;</span>
+                   <span class="o">}</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+
+           <span class="n">String</span> <span class="n">msg</span> <span class="o">=</span> <span class="n">getStringOrNull</span><span class="o">(</span><span class="n">bundle</span><span class="o">,</span> <span class="n">code</span><span class="o">);</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">msg</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+               <span class="k">if</span> <span class="o">(</span><span class="n">codeMap</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="n">codeMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">Locale</span><span class="o">,</span> <span class="n">MessageFormat</span><span class="o">&gt;&gt;();</span>
+                   <span class="k">this</span><span class="o">.</span><span class="na">cachedBundleMessageFormats</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">bundle</span><span class="o">,</span> <span class="n">codeMap</span><span class="o">);</span>
+               <span class="o">}</span>
+               <span class="k">if</span> <span class="o">(</span><span class="n">localeMap</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="n">localeMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">Locale</span><span class="o">,</span> <span class="n">MessageFormat</span><span class="o">&gt;();</span>
+                   <span class="n">codeMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">code</span><span class="o">,</span> <span class="n">localeMap</span><span class="o">);</span>
+               <span class="o">}</span>
+               <span class="n">MessageFormat</span> <span class="n">result</span> <span class="o">=</span> <span class="n">createMessageFormat</span><span class="o">(</span><span class="n">msg</span><span class="o">,</span> <span class="n">locale</span><span class="o">);</span>
+               <span class="n">localeMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">locale</span><span class="o">,</span> <span class="n">result</span><span class="o">);</span>
+               <span class="k">return</span> <span class="n">result</span><span class="o">;</span>
+           <span class="o">}</span>
+
+           <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2事件广播applicationeventmulticaster">2、事件广播(ApplicationEventMulticaster)</h3>
+<p><img src="/spring//spring22.png" alt=""></p>
+<p>ApplicationEventMulticaster实现类SimpleApplicationEventMulticaster；观察者模式一样；</p>
+<h3 id="1添加addapplicationlistener">1.添加addApplicationListener</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+
+  <span class="kd">private</span> <span class="kd">final</span> <span class="n">ListenerRetriever</span> <span class="n">defaultRetriever</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ListenerRetriever</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+
+  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">addApplicationListener</span><span class="o">(</span><span class="n">ApplicationListener</span><span class="o">&lt;?&gt;</span> <span class="n">listener</span><span class="o">)</span> <span class="o">{</span>
+      <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">retrievalMutex</span><span class="o">)</span> <span class="o">{</span>
+          <span class="c1">// Explicitly remove target for a proxy, if registered already,
+</span><span class="c1"></span>          <span class="c1">// in order to avoid double invocations of the same listener.
+</span><span class="c1"></span>          <span class="n">Object</span> <span class="n">singletonTarget</span> <span class="o">=</span> <span class="n">AopProxyUtils</span><span class="o">.</span><span class="na">getSingletonTarget</span><span class="o">(</span><span class="n">listener</span><span class="o">);</span>
+          <span class="k">if</span> <span class="o">(</span><span class="n">singletonTarget</span> <span class="k">instanceof</span> <span class="n">ApplicationListener</span><span class="o">)</span> <span class="o">{</span>
+              <span class="k">this</span><span class="o">.</span><span class="na">defaultRetriever</span><span class="o">.</span><span class="na">applicationListeners</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">singletonTarget</span><span class="o">);</span>
+          <span class="o">}</span>
+          <span class="k">this</span><span class="o">.</span><span class="na">defaultRetriever</span><span class="o">.</span><span class="na">applicationListeners</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">listener</span><span class="o">);</span>
+          <span class="k">this</span><span class="o">.</span><span class="na">retrieverCache</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+      <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">addApplicationListenerBean</span><span class="o">(</span><span class="n">String</span> <span class="n">listenerBeanName</span><span class="o">)</span> <span class="o">{</span>
+      <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">retrievalMutex</span><span class="o">)</span> <span class="o">{</span>
+          <span class="k">this</span><span class="o">.</span><span class="na">defaultRetriever</span><span class="o">.</span><span class="na">applicationListenerBeans</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">listenerBeanName</span><span class="o">);</span>
+          <span class="k">this</span><span class="o">.</span><span class="na">retrieverCache</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+      <span class="o">}</span>
+  <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>事件保存在ListenerRetriever对象中,</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kd">class</span> <span class="nc">ListenerRetriever</span> <span class="o">{</span>
+       <span class="c1">//保存ApplicationListener集合
+</span><span class="c1"></span>       <span class="kd">public</span> <span class="kd">final</span> <span class="n">Set</span><span class="o">&lt;</span><span class="n">ApplicationListener</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">applicationListeners</span><span class="o">;</span>
+       <span class="c1">//保存ApplicationListener的beanName集合
+</span><span class="c1"></span>       <span class="kd">public</span> <span class="kd">final</span> <span class="n">Set</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">applicationListenerBeans</span><span class="o">;</span>
+       <span class="c1">//验证是否相同ApplicationListener
+</span><span class="c1"></span>       <span class="kd">private</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">preFiltered</span><span class="o">;</span>
+
+       <span class="kd">public</span> <span class="nf">ListenerRetriever</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">preFiltered</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">this</span><span class="o">.</span><span class="na">applicationListeners</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LinkedHashSet</span><span class="o">&lt;</span><span class="n">ApplicationListener</span><span class="o">&lt;?&gt;&gt;();</span>
+           <span class="k">this</span><span class="o">.</span><span class="na">applicationListenerBeans</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LinkedHashSet</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;();</span>
+           <span class="k">this</span><span class="o">.</span><span class="na">preFiltered</span> <span class="o">=</span> <span class="n">preFiltered</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="c1">//获取所有ApplicationListener集合
+</span><span class="c1"></span>       <span class="kd">public</span> <span class="n">Collection</span><span class="o">&lt;</span><span class="n">ApplicationListener</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">getApplicationListeners</span><span class="o">()</span> <span class="o">{</span>
+           <span class="n">LinkedList</span><span class="o">&lt;</span><span class="n">ApplicationListener</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">allListeners</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LinkedList</span><span class="o">&lt;</span><span class="n">ApplicationListener</span><span class="o">&lt;?&gt;&gt;();</span>
+           <span class="k">for</span> <span class="o">(</span><span class="n">ApplicationListener</span><span class="o">&lt;?&gt;</span> <span class="n">listener</span> <span class="o">:</span> <span class="k">this</span><span class="o">.</span><span class="na">applicationListeners</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">allListeners</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">listener</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="k">if</span> <span class="o">(!</span><span class="k">this</span><span class="o">.</span><span class="na">applicationListenerBeans</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span> <span class="o">{</span>
+               <span class="n">BeanFactory</span> <span class="n">beanFactory</span> <span class="o">=</span> <span class="n">getBeanFactory</span><span class="o">();</span>
+               <span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="n">listenerBeanName</span> <span class="o">:</span> <span class="k">this</span><span class="o">.</span><span class="na">applicationListenerBeans</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="k">try</span> <span class="o">{</span>
+                       <span class="n">ApplicationListener</span><span class="o">&lt;?&gt;</span> <span class="n">listener</span> <span class="o">=</span> <span class="n">beanFactory</span><span class="o">.</span><span class="na">getBean</span><span class="o">(</span><span class="n">listenerBeanName</span><span class="o">,</span> <span class="n">ApplicationListener</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+                       <span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">preFiltered</span> <span class="o">||</span> <span class="o">!</span><span class="n">allListeners</span><span class="o">.</span><span class="na">contains</span><span class="o">(</span><span class="n">listener</span><span class="o">))</span> <span class="o">{</span>
+                           <span class="n">allListeners</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">listener</span><span class="o">);</span>
+                       <span class="o">}</span>
+                   <span class="o">}</span>
+                   <span class="k">catch</span> <span class="o">(</span><span class="n">NoSuchBeanDefinitionException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+                       <span class="c1">// Singleton listener instance (without backing bean definition) disappeared -
+</span><span class="c1"></span>                       <span class="c1">// probably in the middle of the destruction phase
+</span><span class="c1"></span>                   <span class="o">}</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+           <span class="n">AnnotationAwareOrderComparator</span><span class="o">.</span><span class="na">sort</span><span class="o">(</span><span class="n">allListeners</span><span class="o">);</span>
+           <span class="k">return</span> <span class="n">allListeners</span><span class="o">;</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2multicastevent广播事件">2.multicastEvent广播事件</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">multicastEvent</span><span class="o">(</span><span class="n">ApplicationEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+       <span class="n">multicastEvent</span><span class="o">(</span><span class="n">event</span><span class="o">,</span> <span class="n">resolveDefaultEventType</span><span class="o">(</span><span class="n">event</span><span class="o">));</span>
+   <span class="o">}</span>
+
+   <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">multicastEvent</span><span class="o">(</span><span class="kd">final</span> <span class="n">ApplicationEvent</span> <span class="n">event</span><span class="o">,</span> <span class="n">ResolvableType</span> <span class="n">eventType</span><span class="o">)</span> <span class="o">{</span>
+       <span class="n">ResolvableType</span> <span class="n">type</span> <span class="o">=</span> <span class="o">(</span><span class="n">eventType</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">?</span> <span class="n">eventType</span> <span class="o">:</span> <span class="n">resolveDefaultEventType</span><span class="o">(</span><span class="n">event</span><span class="o">));</span>
+       <span class="k">for</span> <span class="o">(</span><span class="kd">final</span> <span class="n">ApplicationListener</span><span class="o">&lt;?&gt;</span> <span class="n">listener</span> <span class="o">:</span> <span class="n">getApplicationListeners</span><span class="o">(</span><span class="n">event</span><span class="o">,</span> <span class="n">type</span><span class="o">))</span> <span class="o">{</span>
+           <span class="n">Executor</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">getTaskExecutor</span><span class="o">();</span><span class="c1">//线程池
+</span><span class="c1"></span>           <span class="k">if</span> <span class="o">(</span><span class="n">executor</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">executor</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+                   <span class="nd">@Override</span>
+                   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+                       <span class="n">invokeListener</span><span class="o">(</span><span class="n">listener</span><span class="o">,</span> <span class="n">event</span><span class="o">);</span>
+                   <span class="o">}</span>
+               <span class="o">});</span>
+           <span class="o">}</span>
+           <span class="k">else</span> <span class="o">{</span>
+               <span class="c1">//触发ApplicationListener.onApplicationEvent方法
+</span><span class="c1"></span>               <span class="n">invokeListener</span><span class="o">(</span><span class="n">listener</span><span class="o">,</span> <span class="n">event</span><span class="o">);</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+
+   <span class="kd">private</span> <span class="n">ResolvableType</span> <span class="nf">resolveDefaultEventType</span><span class="o">(</span><span class="n">ApplicationEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">return</span> <span class="n">ResolvableType</span><span class="o">.</span><span class="na">forInstance</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
+   <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3getapplicationlisteners-按类型获取所有applicationlistener">3.getApplicationListeners 按类型获取所有ApplicationListener</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">protected</span> <span class="n">Collection</span><span class="o">&lt;</span><span class="n">ApplicationListener</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">getApplicationListeners</span><span class="o">(</span>
+           <span class="n">ApplicationEvent</span> <span class="n">event</span><span class="o">,</span> <span class="n">ResolvableType</span> <span class="n">eventType</span><span class="o">)</span> <span class="o">{</span>
+
+       <span class="n">Object</span> <span class="n">source</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="na">getSource</span><span class="o">();</span>
+       <span class="n">Class</span><span class="o">&lt;?&gt;</span> <span class="n">sourceType</span> <span class="o">=</span> <span class="o">(</span><span class="n">source</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">?</span> <span class="n">source</span><span class="o">.</span><span class="na">getClass</span><span class="o">()</span> <span class="o">:</span> <span class="kc">null</span><span class="o">);</span>
+       <span class="n">ListenerCacheKey</span> <span class="n">cacheKey</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ListenerCacheKey</span><span class="o">(</span><span class="n">eventType</span><span class="o">,</span> <span class="n">sourceType</span><span class="o">);</span>
+
+       <span class="c1">// Quick check for existing entry on ConcurrentHashMap...
+</span><span class="c1"></span>       <span class="n">ListenerRetriever</span> <span class="n">retriever</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">retrieverCache</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">cacheKey</span><span class="o">);</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">retriever</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">return</span> <span class="n">retriever</span><span class="o">.</span><span class="na">getApplicationListeners</span><span class="o">();</span>
+       <span class="o">}</span>
+      
+       <span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">beanClassLoader</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span>
+               <span class="o">(</span><span class="n">ClassUtils</span><span class="o">.</span><span class="na">isCacheSafe</span><span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">getClass</span><span class="o">(),</span> <span class="k">this</span><span class="o">.</span><span class="na">beanClassLoader</span><span class="o">)</span> <span class="o">&amp;&amp;</span>
+                       <span class="o">(</span><span class="n">sourceType</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">ClassUtils</span><span class="o">.</span><span class="na">isCacheSafe</span><span class="o">(</span><span class="n">sourceType</span><span class="o">,</span> <span class="k">this</span><span class="o">.</span><span class="na">beanClassLoader</span><span class="o">))))</span> <span class="o">{</span>
+            <span class="c1">//类加载器是否相同，相同缓存起来
+</span><span class="c1"></span>           <span class="c1">// Fully synchronized building and caching of a ListenerRetriever
+</span><span class="c1"></span>           <span class="c1">//缓存ListenerRetriever
+</span><span class="c1"></span>           <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">retrievalMutex</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">retriever</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">retrieverCache</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">cacheKey</span><span class="o">);</span>
+               <span class="k">if</span> <span class="o">(</span><span class="n">retriever</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="k">return</span> <span class="n">retriever</span><span class="o">.</span><span class="na">getApplicationListeners</span><span class="o">();</span>
+               <span class="o">}</span>
+               <span class="n">retriever</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ListenerRetriever</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+               <span class="c1">//查询相同类型ApplicationListener集合；
+</span><span class="c1"></span>               <span class="n">Collection</span><span class="o">&lt;</span><span class="n">ApplicationListener</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">listeners</span> <span class="o">=</span>
+                       <span class="n">retrieveApplicationListeners</span><span class="o">(</span><span class="n">eventType</span><span class="o">,</span> <span class="n">sourceType</span><span class="o">,</span> <span class="n">retriever</span><span class="o">);</span>
+               <span class="k">this</span><span class="o">.</span><span class="na">retrieverCache</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">cacheKey</span><span class="o">,</span> <span class="n">retriever</span><span class="o">);</span>
+               <span class="k">return</span> <span class="n">listeners</span><span class="o">;</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+       <span class="k">else</span> <span class="o">{</span>
+           <span class="c1">// No ListenerRetriever caching -&gt; no synchronization necessary
+</span><span class="c1"></span>           <span class="c1">//不用缓存ListenerRetriever 
+</span><span class="c1"></span>           <span class="k">return</span> <span class="n">retrieveApplicationListeners</span><span class="o">(</span><span class="n">eventType</span><span class="o">,</span> <span class="n">sourceType</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4applicationcontext-publishevent">4.ApplicationContext publishEvent</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+ 	<span class="kd">protected</span> <span class="kt">void</span> <span class="nf">publishEvent</span><span class="o">(</span><span class="n">Object</span> <span class="n">event</span><span class="o">,</span> <span class="n">ResolvableType</span> <span class="n">eventType</span><span class="o">)</span> <span class="o">{</span>
+ 		<span class="n">Assert</span><span class="o">.</span><span class="na">notNull</span><span class="o">(</span><span class="n">event</span><span class="o">,</span> <span class="s">&#34;Event must not be null&#34;</span><span class="o">);</span>
+ 		<span class="k">if</span> <span class="o">(</span><span class="n">logger</span><span class="o">.</span><span class="na">isTraceEnabled</span><span class="o">())</span> <span class="o">{</span>
+ 			<span class="n">logger</span><span class="o">.</span><span class="na">trace</span><span class="o">(</span><span class="s">&#34;Publishing event in &#34;</span> <span class="o">+</span> <span class="n">getDisplayName</span><span class="o">()</span> <span class="o">+</span> <span class="s">&#34;: &#34;</span> <span class="o">+</span> <span class="n">event</span><span class="o">);</span>
+ 		<span class="o">}</span>
+ 
+ 		<span class="c1">// Decorate event as an ApplicationEvent if necessary
+</span><span class="c1"></span> 		<span class="n">ApplicationEvent</span> <span class="n">applicationEvent</span><span class="o">;</span>
+ 		<span class="k">if</span> <span class="o">(</span><span class="n">event</span> <span class="k">instanceof</span> <span class="n">ApplicationEvent</span><span class="o">)</span> <span class="o">{</span>
+ 			<span class="n">applicationEvent</span> <span class="o">=</span> <span class="o">(</span><span class="n">ApplicationEvent</span><span class="o">)</span> <span class="n">event</span><span class="o">;</span>
+ 		<span class="o">}</span>
+ 		<span class="k">else</span> <span class="o">{</span>
+ 		    <span class="c1">//不是ApplicationEvent事件 封装成PayloadApplicationEvent
+</span><span class="c1"></span> 			<span class="n">applicationEvent</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PayloadApplicationEvent</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;(</span><span class="k">this</span><span class="o">,</span> <span class="n">event</span><span class="o">);</span>
+ 			<span class="k">if</span> <span class="o">(</span><span class="n">eventType</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+ 				<span class="n">eventType</span> <span class="o">=</span> <span class="o">((</span><span class="n">PayloadApplicationEvent</span><span class="o">)</span><span class="n">applicationEvent</span><span class="o">).</span><span class="na">getResolvableType</span><span class="o">();</span>
+ 			<span class="o">}</span>
+ 		<span class="o">}</span>
+ 
+ 		<span class="c1">// Multicast right now if possible - or lazily once the multicaster is initialized
+</span><span class="c1"></span> 		<span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">earlyApplicationEvents</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+ 			<span class="k">this</span><span class="o">.</span><span class="na">earlyApplicationEvents</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">applicationEvent</span><span class="o">);</span>
+ 		<span class="o">}</span>
+ 		<span class="k">else</span> <span class="o">{</span>
+ 			<span class="n">getApplicationEventMulticaster</span><span class="o">().</span><span class="na">multicastEvent</span><span class="o">(</span><span class="n">applicationEvent</span><span class="o">,</span> <span class="n">eventType</span><span class="o">);</span>
+ 		<span class="o">}</span>
+ 
+ 		<span class="c1">// Publish event via parent context as well...
+</span><span class="c1"></span> 		<span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">parent</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+ 			<span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">parent</span> <span class="k">instanceof</span> <span class="n">AbstractApplicationContext</span><span class="o">)</span> <span class="o">{</span>
+ 				<span class="o">((</span><span class="n">AbstractApplicationContext</span><span class="o">)</span> <span class="k">this</span><span class="o">.</span><span class="na">parent</span><span class="o">).</span><span class="na">publishEvent</span><span class="o">(</span><span class="n">event</span><span class="o">,</span> <span class="n">eventType</span><span class="o">);</span>
+ 			<span class="o">}</span>
+ 			<span class="k">else</span> <span class="o">{</span>
+ 				<span class="k">this</span><span class="o">.</span><span class="na">parent</span><span class="o">.</span><span class="na">publishEvent</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
+ 			<span class="o">}</span>
+ 		<span class="o">}</span>
+ 	<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2018-10-20 22:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/spring-ApplicationContext/">spring ApplicationContext</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/spring/05.spring-mvc%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">spring mvc源码分析</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/spring/03.spring%E7%9A%84%E4%BA%8B%E7%89%A9%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
+        <span class="next-text nav-default">spring的事物源码解析</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

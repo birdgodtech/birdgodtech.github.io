@@ -1,0 +1,845 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/post/</link>
+    <description>Recent content in Posts on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Sat, 02 May 2020 20:08:08 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>2.网络层以及RPC实现</title>
+      <link>https://birdgodtech.github.io/post/rocketmq/2.%E7%BD%91%E7%BB%9C%E5%B1%82%E4%BB%A5%E5%8F%8ARPC%E5%AE%9E%E7%8E%B0/</link>
+      <pubDate>Sat, 02 May 2020 20:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/rocketmq/2.%E7%BD%91%E7%BB%9C%E5%B1%82%E4%BB%A5%E5%8F%8ARPC%E5%AE%9E%E7%8E%B0/</guid>
+      <description>一、背景 rocketmq-remoting模块贯穿RocketMq网络层以及RPC实现；基于Netty实现； 二、基于Netty实现线程模型 线</description>
+    </item>
+    
+    <item>
+      <title>1.Rocketmq背景</title>
+      <link>https://birdgodtech.github.io/post/rocketmq/1.rocketmq%E8%83%8C%E6%99%AF/</link>
+      <pubDate>Fri, 01 May 2020 20:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/rocketmq/1.rocketmq%E8%83%8C%E6%99%AF/</guid>
+      <description>一、目标 RocketMQ(4.5.2)源码分析，记录对源码理解，以及探讨RocketMQ设计思想； 二、开发者指南 中文文档 官方写文档很棒； 三、</description>
+    </item>
+    
+    <item>
+      <title>TrafficShaping</title>
+      <link>https://birdgodtech.github.io/post/netty/14.TrafficShaping/</link>
+      <pubDate>Wed, 01 May 2019 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/14.TrafficShaping/</guid>
+      <description>一、介绍 流量整形（Traffic Shaping）是一种主动调整流量输出速率的措施。流量整形与流量监管的主要区别在于，流量整形对流量监管中需要</description>
+    </item>
+    
+    <item>
+      <title>HashedWheelTimer</title>
+      <link>https://birdgodtech.github.io/post/netty/13.HashedWheelTimer/</link>
+      <pubDate>Thu, 25 Apr 2019 23:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/13.HashedWheelTimer/</guid>
+      <description>一、介绍 由于netty管理100w+的连接，用IdleStateHandler心跳检测存在问题： 毋庸置疑占用IO线程； 超时间不精准，例如:N</description>
+    </item>
+    
+    <item>
+      <title>Codec</title>
+      <link>https://birdgodtech.github.io/post/netty/11.Codec/</link>
+      <pubDate>Thu, 25 Apr 2019 21:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/11.Codec/</guid>
+      <description>一、ByteToMessageDecoder 1.Cumulator累加器 1 2 3 4 5 6 7 8 9 10 11 /** * 累积ByteBuf */ public interface Cumulator { /** * Cumulate the given {@link ByteBuf}s</description>
+    </item>
+    
+    <item>
+      <title>IdleStateHandler</title>
+      <link>https://birdgodtech.github.io/post/netty/12.IdleStateHandler/</link>
+      <pubDate>Sat, 20 Apr 2019 22:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/12.IdleStateHandler/</guid>
+      <description>一、介绍 Netty提供的心跳机制 当连接的空闲时间（读或者写）太长时，将会触发一个 IdleStateEvent 事件。 然后，你可以通过你的 ChannelInboundHandler 中重写 userEventTrigged 方法来处理该事件。 如果</description>
+    </item>
+    
+    <item>
+      <title>FastThreadLocal</title>
+      <link>https://birdgodtech.github.io/post/netty/09.FastThreadLocal/</link>
+      <pubDate>Mon, 15 Apr 2019 21:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/09.FastThreadLocal/</guid>
+      <description>一、介绍 Netty为了提高性能，Java的ThreadLocal不用，自己创建FastThreadLocal，屌爆ThreadLocal； T</description>
+    </item>
+    
+    <item>
+      <title>Future和Promise</title>
+      <link>https://birdgodtech.github.io/post/netty/08.Future%E5%92%8CPromise/</link>
+      <pubDate>Wed, 10 Apr 2019 21:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/08.Future%E5%92%8CPromise/</guid>
+      <description>一、io.netty.util.concurrent.Future Future的UML图 io.netty.util.concurrent.F</description>
+    </item>
+    
+    <item>
+      <title>Bootstrap</title>
+      <link>https://birdgodtech.github.io/post/netty/07.Bootstrap/</link>
+      <pubDate>Tue, 09 Apr 2019 22:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/07.Bootstrap/</guid>
+      <description>一、介绍 Bootstrap和ServerBootstrap的类图 Bootstrap是客服端实现，ServerBootstrap服务端实现 二、</description>
+    </item>
+    
+    <item>
+      <title>EventLoop</title>
+      <link>https://birdgodtech.github.io/post/netty/06.EventLoop/</link>
+      <pubDate>Thu, 04 Apr 2019 22:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/06.EventLoop/</guid>
+      <description>一、线程模型 Netty线程模型 这个博客写不错； 二、NioEventLoopGroup线程池分析 1.NioEventLoopGroup的类图结</description>
+    </item>
+    
+    <item>
+      <title>Channelpipeline</title>
+      <link>https://birdgodtech.github.io/post/netty/05.ChannelPipeline/</link>
+      <pubDate>Sat, 23 Mar 2019 23:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/05.ChannelPipeline/</guid>
+      <description>一、介绍 Channelpipeline是 Channelhandler的容器,它负责 Channelhandler的管理和事件拦截与调度。 事件如</description>
+    </item>
+    
+    <item>
+      <title>Channel</title>
+      <link>https://birdgodtech.github.io/post/netty/04.Channel/</link>
+      <pubDate>Sun, 17 Mar 2019 21:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/04.Channel/</guid>
+      <description>一、介绍 Channel是 Netty抽象出来的网络I/O读写相关的接口,为什么不使用JDK NIO原生的Channel而要另起炉灶呢 主要原因如下</description>
+    </item>
+    
+    <item>
+      <title>Recycler对象池</title>
+      <link>https://birdgodtech.github.io/post/netty/03.Recycler%E5%AF%B9%E8%B1%A1%E6%B1%A0/</link>
+      <pubDate>Tue, 12 Mar 2019 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/03.Recycler%E5%AF%B9%E8%B1%A1%E6%B1%A0/</guid>
+      <description>一、简介 博客 Recyclers是本地线程堆栈的轻量级对象池，是抽象方法；Recycler主要提供了3个方法： get():获取一个对象。 new</description>
+    </item>
+    
+    <item>
+      <title>PooledByteBuf内存池</title>
+      <link>https://birdgodtech.github.io/post/netty/02.PooledByteBuf%E5%86%85%E5%AD%98%E6%B1%A0/</link>
+      <pubDate>Thu, 07 Mar 2019 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/02.PooledByteBuf%E5%86%85%E5%AD%98%E6%B1%A0/</guid>
+      <description>一、简介 Netty内存池了解几个概念： jemalloc一致的内存分配算法 jemalloc这块博客写不错; http://people.freebsd.org/~jasone/jemalloc/bsdcan2006/jemalloc.pdf https://www.facebook.com/notes/facebook-engineering/scalable-memory-allocation-using-jemalloc/480222803919 buddy allocation buddy slab allocation slav 1.核心类介绍 Poo</description>
+    </item>
+    
+    <item>
+      <title>ByteBuf工作原理</title>
+      <link>https://birdgodtech.github.io/post/netty/01.Bytebuf/</link>
+      <pubDate>Sat, 02 Mar 2019 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/01.Bytebuf/</guid>
+      <description>一、ByteBuf工作原理 1.为什么Netty扩展NIO中ByteBuffer类？ 主要原因ByteBuffer设计不足几点： ByteBuff</description>
+    </item>
+    
+    <item>
+      <title>dubbo引用服务</title>
+      <link>https://birdgodtech.github.io/post/dubbo/03.dubbo%E5%BC%95%E7%94%A8%E6%9C%8D%E5%8A%A1/</link>
+      <pubDate>Thu, 20 Dec 2018 20:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/dubbo/03.dubbo%E5%BC%95%E7%94%A8%E6%9C%8D%E5%8A%A1/</guid>
+      <description>一、dubbo引用服务 1.Spring afterPropertiesSet()执行方法发布服务 ReferenceBean.getObject()-&amp;gt;ReferenceConfig.get()-&amp;gt;init()-&amp;gt;createProxy() (1).createProxy创建暴露服务接口的代理对象，</description>
+    </item>
+    
+    <item>
+      <title>dubbo服务发布</title>
+      <link>https://birdgodtech.github.io/post/dubbo/02.dubbo%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83/</link>
+      <pubDate>Mon, 10 Dec 2018 20:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/dubbo/02.dubbo%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83/</guid>
+      <description>一、dubbo整体架构 1.先看看架构图 分层架构，一目了然，每一层处理相应的业务逻辑； 官方文档写很棒； 2.在 Dubbo 的核心领域模型中： Protocol 是服务域，它</description>
+    </item>
+    
+    <item>
+      <title>dubbo中的SPI机制</title>
+      <link>https://birdgodtech.github.io/post/dubbo/01.dubbo%E4%B8%AD%E7%9A%84SPI%E6%9C%BA%E5%88%B6/</link>
+      <pubDate>Sun, 02 Dec 2018 20:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/dubbo/01.dubbo%E4%B8%AD%E7%9A%84SPI%E6%9C%BA%E5%88%B6/</guid>
+      <description>一、 Java SPI（Service Provider Interface） 1.SPI思想 具有可插拔性，在软件系统的设计中，可插拔是一个重要特性。它意味着给系统添加新</description>
+    </item>
+    
+    <item>
+      <title>spring boot执行流程源码分析</title>
+      <link>https://birdgodtech.github.io/post/springboot/01.spring-boot%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Thu, 01 Nov 2018 23:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/springboot/01.spring-boot%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>spring boot 源码分析 一、spring boot 执行流程 例子： 1 2 3 4 public static void main(String[] args) { SpringApplication.run(SampleWebFluxApplication.class); } 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 /** * Static helper that can be used to run a {@link SpringApplication}</description>
+    </item>
+    
+    <item>
+      <title>spring mvc源码分析</title>
+      <link>https://birdgodtech.github.io/post/spring/05.spring-mvc%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Thu, 01 Nov 2018 23:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/spring/05.spring-mvc%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>spring mvc源码分析 一、spring mvc 执行流程 这个图片来自这个博客 XmlWebApplicationContext先读配置文件； 1 &amp;lt;mvc:annotation-driven&amp;gt;&amp;lt;/mvc:annotation-driven&amp;gt; MvcNam</description>
+    </item>
+    
+    <item>
+      <title>ApplicationContext源码解析</title>
+      <link>https://birdgodtech.github.io/post/spring/04.ApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</link>
+      <pubDate>Sat, 20 Oct 2018 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/spring/04.ApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</guid>
+      <description>ApplicationContext源码解析 一、ApplicationContext体系图 ApplicationContext接口,它由Be</description>
+    </item>
+    
+    <item>
+      <title>spring的事物源码解析</title>
+      <link>https://birdgodtech.github.io/post/spring/03.spring%E7%9A%84%E4%BA%8B%E7%89%A9%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</link>
+      <pubDate>Mon, 15 Oct 2018 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/spring/03.spring%E7%9A%84%E4%BA%8B%E7%89%A9%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</guid>
+      <description>spring的事物源码解析 一、注解解析 1 &amp;lt;tx:annotation-driven&amp;gt;&amp;lt;/tx:annotation-driven&amp;gt; TxNamespaceHandler解析XML,AnnotationDrivenBeanDefin</description>
+    </item>
+    
+    <item>
+      <title>Spring的AOP源码分析</title>
+      <link>https://birdgodtech.github.io/post/spring/02.spring%E7%9A%84AOP%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</link>
+      <pubDate>Fri, 05 Oct 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/spring/02.spring%E7%9A%84AOP%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</guid>
+      <description>Spring的AOP源码分析 一、AOP体系图 1、AOP术语 1）连接点（Joinpoint） 程序执行的某个特定位置：如类开始初始化前、类初始化</description>
+    </item>
+    
+    <item>
+      <title>Spring的IOC源码分析</title>
+      <link>https://birdgodtech.github.io/post/spring/01.spring%E7%9A%84IOC%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</link>
+      <pubDate>Mon, 01 Oct 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/spring/01.spring%E7%9A%84IOC%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</guid>
+      <description>Spring的IOC源码分析 一、Spring的体系结构 BeanFactory实现工厂模式，创建bean工厂类；BeanDefinition是</description>
+    </item>
+    
+    <item>
+      <title>LongAccumulator</title>
+      <link>https://birdgodtech.github.io/post/concurrent/striped64/LongAccumulator%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sat, 22 Sep 2018 20:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/striped64/LongAccumulator%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>LongAccumulator源码分析 一、LongAccumulator构造 1 2 3 4 5 6 7 8 9 10 11 12 13 14 private final LongBinaryOperator function; //操作累加方法 private final long identity; //</description>
+    </item>
+    
+    <item>
+      <title>LongAdder</title>
+      <link>https://birdgodtech.github.io/post/concurrent/striped64/LongAdder%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Thu, 13 Sep 2018 20:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/striped64/LongAdder%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>LongAdder源码分析 一、LongAdder构造 1 2 3 4 5 6 /** * Creates a new adder with initial sum of zero. */ public LongAdder() { } 二、add 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17</description>
+    </item>
+    
+    <item>
+      <title>Striped64</title>
+      <link>https://birdgodtech.github.io/post/concurrent/striped64/Striped64%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sun, 02 Sep 2018 20:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/striped64/Striped64%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>Striped64源码分析 Striped64博客 jdk 1.8.0.90 分析 简介 Striped64是jdk1.8提供的用于支持如Long累加器，Double累加</description>
+    </item>
+    
+    <item>
+      <title>ForkJoin1.8 模式分析</title>
+      <link>https://birdgodtech.github.io/post/concurrent/jdk1.8/ForkJoin1.8%E6%A8%A1%E5%BC%8F%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 20 Aug 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/jdk1.8/ForkJoin1.8%E6%A8%A1%E5%BC%8F%E5%88%86%E6%9E%90/</guid>
+      <description>ForkJoin模式分析 简介 Fork/Join框架介绍不错博客，阿里方腾飞写 Fork/Join使用两个类来完成以上两件事情： ForkJoin</description>
+    </item>
+    
+    <item>
+      <title>神奇的缓存行填充</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/%E7%BC%93%E5%AD%98%E8%A1%8C%E5%A1%AB%E5%85%85cache-line-padding/</link>
+      <pubDate>Wed, 15 Aug 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/%E7%BC%93%E5%AD%98%E8%A1%8C%E5%A1%AB%E5%85%85cache-line-padding/</guid>
+      <description>神奇的缓存行填充 原文地址 计算机入门 我喜欢在LMAX工作的原因之一是，在这里工作让我明白从大学和A Level Computing所学的东西实际上还是有意</description>
+    </item>
+    
+    <item>
+      <title>揭秘内存屏障</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9Cmemory-barriers/</link>
+      <pubDate>Wed, 01 Aug 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9Cmemory-barriers/</guid>
+      <description>揭秘内存屏障 原文地址 什么是内存屏障？ 它是一个CPU指令。没错，又一次，我们在讨论CPU级别的东西，以便获得我们想要的性能（Martin著名的</description>
+    </item>
+    
+    <item>
+      <title>伪共享(False Sharing)</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/%E4%BC%AA%E5%85%B1%E4%BA%ABFalse-Sharing/</link>
+      <pubDate>Wed, 25 Jul 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/%E4%BC%AA%E5%85%B1%E4%BA%ABFalse-Sharing/</guid>
+      <description>伪共享(False Sharing) 原文地址 缓存系统中是以缓存行（cache line）为单位存储的。缓存行是2的整数幂个连续字节，一般为32-256个字节。</description>
+    </item>
+    
+    <item>
+      <title>Disruptor</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/8.Disruptor%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 16 Jul 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/8.Disruptor%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>Disruptor框架源码分析 简介 Disruptor中的一些重要组件和组件的运行方式，也通过手动组合这些组件的方式给出了一些基本的用例。框架</description>
+    </item>
+    
+    <item>
+      <title>EventProcessor</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/7.EventProcessor%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 02 Jul 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/7.EventProcessor%E5%88%86%E6%9E%90/</guid>
+      <description>EventProcessor分析 简介 EventProcessor 持有特定消费者(Consumer)的 Sequence，并提供用于调用事件处理实现的事件循环(Event</description>
+    </item>
+    
+    <item>
+      <title>RingBuffer</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/6.RingBuffer%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 25 Jun 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/6.RingBuffer%E5%88%86%E6%9E%90/</guid>
+      <description>RingBuffer分析 简介 环形的缓冲区。曾经 RingBuffer 是 Disruptor 中的最主要的对象，但从3.0版本开始，其职责被简化为仅仅负责对通过 Disruptor 进行交换的数据（事件</description>
+    </item>
+    
+    <item>
+      <title>WaitStrategy</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/5.WaitStrategy%E5%88%86%E6%9E%90/</link>
+      <pubDate>Wed, 20 Jun 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/5.WaitStrategy%E5%88%86%E6%9E%90/</guid>
+      <description>WaitStrategy分析 简介 定义 Consumer 如何进行等待下一个事件的策略。 （注：Disruptor 定义了多种不同的策略，针对不同的场景，提供了不一</description>
+    </item>
+    
+    <item>
+      <title>SequenceBarrier</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/4.SequenceBarrier%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 15 May 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/4.SequenceBarrier%E5%88%86%E6%9E%90/</guid>
+      <description>SequenceBarrier分析 简介 序列屏障由序列发生器产生，包含对序列发生器的主要发布序列和任何相关消费者的序列的引用。它包含确定消费者</description>
+    </item>
+    
+    <item>
+      <title>Sequencer分析</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/3.Sequencer%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 15 May 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/3.Sequencer%E5%88%86%E6%9E%90/</guid>
+      <description>Sequencer分析 简介 Sequencer是Disruptor的真正核心。这个接口的2个实现（单生产者(SingleProducerSeq</description>
+    </item>
+    
+    <item>
+      <title>Sequence源码分析</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/2.Sequence%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 08 May 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/2.Sequence%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>Sequence源码分析 简介 Disruptor使用序列作为一种手段来确定特定组件的位置。每个消费者（EventProcessor）都像Dis</description>
+    </item>
+    
+    <item>
+      <title>disruptor介绍</title>
+      <link>https://birdgodtech.github.io/post/concurrent/disruptor/1.disruptor%E4%BB%8B%E7%BB%8D/</link>
+      <pubDate>Sat, 05 May 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/disruptor/1.disruptor%E4%BB%8B%E7%BB%8D/</guid>
+      <description>disruptor介绍 简介 从功能上来看，Disruptor 是实现了&amp;quot;队列&amp;quot;的功能，而且是一个有界队列。那么它的应用场景自</description>
+    </item>
+    
+    <item>
+      <title>ConcurrentLinkedQueue</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/11.ConcurrentHashMap1.7%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 01 May 2018 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/11.ConcurrentHashMap1.7%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>ConcurrentHashMap源码分析 简介 ConcurrentHashMap是一种线程安全的HashMap。相对于HashTable和C</description>
+    </item>
+    
+    <item>
+      <title>ConcurrentHashMap1.8</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/14.ConcurrentHashMap1.8%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Fri, 18 Aug 2017 21:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/14.ConcurrentHashMap1.8%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>ConcurrentHashMap1.8源码分析 简介 改进一：取消segments字段，直接采用transient volatile HashEntry&amp;lt;K,V&amp;gt;[] table保存数据，采用</description>
+    </item>
+    
+    <item>
+      <title>ConcurrentSkipListSet</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/13.ConcurrentSkipListSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Fri, 18 Aug 2017 21:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/13.ConcurrentSkipListSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>ConcurrentSkipListSet源码分析 简介 由于ConcurrentSkipListSet是基于ConcurrentSkipLis</description>
+    </item>
+    
+    <item>
+      <title>ConcurrentSkipListMap</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/12.ConcurrentSkipListMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Thu, 10 Aug 2017 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/12.ConcurrentSkipListMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>ConcurrentSkipListMap源码分析 简介 ConcurrentSkipListMap是一种线程安全的有序的Map; Concurr</description>
+    </item>
+    
+    <item>
+      <title>ConcurrentLinkedQueue</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/10.ConcurrentLinkedQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sat, 22 Jul 2017 18:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/10.ConcurrentLinkedQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>ConcurrentLinkedQueue源码分析 简介 ConcurrentLinkedQueue是一种基于单向链表实现的无界的线程安全队列。</description>
+    </item>
+    
+    <item>
+      <title>CopyOnWriteArraySet</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/09.CopyOnWriteArraySet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 18 Jul 2017 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/09.CopyOnWriteArraySet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>09.CopyOnWriteArraySet源码分析 简介 CopyOnWriteArraySet由内部的一个CopyOnWriteArrayL</description>
+    </item>
+    
+    <item>
+      <title>CopyOnWriteArrayList</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/08.CopyOnWriteArrayList%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sat, 08 Jul 2017 21:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/08.CopyOnWriteArrayList%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>CopyOnWriteArrayList源码分析 简介 CopyOnWrite容器即写时复制的容器。通俗的理解是当我们往一个容器添加元素的时候，</description>
+    </item>
+    
+    <item>
+      <title>LinkedBlockingDeque</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/07.LinkedBlockingDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sun, 02 Jul 2017 22:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/07.LinkedBlockingDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>LinkedBlockingDeque源码分析 简介 LinkedBlockingDeque是一种基于双向链表实现的有界的(可选的，不指定默认i</description>
+    </item>
+    
+    <item>
+      <title>LinkedTransferQueue</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/06.LinkedTransferQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sun, 25 Jun 2017 21:08:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/06.LinkedTransferQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>LinkedTransferQueue源码分析 简介 LinkedTransferQueue是TransferQueue接口的实现类，其定义为一</description>
+    </item>
+    
+    <item>
+      <title>SynchronousQueue</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/05.SynchronousQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 20 Jun 2017 22:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/05.SynchronousQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>SynchronousQueue源码分析 简介 SynchronousQueue是一种特殊的阻塞队列，它本身没有容量，只有当一个线程从队列取数据</description>
+    </item>
+    
+    <item>
+      <title>DelayQueue</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/04.DelayQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Thu, 15 Jun 2017 18:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/04.DelayQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>DelayQueue(延时队列)源码分析 简介 DelayQueue是一种无界的阻塞队列，队列里只允许放入可以&amp;quot;延期&amp;quot;的元素</description>
+    </item>
+    
+    <item>
+      <title>PriorityBlockingQueue</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/03.PriorityBlockingQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sat, 10 Jun 2017 18:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/03.PriorityBlockingQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>PriorityBlockingQueue源码分析 简介 PriorityBlockingQueue是一个支持优先级的无界阻塞队列。默认情况下元</description>
+    </item>
+    
+    <item>
+      <title>LinkBlockingQueue</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/02.LinkedBlockingQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sun, 04 Jun 2017 18:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/02.LinkedBlockingQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>LinkBlockingQueue源码分析 简介 LinkedBlockingQueue是一个单向链表实现的阻塞队列。该队列按FIFO（先进先出</description>
+    </item>
+    
+    <item>
+      <title>ArrayBlockingQueue</title>
+      <link>https://birdgodtech.github.io/post/concurrent/collection/01.ArrayBlockingQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Thu, 01 Jun 2017 21:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/collection/01.ArrayBlockingQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>ArrayBlockingQueue源码分析 简介 ArrayBlockingQueue是一种基于数组实现的有界的阻塞队列。队列中的元素遵循先入</description>
+    </item>
+    
+    <item>
+      <title>JMH:JVM基准测试工具</title>
+      <link>https://birdgodtech.github.io/post/concurrent/JMH-JVM%E5%9F%BA%E5%87%86%E6%B5%8B%E8%AF%95%E5%B7%A5%E5%85%B7/</link>
+      <pubDate>Tue, 23 May 2017 21:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/JMH-JVM%E5%9F%BA%E5%87%86%E6%B5%8B%E8%AF%95%E5%B7%A5%E5%85%B7/</guid>
+      <description>JMH:JVM基准测试工具 概述 JMH 是一个由 OpenJDK/Oracle 里面那群开发了 Java 编译器的大牛们所开发的 Micro Benchmark Framework 。何谓 Micro Benchmark 呢？ 简单地说就是在 method 层面上的 benchmar</description>
+    </item>
+    
+    <item>
+      <title>StamppedLock</title>
+      <link>https://birdgodtech.github.io/post/concurrent/CLH%E9%94%81%E5%92%8CMCS%E9%94%81/</link>
+      <pubDate>Mon, 15 May 2017 18:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/CLH%E9%94%81%E5%92%8CMCS%E9%94%81/</guid>
+      <description>分析CLH锁 、MCS锁 原博客地址 一、引文 1. SMP(Symmetric Multi-Processor) 对称多处理器结构，指服务器中多个CPU对称工作，每个CPU访问内存地址所需时间相同。其主要特征</description>
+    </item>
+    
+    <item>
+      <title>Fork_Join_Framework</title>
+      <link>https://birdgodtech.github.io/post/concurrent/Fork_Join_Framework/</link>
+      <pubDate>Sun, 14 May 2017 20:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/Fork_Join_Framework/</guid>
+      <description>A Java Fork/Join Framework 中文翻译版 原文地址 翻译地址 论文摘要 本论文介绍一种支持并行编程方式的Java框架，主要包括设计、实现和性能分析三个部分。基于它，一个任</description>
+    </item>
+    
+    <item>
+      <title>StamppedLock</title>
+      <link>https://birdgodtech.github.io/post/concurrent/16.StampedLock/</link>
+      <pubDate>Thu, 11 May 2017 19:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/16.StampedLock/</guid>
+      <description>简介 StamppedLock是Java 8中引入的一种新的锁机制。读写锁虽然分离了读和写的功能，使得读与读之间可以完全并发。 但是，读和写之间依</description>
+    </item>
+    
+    <item>
+      <title>ForkJoin</title>
+      <link>https://birdgodtech.github.io/post/concurrent/15.ForkJoin%E6%A8%A1%E5%BC%8F%E5%88%86%E6%9E%90/</link>
+      <pubDate>Wed, 03 May 2017 19:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/15.ForkJoin%E6%A8%A1%E5%BC%8F%E5%88%86%E6%9E%90/</guid>
+      <description>ForkJoin模式分析 简介 Fork/Join框架介绍不错博客，阿里方腾飞写 Fork/Join使用两个类来完成以上两件事情： ForkJoin</description>
+    </item>
+    
+    <item>
+      <title>ThreadPoolExecutor</title>
+      <link>https://birdgodtech.github.io/post/concurrent/14.ScheduledThreadPoolExecutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 25 Apr 2017 19:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/14.ScheduledThreadPoolExecutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>ScheduledThreadPoolExecutor源码分析 简介 ScheduledThreadPoolExecutor是一种类似Timer</description>
+    </item>
+    
+    <item>
+      <title>ThreadPoolExecutor</title>
+      <link>https://birdgodtech.github.io/post/concurrent/13.ThreadPoolExecutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Thu, 20 Apr 2017 20:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/13.ThreadPoolExecutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>ThreadPoolExecutor源码分析 简介 ThreadPoolExecutor是java.util.concurrent包中提供的线程</description>
+    </item>
+    
+    <item>
+      <title>FutureTask</title>
+      <link>https://birdgodtech.github.io/post/concurrent/12.FutureTask%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sat, 15 Apr 2017 20:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/12.FutureTask%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>FutureTask源码分析 简介 一、FutureTask 内部实现 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38</description>
+    </item>
+    
+    <item>
+      <title>ThreadLocal</title>
+      <link>https://birdgodtech.github.io/post/concurrent/11.ThreadLocal%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 11 Apr 2017 21:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/11.ThreadLocal%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>ThreadLocal源码分析 简介 ThreadLocal类顾名思义可以理解为线程本地变量。也就是说如果定义了一个ThreadLocal，每个</description>
+    </item>
+    
+    <item>
+      <title>CyclicBarrier</title>
+      <link>https://birdgodtech.github.io/post/concurrent/09.CyclicBarrier%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Thu, 06 Apr 2017 22:10:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/09.CyclicBarrier%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>可重用屏障 CyclicBarrier 简介 CyclicBarrier 的字面意思是可循环使用（Cyclic）的屏障（Barrier）。它要做的事情是，让一组线程到达一个屏障（也可以叫同步点）时</description>
+    </item>
+    
+    <item>
+      <title>Semaphore</title>
+      <link>https://birdgodtech.github.io/post/concurrent/08.Semaphore%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 03 Apr 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/08.Semaphore%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>信号量 Semaphore 简介 Semaphore是一种基于计数的信号量，管理了一组许可。线程可以申请许可，当信号量中有许可时，线程申请成功， 拿走一个许可；没有</description>
+    </item>
+    
+    <item>
+      <title>CountDownLatch</title>
+      <link>https://birdgodtech.github.io/post/concurrent/07.CountDownLatch%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sun, 02 Apr 2017 22:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/07.CountDownLatch%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>分析CountDownLatch 简介 CountDownLatch是一种锁，称为闭锁。可以让一个或多个线程等待另外一个或多个线程执行完毕后再执</description>
+    </item>
+    
+    <item>
+      <title>ReentrantReadWriteLock</title>
+      <link>https://birdgodtech.github.io/post/concurrent/06.ReentrantReadWriteLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sat, 25 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/06.ReentrantReadWriteLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>分析 读写锁ReentrantReadWriteLock 简介 提供了读写锁的机制，读锁使用AQS的共享模式，写锁使用独占模式。 实现写重入锁 支持公</description>
+    </item>
+    
+    <item>
+      <title>ReentrantLock</title>
+      <link>https://birdgodtech.github.io/post/concurrent/05.ReentrantLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 20 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/05.ReentrantLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>分析重入锁ReentrantLock 简介 Java代码层面提供的锁机制，可做为Synchronized(jvm内置)的替代物，和Synchro</description>
+    </item>
+    
+    <item>
+      <title>AQS</title>
+      <link>https://birdgodtech.github.io/post/concurrent/04.AQS/</link>
+      <pubDate>Wed, 15 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/04.AQS/</guid>
+      <description>java.util.concurrent.locks.AbstractQueuedSynchronizer源码分析 简介： AbstractQu</description>
+    </item>
+    
+    <item>
+      <title>Thread的interrupt</title>
+      <link>https://birdgodtech.github.io/post/concurrent/03.Thread%E7%9A%84interrupt%E8%AF%A6%E8%A7%A3/</link>
+      <pubDate>Wed, 15 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/03.Thread%E7%9A%84interrupt%E8%AF%A6%E8%A7%A3/</guid>
+      <description>Java Thread的interrupt详解 一、概述： 1、没有任何语言方面的需求一个被中断的线程应该终止。中断一个线程只是为了引起该线程的注意，被</description>
+    </item>
+    
+    <item>
+      <title>Atomic讲解</title>
+      <link>https://birdgodtech.github.io/post/concurrent/02.Atomic%E8%AE%B2%E8%A7%A3/</link>
+      <pubDate>Tue, 14 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/02.Atomic%E8%AE%B2%E8%A7%A3/</guid>
+      <description>引言 Java从JDK1.5开始提供了java.util.concurrent.atomic包，方便程序员在多线程环境下，无锁的进行原子操作。</description>
+    </item>
+    
+    <item>
+      <title>AQS</title>
+      <link>https://birdgodtech.github.io/post/concurrent/Synchronizer_Framework/</link>
+      <pubDate>Tue, 14 Mar 2017 18:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/Synchronizer_Framework/</guid>
+      <description>The java.util.concurrent Synchronizer Framework 中文翻译版 原文地址 翻译地址 摘要 在J2SE 1.5的java.util.concurrent包（下称j.u.c包）中，大部分的同步器（例</description>
+    </item>
+    
+    <item>
+      <title>Unsafe</title>
+      <link>https://birdgodtech.github.io/post/concurrent/01.Unsafe/</link>
+      <pubDate>Mon, 13 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/01.Unsafe/</guid>
+      <description>#说明 java不能直接访问操作系统底层，而是通过本地方法来访问。Unsafe类提供了硬件级别的原子操作，主要提供了以下功能： 一、通过Unsa</description>
+    </item>
+    
+    <item>
+      <title>TreeSet</title>
+      <link>https://birdgodtech.github.io/post/collection/16.TreeSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Fri, 10 Mar 2017 21:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/16.TreeSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>TreeSet源码分析 简介 TreeSet 是一个有序的集合，它的作用是提供有序的Set集合。它继承于AbstractSet抽象类，实现了Navigable</description>
+    </item>
+    
+    <item>
+      <title>LinkedHashSet</title>
+      <link>https://birdgodtech.github.io/post/collection/15.LinkedHashSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Fri, 03 Mar 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/15.LinkedHashSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>LinkedHashSet源码分析 简介 LinkedHashSet基于LinkedHashMap扩展。源码其次很简单。 LinkedHashSe</description>
+    </item>
+    
+    <item>
+      <title>HashSet</title>
+      <link>https://birdgodtech.github.io/post/collection/14.HashSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Wed, 01 Mar 2017 21:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/14.HashSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>HashSet源码分析 简介 HashSet实现Set接口，由哈希表（实际上是一个HashMap实例）支持。它不保证set 的迭代顺序；特别是它不</description>
+    </item>
+    
+    <item>
+      <title>Hashtable</title>
+      <link>https://birdgodtech.github.io/post/collection/13.Hashtable%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 21 Feb 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/13.Hashtable%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>Hashtable源码分析 简介 Hashtable 继承于Dictionary ，实现了Map、Cloneable、java.io.Serializable接口。</description>
+    </item>
+    
+    <item>
+      <title>TreeMap</title>
+      <link>https://birdgodtech.github.io/post/collection/12.TreeMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 20 Feb 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/12.TreeMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>TreeMap 源码分析 简介 TreeMap是一种有序的Map(K，V)容器，Key在容器中按照某种顺序排列，该顺序由给定的比较器或者Key自身的顺序来决定</description>
+    </item>
+    
+    <item>
+      <title>WeakHashMap</title>
+      <link>https://birdgodtech.github.io/post/collection/11.WeakHashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sun, 19 Feb 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/11.WeakHashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>WeakHashMap源码分析.md 简介 WeakHashMap和HashMap一样，WeakHashMap 也是一个散列表，它存储的内容也是键</description>
+    </item>
+    
+    <item>
+      <title>IdentityHashMap</title>
+      <link>https://birdgodtech.github.io/post/collection/10.IdentityHashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sat, 18 Feb 2017 19:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/10.IdentityHashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>IdentityHashMap源码分析 简介 IdentityHashMap与HashMap一样，也是一个通过键值对来存储元素的集合，但是Ide</description>
+    </item>
+    
+    <item>
+      <title>LinkedHashMap</title>
+      <link>https://birdgodtech.github.io/post/collection/09.LinkedHashMap/</link>
+      <pubDate>Fri, 17 Feb 2017 23:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/09.LinkedHashMap/</guid>
+      <description>一、 LinkedHashMap概述: LinkedHashMap是HashMap的子类，与HashMap有着同样的存储结构，但它加入了一个双向</description>
+    </item>
+    
+    <item>
+      <title>HashMap_1.7</title>
+      <link>https://birdgodtech.github.io/post/collection/08.HashMap_1.7/</link>
+      <pubDate>Thu, 16 Feb 2017 20:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/08.HashMap_1.7/</guid>
+      <description>一、 HashMap概述: HashMap是基于哈希表实现的，每一个元素是一个key-value对，其内部通过单链表解决冲突问题，容量不足（超过</description>
+    </item>
+    
+    <item>
+      <title>ArrayDeque</title>
+      <link>https://birdgodtech.github.io/post/collection/07.ArrayDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Wed, 15 Feb 2017 22:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/07.ArrayDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>ArrayDeque源码分析 简介 ArrayDeque为双端队列，支持首部，尾部两端的操作，因此做双端操作可用于FIFO等queue, 做单端操</description>
+    </item>
+    
+    <item>
+      <title>PriorityQueue</title>
+      <link>https://birdgodtech.github.io/post/collection/06.PriorityQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 14 Feb 2017 21:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/06.PriorityQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>PriorityQueue源码分析 简介 PriorityQueue是有限队列，基于优先堆实现； 一、PriorityQueue内部结构实现 1 2 3</description>
+    </item>
+    
+    <item>
+      <title>Stack</title>
+      <link>https://birdgodtech.github.io/post/collection/05.Stack%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 13 Feb 2017 20:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/05.Stack%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>Stack源码分析 简介 Stack类表示后进先出（LIFO）的对象堆栈。继承Vector类，实现很简单。 源码分析 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15</description>
+    </item>
+    
+    <item>
+      <title>Vector</title>
+      <link>https://birdgodtech.github.io/post/collection/04.Vector%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 13 Feb 2017 18:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/04.Vector%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>Vector源码分析 简介 Vector也是基于数组实现的，是一个动态数组，其容量能自动增长。 Vector是JDK1.0引入了，它的很多实现方法</description>
+    </item>
+    
+    <item>
+      <title>LinkedList</title>
+      <link>https://birdgodtech.github.io/post/collection/03.LinkedList/</link>
+      <pubDate>Sun, 12 Feb 2017 19:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/03.LinkedList/</guid>
+      <description>一、 LinkedList概述: LinkedList双向链表实现。 LinkedList实现List,Deque接口，提供栈、队列、双端队列的方</description>
+    </item>
+    
+    <item>
+      <title>java集合框架</title>
+      <link>https://birdgodtech.github.io/post/collection/01.java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6/</link>
+      <pubDate>Fri, 10 Feb 2017 20:12:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/01.java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6/</guid>
+      <description>Java集合框架是java提供的工具包，在java.util.*中，这个包中包含了常用的数据结构：集合、数组、链表、栈、队列、映射等. jav</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://birdgodtech.github.io/post/collection/08.HashMap_1.8/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/08.HashMap_1.8/</guid>
+      <description>https://tech.meituan.com/java_hashmap.html</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://birdgodtech.github.io/post/concurrent/10.Phaser%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/10.Phaser%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>https://www.cnblogs.com/lytwajue/p/7258278.html</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://birdgodtech.github.io/post/concurrent/17.Exchange%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/17.Exchange%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>JDk1.7 http://brokendreams.iteye.com/blog/2253956 1.8 https://www.cnblogs.com/d-homme/p/9387948.html 为了返回一个介于0和max之间的索引，我们对mod操作使用了一个便宜的近似值，这也可以纠正由于非2次幂剩余（参见{@link java</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://birdgodtech.github.io/post/concurrent/jdk1.8/CompletableFuture%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/jdk1.8/CompletableFuture%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>http://www.cnblogs.com/aniao/p/aniao_cf.html</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://birdgodtech.github.io/post/netty/10.%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%E6%A3%80%E6%B5%8B/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/netty/10.%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%E6%A3%80%E6%B5%8B/</guid>
+      <description>http://blog.csdn.net/hadixlin/article/details/19301377
+https://skyao.gitbooks.io/learning-netty/buffer/lack_detection.html
+http://www.infoq.com/cn/articles/netty-high-performance?utm_source=infoq&amp;amp;utm_medium=popular_links</description>
+    </item>
+    
+  </channel>
+</rss>

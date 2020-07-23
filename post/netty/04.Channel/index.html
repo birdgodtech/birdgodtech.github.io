@@ -1,0 +1,3011 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Channel - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="一、介绍 Channel是 Netty抽象出来的网络I/O读写相关的接口,为什么不使用JDK NIO原生的Channel而要另起炉灶呢 主要原因如下" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/netty/04.Channel/" />
+<link href="/post/netty/04.Channel/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/netty/04.Channel/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="Channel" />
+<meta property="og:description" content="一、介绍 Channel是 Netty抽象出来的网络I/O读写相关的接口,为什么不使用JDK NIO原生的Channel而要另起炉灶呢 主要原因如下" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/netty/04.Channel/" />
+<meta property="article:published_time" content="2019-03-17T21:18:08+00:00" />
+<meta property="article:modified_time" content="2019-03-17T21:18:08+00:00" />
+<meta itemprop="name" content="Channel">
+<meta itemprop="description" content="一、介绍 Channel是 Netty抽象出来的网络I/O读写相关的接口,为什么不使用JDK NIO原生的Channel而要另起炉灶呢 主要原因如下">
+<meta itemprop="datePublished" content="2019-03-17T21:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2019-03-17T21:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="11430">
+
+
+
+<meta itemprop="keywords" content="netty," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Channel"/>
+<meta name="twitter:description" content="一、介绍 Channel是 Netty抽象出来的网络I/O读写相关的接口,为什么不使用JDK NIO原生的Channel而要另起炉灶呢 主要原因如下"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">Channel</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2019-03-17 21:18 </span>
+      <div class="post-category">
+        <a href="/categories/netty/"> netty </a>
+        </div>
+      <span class="more-meta"> 约 11430 字 </span>
+      <span class="more-meta"> 预计阅读 23 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1属性">1.属性</a></li>
+    <li><a href="#2构造">2.构造</a></li>
+    <li><a href="#3bindconnectdisconnectclosereadwrited等这些方法都是委托pipeline实现滴">3.bind,connect,disconnect,close,read,writed等这些方法都是委托pipeline实现滴；</a></li>
+    <li><a href="#4localaddressremoteaddress方法都是由unsafe对象去实现">4.localAddress,remoteAddress方法都是由Unsafe对象去实现</a></li>
+    <li><a href="#5abstractunsafe源码分析">5.AbstractUnsafe源码分析</a>
+      <ul>
+        <li><a href="#1属性-1">(1).属性</a></li>
+        <li><a href="#2register只要创建channel第一件事就要调用register方法">(2).register只要创建Channel,第一件事就要调用register方法；</a></li>
+        <li><a href="#3beginread">(3).beginRead</a></li>
+        <li><a href="#4bind-服务绑定端口操作抽象dobind方法子类实现">(4).bind 服务绑定端口操作抽象doBind方法子类实现</a></li>
+        <li><a href="#5disconnect-断开">(5).disconnect 断开</a></li>
+        <li><a href="#6close">(6).close</a></li>
+        <li><a href="#7deregister">(7).deregister</a></li>
+        <li><a href="#8write">(8).write</a></li>
+        <li><a href="#9flush-真正往网络发送消息">(9).flush 真正往网络发送消息</a></li>
+      </ul>
+    </li>
+    <li><a href="#6总结">6.总结</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1属性-2">1.属性</a></li>
+    <li><a href="#2doregister">2.doRegister</a></li>
+    <li><a href="#4doderegister">4.doDeregister</a></li>
+    <li><a href="#5dobeginread-设置当前监听事件">5.doBeginRead 设置当前监听事件</a></li>
+    <li><a href="#6doclose">6.doClose</a></li>
+    <li><a href="#7abstractniounsafe源码分析">7.AbstractNioUnsafe源码分析</a>
+      <ul>
+        <li><a href="#1实现niounsafe接口">(1).实现NioUnsafe接口</a></li>
+        <li><a href="#2connect-链接服务端">(2).connect 链接服务端</a></li>
+        <li><a href="#3finishconnect">(3).finishConnect</a></li>
+        <li><a href="#4flush0">(4).flush0</a></li>
+        <li><a href="#4forceflush-立即强制刷新">(4).forceFlush 立即强制刷新</a></li>
+        <li><a href="#5removereadop">(5).removeReadOp</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#2dowrite">2.doWrite</a></li>
+    <li><a href="#3niomessageunsafe-源码分析">3.NioMessageUnsafe 源码分析</a>
+      <ul>
+        <li><a href="#1属性-3">1.属性</a></li>
+        <li><a href="#2read读数据">2.read读数据</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#1构造">1.构造</a></li>
+    <li><a href="#2dobind">2.doBind</a></li>
+    <li><a href="#3doreadmessages-创建niosocketchannel">3.doReadMessages 创建NioSocketChannel</a></li>
+    <li><a href="#4doclose">4.doClose</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1构造-1">1.构造</a></li>
+    <li><a href="#2dowrite-1">2.doWrite</a>
+      <ul>
+        <li><a href="#adowriteinternal-对不同类型写操作">a.doWriteInternal 对不同类型写操作</a></li>
+      </ul>
+    </li>
+    <li><a href="#3dowrite0-直接调用dowriteinternal">3.doWrite0 直接调用doWriteInternal</a></li>
+    <li><a href="#4niobyteunsafe-源码分析">4.NioByteUnsafe 源码分析</a>
+      <ul>
+        <li><a href="#1read">(1).read</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#1构造-2">1.构造</a></li>
+    <li><a href="#2doconnect-链接">2.doConnect 链接</a></li>
+    <li><a href="#4dofinishconnect">4.doFinishConnect</a></li>
+    <li><a href="#5doreadbytes">5.doReadBytes</a></li>
+    <li><a href="#6dowritebytes">6.doWriteBytes</a></li>
+    <li><a href="#7dowritefileregion-transferto运用零cp">7.doWriteFileRegion transferTo运用零CP</a></li>
+    <li><a href="#6dowrite">6.doWrite</a>
+      <ul>
+        <li><a href="#a每次调整写入的最大字节数adjustmaxbytespergatheringwrite">a.每次调整写入的最大字节数(adjustMaxBytesPerGatheringWrite)</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#1内部数据结构">1.内部数据结构</a></li>
+    <li><a href="#2addmessage">2.addMessage</a>
+      <ul>
+        <li><a href="#1写一直写下去不调用调用flush发生oom">(1).写一直写下去，不调用调用Flush，发生OOM;</a></li>
+        <li><a href="#2写的缓冲区的高水位降下去有没有通知我加快write频率呢肯定有这个就是所谓写的缓冲区的低水位这样会触发firechannelwritabilitychanged">(2).写的缓冲区的高水位降下去，有没有通知我加快write频率呢？肯定有，这个就是所谓写的缓冲区的低水位，这样会触发fireChannelWritabilityChanged</a></li>
+      </ul>
+    </li>
+    <li><a href="#3addflush">3.addFlush</a></li>
+    <li><a href="#4entry结构">4.Entry结构</a>
+      <ul>
+        <li><a href="#1创建">1.创建</a></li>
+        <li><a href="#apendingsize加9696是啥呢">a.pendingSize加96，96是啥呢？</a></li>
+      </ul>
+    </li>
+    <li><a href="#6niobuffers-提供这个主要nio的写必须用bytebuf转化bytebuffer">6.nioBuffers 提供这个，主要NIO的写必须用ByteBuf转化ByteBuffer</a>
+      <ul>
+        <li><a href="#ainternalthreadlocalmap-本地添加缓冲区">a.InternalThreadLocalMap 本地添加缓冲区</a></li>
+      </ul>
+    </li>
+    <li><a href="#7removebytes-按字节删除entry">7.removeBytes 按字节删除Entry</a>
+      <ul>
+        <li><a href="#awrittenbytes写的字节小于entryentry中还有数据要发送主要bytebuffer在写时候把读位置也变动这里不用去初始化操作">a.writtenBytes写的字节小于Entry，Entry中还有数据要发送，主要ByteBuffer，在写时候把读位置也变动，这里不用去初始化操作；</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#1recvbytebufallocator接口类图">1.RecvByteBufAllocator接口类图</a></li>
+    <li><a href="#2adaptiverecvbytebufallocator">2.AdaptiveRecvByteBufAllocator</a>
+      <ul>
+        <li><a href="#a类图">a.类图</a></li>
+        <li><a href="#bnewhandle-直接创建handleimpl">b.newHandle 直接创建HandleImpl</a></li>
+      </ul>
+    </li>
+    <li><a href="#3adaptiverecvbytebufallocatorhandleimpl">3.AdaptiveRecvByteBufAllocator#HandleImpl</a>
+      <ul>
+        <li><a href="#a类图结构">a.类图结构</a></li>
+        <li><a href="#bmaxmessagehandle">b.MaxMessageHandle</a></li>
+        <li><a href="#c数据结构">c.数据结构</a></li>
+        <li><a href="#dadaptiverecvbytebufallocator的类变量定义">d.AdaptiveRecvByteBufAllocator的类变量定义</a></li>
+        <li><a href="#elastbytesread记录读取的大小">e.lastBytesRead记录读取的大小</a></li>
+        <li><a href="#frecord-计算下一个读取的大小">f.record 计算下一个读取的大小</a></li>
+        <li><a href="#greadcomplete-调用record计算下次读取的大小">g.readComplete 调用record，计算下次读取的大小</a></li>
+        <li><a href="#hallocate获取内存空间">h.allocate获取内存空间</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2019-03-17T21:18:08" title="March 17, 2019">March 17, 2019</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="一介绍">一、介绍</h1>
+<p>Channel是 Netty抽象出来的网络I/O读写相关的接口,为什么不使用JDK NIO原生的Channel而要另起炉灶呢
+主要原因如下:</p>
+<ul>
+<li>
+<p>(1)JDK的Socketchannel和ServerSocketchannel没有统一的Channel接口供业务开发者使用,对于用户而言,没有统一的API操作,使用起来并不方便。</p>
+</li>
+<li>
+<p>(3) Netty的Channel需要能够跟Netty的整体架构融合在一起,例如I/O模型、基于Channelpipeline的定制模型,以及基于元数据描述配置化的TCP参数等,
+这些JDK的Socketchannel和 Serversocketchannel都没有提供,需要重新封装;</p>
+</li>
+<li>
+<p>(4)自定义的 Channel,功能实现更加灵活。</p>
+</li>
+</ul>
+<p>基于上述4个原因,Nety重新设计了Channel接口,并且给予了很多不同的实现。它的设计原理比较简单,但是功能却比较繁杂,主要的设计理念如下。</p>
+<ul>
+<li>
+<p>(1)在Channel接口层,采用Facade模式进行统一封装,将网络I/O操作、网络IO相关联的其他操作封装起来,统一对外提供。</p>
+</li>
+<li>
+<p>(2) Channel接口的定义尽量大而全,为 Socketchannel和 ServerSocketchannel提供统一的规范,由不同子类实现不同的功能,公共功能在抽象父类中实现,最大程度地实现功能和接口的重用</p>
+</li>
+<li>
+<p>(3)具体实现采用聚合而非包含的方式,将相关的功能类聚合在 Channel中,由 Channel统一负责分配和调度,功能实现更加灵活。</p>
+</li>
+</ul>
+<h1 id="二channel接口说明">二、Channel接口说明</h1>
+<p>Channel接口方法如图下：</p>
+<p><img src="/netty/Channel07.png" alt=""></p>
+<p>Channel接口中有个Unsafe接口；Unsafe接口实际上是 Channel接口的辅助接口,它不应该被用户代码直接调用。实际
+的I/O读写操作都是由Unsafe接口负责完成的</p>
+<p>Channel接口实现子类很多，主要讲解NioServerSocketChannel和NioSocketChannel两个类；</p>
+<p>NioServerSocketChannel类UML图</p>
+<p><img src="/netty/Channel03.png" alt=""></p>
+<p>NioSocketChannel类UML图</p>
+<p><img src="/netty/Channel04.png" alt=""></p>
+<h1 id="三abstractchannel源码分析">三、AbstractChannel源码分析</h1>
+<h2 id="1属性">1.属性</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">AbstractChannel</span> <span class="kd">extends</span> <span class="n">DefaultAttributeMap</span> <span class="kd">implements</span> <span class="n">Channel</span> <span class="o">{</span>
+    
+    <span class="c1">//父Channel 在NIO 用于服务端accept创建NioSocketChannel自定父类
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Channel</span> <span class="n">parent</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">ChannelId</span> <span class="n">id</span><span class="o">;</span> <span class="c1">//采用默认方式生成的全局唯一ID;
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Unsafe</span> <span class="n">unsafe</span><span class="o">;</span> <span class="c1">//Unsafe
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">DefaultChannelPipeline</span> <span class="n">pipeline</span><span class="o">;</span> <span class="c1">//当前Channel对应DefaultChannelPipeline
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">VoidChannelPromise</span> <span class="n">unsafeVoidPromise</span> <span class="o">=</span> <span class="k">new</span> <span class="n">VoidChannelPromise</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">CloseFuture</span> <span class="n">closeFuture</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CloseFuture</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+
+    <span class="kd">private</span> <span class="kd">volatile</span> <span class="n">SocketAddress</span> <span class="n">localAddress</span><span class="o">;</span><span class="c1">//本地地址
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">volatile</span> <span class="n">SocketAddress</span> <span class="n">remoteAddress</span><span class="o">;</span><span class="c1">//远程地址
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">volatile</span> <span class="n">EventLoop</span> <span class="n">eventLoop</span><span class="o">;</span>        <span class="c1">//当前Channel注册EventLoop
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">volatile</span> <span class="kt">boolean</span> <span class="n">registered</span><span class="o">;</span>         <span class="c1">//注册状态
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">closeInitiated</span><span class="o">;</span>              <span class="c1">//关闭初始化状态
+</span><span class="c1"></span>
+    <span class="cm">/** Cache for the string representation of this channel */</span>
+    <span class="c1">//缓存此通道的字符串表示形式
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">strValActive</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">String</span> <span class="n">strVal</span><span class="o">;</span>
+<span class="o">}</span>     
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2构造">2.构造</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">protected</span> <span class="nf">AbstractChannel</span><span class="o">(</span><span class="n">Channel</span> <span class="n">parent</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">parent</span> <span class="o">=</span> <span class="n">parent</span><span class="o">;</span>
+        <span class="n">id</span> <span class="o">=</span> <span class="n">newId</span><span class="o">();</span>
+        <span class="n">unsafe</span> <span class="o">=</span> <span class="n">newUnsafe</span><span class="o">();</span>  <span class="c1">//抽象方法，子类去实现
+</span><span class="c1"></span>        <span class="n">pipeline</span> <span class="o">=</span> <span class="n">newChannelPipeline</span><span class="o">();</span>
+    <span class="o">}</span>
+    <span class="kd">protected</span> <span class="nf">AbstractChannel</span><span class="o">(</span><span class="n">Channel</span> <span class="n">parent</span><span class="o">,</span> <span class="n">ChannelId</span> <span class="n">id</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">parent</span> <span class="o">=</span> <span class="n">parent</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">id</span> <span class="o">=</span> <span class="n">id</span><span class="o">;</span>
+        <span class="n">unsafe</span> <span class="o">=</span> <span class="n">newUnsafe</span><span class="o">();</span>
+        <span class="n">pipeline</span> <span class="o">=</span> <span class="n">newChannelPipeline</span><span class="o">();</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>主要职责创建DefaultChannelPipeline</li>
+</ul>
+<h2 id="3bindconnectdisconnectclosereadwrited等这些方法都是委托pipeline实现滴">3.bind,connect,disconnect,close,read,writed等这些方法都是委托pipeline实现滴；</h2>
+<h2 id="4localaddressremoteaddress方法都是由unsafe对象去实现">4.localAddress,remoteAddress方法都是由Unsafe对象去实现</h2>
+<h2 id="5abstractunsafe源码分析">5.AbstractUnsafe源码分析</h2>
+<h3 id="1属性-1">(1).属性</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="kd">protected</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">AbstractUnsafe</span> <span class="kd">implements</span> <span class="n">Unsafe</span> <span class="o">{</span>
+
+        <span class="kd">private</span> <span class="kd">final</span> <span class="n">ChannelOutboundBuffer</span> <span class="n">outboundBuffer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ChannelOutboundBuffer</span><span class="o">(</span><span class="n">AbstractChannel</span><span class="o">.</span><span class="na">this</span><span class="o">);</span>
+        <span class="kd">private</span> <span class="n">RecvByteBufAllocator</span><span class="o">.</span><span class="na">Handle</span> <span class="n">recvHandle</span><span class="o">;</span>
+        <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">inFlush0</span><span class="o">;</span>
+        <span class="cm">/** true if the channel has never been registered, false otherwise */</span>
+        <span class="c1">//如果通道从未被注册，则返回true，否则返回false
+</span><span class="c1"></span>        <span class="kd">private</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">neverRegistered</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2register只要创建channel第一件事就要调用register方法">(2).register只要创建Channel,第一件事就要调用register方法；</h3>
+<p>主要处理的步骤:</p>
+<ul>
+<li>EventLoop赋值操作,异步执行调用EventLoop执行,ChannelPromise也是异步提交</li>
+<li>调用doRegister()空方法
+<ul>
+<li>子类AbstractNioChannel重写方法</li>
+</ul>
+</li>
+<li>pipeline.invokeHandlerAddedIfNeeded()添加Channelhandler</li>
+<li>pipeline.fireChannelRegistered()</li>
+<li>是否激活，是pipeline.fireChannelActive()</li>
+</ul>
+<h3 id="3beginread">(3).beginRead</h3>
+<ul>
+<li>pipeline.fireChannelActive()最终调用代码</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">if (channel.config().isAutoRead()) {
+             channel.read();==&gt;最终调用beginRead
+ }   
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>doBeginRead抽象方法，子类做NIO事件监听操作
+<ul>
+<li>NioSocketChannel对应OP_READ</li>
+<li>NioServerSocketChannel对应OP_ACCEPT</li>
+</ul>
+</li>
+</ul>
+<h3 id="4bind-服务绑定端口操作抽象dobind方法子类实现">(4).bind 服务绑定端口操作抽象doBind方法子类实现</h3>
+<h3 id="5disconnect-断开">(5).disconnect 断开</h3>
+<ul>
+<li>doDisconnect 抽象方法
+<ul>
+<li>NioSocketChannel调用doClose</li>
+<li>NioServerSocketChannel不支持</li>
+</ul>
+</li>
+<li>pipeline.fireChannelInactive()</li>
+</ul>
+<h3 id="6close">(6).close</h3>
+<p>closeExecutor调度执行close，抽象doClose()方法；</p>
+<h3 id="7deregister">(7).deregister</h3>
+<ul>
+<li>抽象doDeregister</li>
+<li>pipeline.fireChannelInactive();</li>
+<li>pipeline.fireChannelUnregistered()</li>
+</ul>
+<h3 id="8write">(8).write</h3>
+<ul>
+<li>往ChannelOutboundBuffer添加消息</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">write</span><span class="o">(</span><span class="n">Object</span> <span class="n">msg</span><span class="o">,</span> <span class="n">ChannelPromise</span> <span class="n">promise</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">assertEventLoop</span><span class="o">();</span>
+
+            <span class="n">ChannelOutboundBuffer</span> <span class="n">outboundBuffer</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">outboundBuffer</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">outboundBuffer</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span> <span class="c1">//channel关闭中，禁止写数据
+</span><span class="c1"></span>
+                <span class="c1">// If the outboundBuffer is null we know the channel was closed and so
+</span><span class="c1"></span>                <span class="c1">// need to fail the future right away. If it is not null the handling of the rest
+</span><span class="c1"></span>                <span class="c1">// will be done in flush0()
+</span><span class="c1"></span>                <span class="c1">// See https://github.com/netty/netty/issues/2362
+</span><span class="c1"></span>                <span class="n">safeSetFailure</span><span class="o">(</span><span class="n">promise</span><span class="o">,</span> <span class="n">WRITE_CLOSED_CHANNEL_EXCEPTION</span><span class="o">);</span>
+                <span class="c1">// release message now to prevent resource-leak
+</span><span class="c1"></span>                <span class="n">ReferenceCountUtil</span><span class="o">.</span><span class="na">release</span><span class="o">(</span><span class="n">msg</span><span class="o">);</span> <span class="c1">//防止释放msg泄漏。
+</span><span class="c1"></span>                <span class="k">return</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="kt">int</span> <span class="n">size</span><span class="o">;</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">filterOutboundMessage</span><span class="o">(</span><span class="n">msg</span><span class="o">);</span><span class="c1">//过滤
+</span><span class="c1"></span>                <span class="c1">//估算大小 
+</span><span class="c1"></span>                <span class="n">size</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="na">estimatorHandle</span><span class="o">().</span><span class="na">size</span><span class="o">(</span><span class="n">msg</span><span class="o">);</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">size</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">safeSetFailure</span><span class="o">(</span><span class="n">promise</span><span class="o">,</span> <span class="n">t</span><span class="o">);</span>
+                <span class="n">ReferenceCountUtil</span><span class="o">.</span><span class="na">release</span><span class="o">(</span><span class="n">msg</span><span class="o">);</span>
+                <span class="k">return</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="n">outboundBuffer</span><span class="o">.</span><span class="na">addMessage</span><span class="o">(</span><span class="n">msg</span><span class="o">,</span> <span class="n">size</span><span class="o">,</span> <span class="n">promise</span><span class="o">);</span><span class="c1">//添加消息
+</span><span class="c1"></span>        <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="9flush-真正往网络发送消息">(9).flush 真正往网络发送消息</h3>
+<p>抽象doWrite子类实现</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">flush</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">assertEventLoop</span><span class="o">();</span>
+
+            <span class="n">ChannelOutboundBuffer</span> <span class="n">outboundBuffer</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">outboundBuffer</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">outboundBuffer</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span><span class="c1">//channel 关闭
+</span><span class="c1"></span>                <span class="k">return</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="n">outboundBuffer</span><span class="o">.</span><span class="na">addFlush</span><span class="o">();</span><span class="c1">// 添加一个刷新标记
+</span><span class="c1"></span>            <span class="n">flush0</span><span class="o">();</span>
+        <span class="o">}</span>
+
+        <span class="nd">@SuppressWarnings</span><span class="o">(</span><span class="s">&#34;deprecation&#34;</span><span class="o">)</span>
+        <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">flush0</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">inFlush0</span><span class="o">)</span> <span class="o">{</span>
+                <span class="c1">// Avoid re-entrance
+</span><span class="c1"></span>                <span class="k">return</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="kd">final</span> <span class="n">ChannelOutboundBuffer</span> <span class="n">outboundBuffer</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">outboundBuffer</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">outboundBuffer</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">outboundBuffer</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span> <span class="o">{</span>
+                <span class="k">return</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="n">inFlush0</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+
+            <span class="c1">// Mark all pending write requests as failure if the channel is inactive.
+</span><span class="c1"></span>            <span class="c1">//如果channel非激活状态，将所有挂起的写请求标记为失败。
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(!</span><span class="n">isActive</span><span class="o">())</span> <span class="o">{</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">isOpen</span><span class="o">())</span> <span class="o">{</span>
+                        <span class="n">outboundBuffer</span><span class="o">.</span><span class="na">failFlushed</span><span class="o">(</span><span class="n">FLUSH0_NOT_YET_CONNECTED_EXCEPTION</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                        <span class="c1">// Do not trigger channelWritabilityChanged because the channel is closed already.
+</span><span class="c1"></span>                        <span class="n">outboundBuffer</span><span class="o">.</span><span class="na">failFlushed</span><span class="o">(</span><span class="n">FLUSH0_CLOSED_CHANNEL_EXCEPTION</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+                    <span class="o">}</span>
+                <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                    <span class="n">inFlush0</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">return</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">doWrite</span><span class="o">(</span><span class="n">outboundBuffer</span><span class="o">);</span> <span class="c1">//抽象方法
+</span><span class="c1"></span>            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">t</span> <span class="k">instanceof</span> <span class="n">IOException</span> <span class="o">&amp;&amp;</span> <span class="n">config</span><span class="o">().</span><span class="na">isAutoClose</span><span class="o">())</span> <span class="o">{</span>
+                    <span class="cm">/**
+</span><span class="cm">                     * Just call {@link #close(ChannelPromise, Throwable, boolean)} here which will take care of
+</span><span class="cm">                     * failing all flushed messages and also ensure the actual close of the underlying transport
+</span><span class="cm">                     * will happen before the promises are notified.
+</span><span class="cm">                     *
+</span><span class="cm">                     * This is needed as otherwise {@link #isActive()} , {@link #isOpen()} and {@link #isWritable()}
+</span><span class="cm">                     * may still return {@code true} even if the channel should be closed as result of the exception.
+</span><span class="cm">                     */</span>
+                    <span class="n">close</span><span class="o">(</span><span class="n">voidPromise</span><span class="o">(),</span> <span class="n">t</span><span class="o">,</span> <span class="n">FLUSH0_CLOSED_CHANNEL_EXCEPTION</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span><span class="c1">//写异常，就关闭
+</span><span class="c1"></span>                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                    <span class="k">try</span> <span class="o">{</span>
+                        <span class="n">shutdownOutput</span><span class="o">(</span><span class="n">voidPromise</span><span class="o">(),</span> <span class="n">t</span><span class="o">);</span>
+                    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">t2</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">close</span><span class="o">(</span><span class="n">voidPromise</span><span class="o">(),</span> <span class="n">t2</span><span class="o">,</span> <span class="n">FLUSH0_CLOSED_CHANNEL_EXCEPTION</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                <span class="n">inFlush0</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="6总结">6.总结</h2>
+<ul>
+<li>封装异常处理，提供抽象方法，让子类处理相关的业务</li>
+<li>ChannelOutboundBuffer处理写操作</li>
+<li>connect和read未实现，子类实现</li>
+</ul>
+<h1 id="四abstractniochannel源码分析">四、AbstractNioChannel源码分析</h1>
+<h2 id="1属性-2">1.属性</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">AbstractNioChannel</span> <span class="kd">extends</span> <span class="n">AbstractChannel</span> <span class="o">{</span>
+
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">SelectableChannel</span> <span class="n">ch</span><span class="o">;</span>  <span class="c1">//包装的JDK Channel
+</span><span class="c1"></span>    <span class="kd">protected</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">readInterestOp</span><span class="o">;</span> <span class="c1">//Read事件，服务端OP_ACCEPT，其他OP_READ
+</span><span class="c1"></span>    <span class="kd">volatile</span> <span class="n">SelectionKey</span> <span class="n">selectionKey</span><span class="o">;</span> <span class="c1">//对应JDK SelectionKey
+</span><span class="c1"></span>    <span class="kt">boolean</span> <span class="n">readPending</span><span class="o">;</span>                <span class="c1">//底层读事件进行标记
+</span><span class="c1"></span>    <span class="c1">//清除readPending标记
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Runnable</span> <span class="n">clearReadPendingRunnable</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">clearReadPending0</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">};</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2doregister">2.doRegister</h2>
+<p>获取Java的SelectionKey；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">doRegister</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="kt">boolean</span> <span class="n">selected</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="n">selectionKey</span> <span class="o">=</span> <span class="n">javaChannel</span><span class="o">().</span><span class="na">register</span><span class="o">(</span><span class="n">eventLoop</span><span class="o">().</span><span class="na">unwrappedSelector</span><span class="o">(),</span> <span class="n">0</span><span class="o">,</span> <span class="k">this</span><span class="o">);</span>
+           <span class="o">...</span>
+       <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4doderegister">4.doDeregister</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">doDeregister</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="n">eventLoop</span><span class="o">().</span><span class="na">cancel</span><span class="o">(</span><span class="n">selectionKey</span><span class="o">());</span><span class="c1">//eventLoop处理取消
+</span><span class="c1"></span>    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="5dobeginread-设置当前监听事件">5.doBeginRead 设置当前监听事件</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">doBeginRead</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="c1">// Channel.read() or ChannelHandlerContext.read() was called
+</span><span class="c1"></span>        <span class="kd">final</span> <span class="n">SelectionKey</span> <span class="n">selectionKey</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">selectionKey</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">selectionKey</span><span class="o">.</span><span class="na">isValid</span><span class="o">())</span> <span class="o">{</span> <span class="c1">//选择键被取消而不再有效
+</span><span class="c1"></span>
+            <span class="k">return</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="n">readPending</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span> <span class="c1">//设置底层读事件
+</span><span class="c1"></span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="n">interestOps</span> <span class="o">=</span> <span class="n">selectionKey</span><span class="o">.</span><span class="na">interestOps</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">((</span><span class="n">interestOps</span> <span class="o">&amp;</span> <span class="n">readInterestOp</span><span class="o">)</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">//读事件设置
+</span><span class="c1"></span>            <span class="n">selectionKey</span><span class="o">.</span><span class="na">interestOps</span><span class="o">(</span><span class="n">interestOps</span> <span class="o">|</span> <span class="n">readInterestOp</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="6doclose">6.doClose</h2>
+<p>啥没处理，子类重写这个方法</p>
+<h2 id="7abstractniounsafe源码分析">7.AbstractNioUnsafe源码分析</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="kd">protected</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">AbstractNioUnsafe</span> <span class="kd">extends</span> <span class="n">AbstractUnsafe</span> <span class="kd">implements</span> <span class="n">NioUnsafe</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1实现niounsafe接口">(1).实现NioUnsafe接口</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * Special {@link Unsafe} sub-type which allows to access the underlying {@link SelectableChannel}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kd">interface</span> <span class="nc">NioUnsafe</span> <span class="kd">extends</span> <span class="n">Unsafe</span> <span class="o">{</span>
+        <span class="cm">/**
+</span><span class="cm">         * Return underlying {@link SelectableChannel}
+</span><span class="cm">         */</span>
+        <span class="n">SelectableChannel</span> <span class="nf">ch</span><span class="o">();</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * 客户端链接服务端成功，调用finishConnect
+</span><span class="cm">         */</span>
+        <span class="kt">void</span> <span class="nf">finishConnect</span><span class="o">();</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Read from underlying {@link SelectableChannel}
+</span><span class="cm">         */</span>
+        <span class="kt">void</span> <span class="nf">read</span><span class="o">();</span>
+        <span class="c1">//立即强制刷新
+</span><span class="c1"></span>        <span class="kt">void</span> <span class="nf">forceFlush</span><span class="o">();</span>
+    <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2connect-链接服务端">(2).connect 链接服务端</h3>
+<ul>
+<li>doConnect抽象方法</li>
+<li>pipeline().fireChannelActive();</li>
+</ul>
+<h3 id="3finishconnect">(3).finishConnect</h3>
+<ul>
+<li>doFinishConnect()抽象方法</li>
+<li>pipeline().fireChannelActive();</li>
+</ul>
+<h3 id="4flush0">(4).flush0</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">        <span class="nd">@Override</span>
+        <span class="kd">protected</span> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">flush0</span><span class="o">()</span> <span class="o">{</span>
+            <span class="c1">//只有在没有等待刷新时立即刷新。如果有一个待定的刷新操作，事件循环将调用forceFlush()，因此现在不需要调用它。
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(</span><span class="n">isFlushPending</span><span class="o">())</span> <span class="o">{</span>
+                <span class="k">return</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="kd">super</span><span class="o">.</span><span class="na">flush0</span><span class="o">();</span>
+        <span class="o">}</span>
+       <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">isFlushPending</span><span class="o">()</span> <span class="o">{</span>
+           <span class="n">SelectionKey</span> <span class="n">selectionKey</span> <span class="o">=</span> <span class="n">selectionKey</span><span class="o">();</span>
+           <span class="c1">//OP_WRITE表示通道可写
+</span><span class="c1"></span>           <span class="k">return</span> <span class="n">selectionKey</span><span class="o">.</span><span class="na">isValid</span><span class="o">()</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">selectionKey</span><span class="o">.</span><span class="na">interestOps</span><span class="o">()</span> <span class="o">&amp;</span> <span class="n">SelectionKey</span><span class="o">.</span><span class="na">OP_WRITE</span><span class="o">)</span> <span class="o">!=</span> <span class="n">0</span><span class="o">;</span>
+       <span class="o">}</span>
+         
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4forceflush-立即强制刷新">(4).forceFlush 立即强制刷新</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    @Override
+        public final void forceFlush() {
+            // 立即强制刷新
+            super.flush0();
+        }  
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="5removereadop">(5).removeReadOp</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">       <span class="kd">protected</span> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">removeReadOp</span><span class="o">()</span> <span class="o">{</span>
+           <span class="n">SelectionKey</span> <span class="n">key</span> <span class="o">=</span> <span class="n">selectionKey</span><span class="o">();</span>
+           <span class="c1">// Check first if the key is still valid as it may be canceled as part of the deregistration
+</span><span class="c1"></span>           <span class="c1">// from the EventLoop
+</span><span class="c1"></span>           <span class="c1">//首先检查键是否仍然有效，因为它可能会被取消，作为从EventLoop注销的一部分
+</span><span class="c1"></span>           <span class="c1">// See https://github.com/netty/netty/issues/2104
+</span><span class="c1"></span>           <span class="k">if</span> <span class="o">(!</span><span class="n">key</span><span class="o">.</span><span class="na">isValid</span><span class="o">())</span> <span class="o">{</span>
+               <span class="k">return</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="kt">int</span> <span class="n">interestOps</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="na">interestOps</span><span class="o">();</span>
+           <span class="k">if</span> <span class="o">((</span><span class="n">interestOps</span> <span class="o">&amp;</span> <span class="n">readInterestOp</span><span class="o">)</span> <span class="o">!=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+               <span class="c1">// only remove readInterestOp if needed
+</span><span class="c1"></span>               <span class="c1">//只需要删除readInterestOp
+</span><span class="c1"></span>               <span class="n">key</span><span class="o">.</span><span class="na">interestOps</span><span class="o">(</span><span class="n">interestOps</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">readInterestOp</span><span class="o">);</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="五abstractniomessagechannel源码分析">五、AbstractNioMessageChannel源码分析</h1>
+<p>服务端AbstractNioMessageChannel</p>
+<h2 id="2dowrite">2.doWrite</h2>
+<ul>
+<li>doWriteMessage抽象方法
+<ul>
+<li>NioServerSocketChannel不支持操作，主要充当ACCEPT，链接客服端角色；</li>
+</ul>
+</li>
+</ul>
+<h2 id="3niomessageunsafe-源码分析">3.NioMessageUnsafe 源码分析</h2>
+<h3 id="1属性-3">1.属性</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">NioMessageUnsafe</span> <span class="kd">extends</span> <span class="n">AbstractNioUnsafe</span> <span class="o">{</span>
+
+        <span class="kd">private</span> <span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">readBuf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;();</span><span class="c1">//doReadMessages用到这个集合
+</span><span class="c1"></span><span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2read读数据">2.read读数据</h3>
+<ul>
+<li>doReadMessages抽象方法
+<ul>
+<li>NioServerSocketChannel实现就是客服端链接成功Channel</li>
+</ul>
+</li>
+<li>运用RecvByteBufAllocator</li>
+<li>pipeline.fireChannelRead(readBuf.get(i));//触发ChannelRead事件</li>
+<li>pipeline.fireChannelReadComplete();</li>
+</ul>
+<h1 id="六nioserversocketchannel源码分析">六、NioServerSocketChannel源码分析</h1>
+<h2 id="1构造">1.构造</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">NioServerSocketChannel</span> <span class="kd">extends</span> <span class="n">AbstractNioMessageChannel</span>
+                             <span class="kd">implements</span> <span class="n">io</span><span class="o">.</span><span class="na">netty</span><span class="o">.</span><span class="na">channel</span><span class="o">.</span><span class="na">socket</span><span class="o">.</span><span class="na">ServerSocketChannel</span> <span class="o">{</span>
+
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">ChannelMetadata</span> <span class="n">METADATA</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ChannelMetadata</span><span class="o">(</span><span class="kc">false</span><span class="o">,</span> <span class="n">16</span><span class="o">);</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">SelectorProvider</span> <span class="n">DEFAULT_SELECTOR_PROVIDER</span> <span class="o">=</span> <span class="n">SelectorProvider</span><span class="o">.</span><span class="na">provider</span><span class="o">();</span>
+
+    <span class="kd">private</span> <span class="kd">static</span> <span class="n">ServerSocketChannel</span> <span class="nf">newSocket</span><span class="o">(</span><span class="n">SelectorProvider</span> <span class="n">provider</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="cm">/**
+</span><span class="cm">             *  Use the {@link SelectorProvider} to open {@link SocketChannel} and so remove condition in
+</span><span class="cm">             *  {@link SelectorProvider#provider()} which is called by each ServerSocketChannel.open() otherwise.
+</span><span class="cm">             *
+</span><span class="cm">             *  See &lt;a href=&#34;https://github.com/netty/netty/issues/2308&#34;&gt;#2308&lt;/a&gt;.
+</span><span class="cm">             */</span>
+            <span class="k">return</span> <span class="n">provider</span><span class="o">.</span><span class="na">openServerSocketChannel</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">ChannelException</span><span class="o">(</span>
+                    <span class="s">&#34;Failed to open a server socket.&#34;</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">ServerSocketChannelConfig</span> <span class="n">config</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Create a new instance
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">NioServerSocketChannel</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span><span class="n">newSocket</span><span class="o">(</span><span class="n">DEFAULT_SELECTOR_PROVIDER</span><span class="o">));</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2dobind">2.doBind</h2>
+<ul>
+<li>backlog 链接队列数量</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">doBind</span><span class="o">(</span><span class="n">SocketAddress</span> <span class="n">localAddress</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">PlatformDependent</span><span class="o">.</span><span class="na">javaVersion</span><span class="o">()</span> <span class="o">&gt;=</span> <span class="n">7</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">javaChannel</span><span class="o">().</span><span class="na">bind</span><span class="o">(</span><span class="n">localAddress</span><span class="o">,</span> <span class="n">config</span><span class="o">.</span><span class="na">getBacklog</span><span class="o">());</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="n">javaChannel</span><span class="o">().</span><span class="na">socket</span><span class="o">().</span><span class="na">bind</span><span class="o">(</span><span class="n">localAddress</span><span class="o">,</span> <span class="n">config</span><span class="o">.</span><span class="na">getBacklog</span><span class="o">());</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3doreadmessages-创建niosocketchannel">3.doReadMessages 创建NioSocketChannel</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="kt">int</span> <span class="nf">doReadMessages</span><span class="o">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">buf</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="n">SocketChannel</span> <span class="n">ch</span> <span class="o">=</span> <span class="n">SocketUtils</span><span class="o">.</span><span class="na">accept</span><span class="o">(</span><span class="n">javaChannel</span><span class="o">());</span>
+
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">ch</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">buf</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">NioSocketChannel</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">ch</span><span class="o">));</span>
+                <span class="k">return</span> <span class="n">1</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}...</span>
+        <span class="k">return</span> <span class="n">0</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4doclose">4.doClose</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="nd">@Override</span>
+   <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">doClose</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+       <span class="n">javaChannel</span><span class="o">().</span><span class="na">close</span><span class="o">();</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="七abstractniobytechannel源码分析">七、AbstractNioByteChannel源码分析</h1>
+<h2 id="1构造-1">1.构造</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">protected</span> <span class="nf">AbstractNioByteChannel</span><span class="o">(</span><span class="n">Channel</span> <span class="n">parent</span><span class="o">,</span> <span class="n">SelectableChannel</span> <span class="n">ch</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">parent</span><span class="o">,</span> <span class="n">ch</span><span class="o">,</span> <span class="n">SelectionKey</span><span class="o">.</span><span class="na">OP_READ</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2dowrite-1">2.doWrite</h2>
+<ul>
+<li>NioSocketChannel重写</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">doWrite</span><span class="o">(</span><span class="n">ChannelOutboundBuffer</span> <span class="n">in</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+       <span class="c1">//循环写次数，默认16次
+</span><span class="c1"></span>        <span class="kt">int</span> <span class="n">writeSpinCount</span> <span class="o">=</span> <span class="n">config</span><span class="o">().</span><span class="na">getWriteSpinCount</span><span class="o">();</span>
+        <span class="k">do</span> <span class="o">{</span>
+            <span class="n">Object</span> <span class="n">msg</span> <span class="o">=</span> <span class="n">in</span><span class="o">.</span><span class="na">current</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">msg</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>  
+                <span class="c1">// Wrote all messages.
+</span><span class="c1"></span>                <span class="n">clearOpWrite</span><span class="o">();</span> <span class="c1">//清除SelectionKey.OP_WRITE
+</span><span class="c1"></span>                <span class="c1">// Directly return here so incompleteWrite(...) is not called.
+</span><span class="c1"></span>                <span class="k">return</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="n">writeSpinCount</span> <span class="o">-=</span> <span class="n">doWriteInternal</span><span class="o">(</span><span class="n">in</span><span class="o">,</span> <span class="n">msg</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">while</span> <span class="o">(</span><span class="n">writeSpinCount</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">);</span>
+
+        <span class="n">incompleteWrite</span><span class="o">(</span><span class="n">writeSpinCount</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">);</span>
+    <span class="o">}</span>
+
+  <span class="kd">protected</span> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">incompleteWrite</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">setOpWrite</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// IO写满了，设置SelectionKey.OP_WRITE事件
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">setOpWrite</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">setOpWrite</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>  <span class="c1">//writeSpinCount为零情况，数据没写完，提交eventLoop处理
+</span><span class="c1"></span>            <span class="c1">// Schedule flush again later so other tasks can be picked up in the meantime
+</span><span class="c1"></span>            <span class="n">Runnable</span> <span class="n">flushTask</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">flushTask</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">flushTask</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">flushTask</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">flushTask</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+                    <span class="nd">@Override</span>
+                    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+                        <span class="n">flush</span><span class="o">();</span>   <span class="c1">// pipeline.flush();
+</span><span class="c1"></span>                    <span class="o">}</span>
+                <span class="o">};</span>
+            <span class="o">}</span>
+            <span class="c1">//flushTask任务提交eventLoop
+</span><span class="c1"></span>            <span class="n">eventLoop</span><span class="o">().</span><span class="na">execute</span><span class="o">(</span><span class="n">flushTask</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="adowriteinternal-对不同类型写操作">a.doWriteInternal 对不同类型写操作</h3>
+<ul>
+<li>ByteBuf调用doWriteBytes抽象方法</li>
+<li>FileRegion调用doWriteFileRegion方法</li>
+<li>写多少字节同步ChannelOutboundBuffer#progress</li>
+<li>已经读完调用ChannelOutboundBuffer#remove</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  private int doWriteInternal(ChannelOutboundBuffer in, Object msg) throws Exception {
+       if (msg instanceof ByteBuf) {  
+           ByteBuf buf = (ByteBuf) msg;
+           if (!buf.isReadable()) {
+               in.remove();
+               return 0;
+           }
+
+           final int localFlushedAmount = doWriteBytes(buf);//抽象方法
+           if (localFlushedAmount &gt; 0) {
+               in.progress(localFlushedAmount); //通知有关写入进度的当前消息的{@link ChannelPromise}。
+               if (!buf.isReadable()) {
+                   in.remove();
+               }
+               return 1;
+           }
+       } else if (msg instanceof FileRegion) {//FileRegion是Netty对NIO底层的FileChannel的封装
+           FileRegion region = (FileRegion) msg;
+           if (region.transferred() &gt;= region.count()) {
+               in.remove();
+               return 0;
+           }
+
+           long localFlushedAmount = doWriteFileRegion(region);//模版方法
+           if (localFlushedAmount &gt; 0) {
+               in.progress(localFlushedAmount);
+               if (region.transferred() &gt;= region.count()) {
+                   in.remove();
+               }
+               return 1;
+           }
+       } else {
+           // Should not reach here.
+           throw new Error();
+       }
+       return WRITE_STATUS_SNDBUF_FULL;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3dowrite0-直接调用dowriteinternal">3.doWrite0 直接调用doWriteInternal</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="cm">/**
+</span><span class="cm">    * Write objects to the OS.
+</span><span class="cm">    * 将对象写入操作系统。
+</span><span class="cm">    * @param in the collection which contains objects to write.
+</span><span class="cm">    * @return The value that should be decremented from the write quantum which starts at
+</span><span class="cm">    * {@link ChannelConfig#getWriteSpinCount()}. The typical use cases are as follows:
+</span><span class="cm">    * &lt;ul&gt;
+</span><span class="cm">    *     &lt;li&gt;0 - if no write was attempted. This is appropriate if an empty {@link ByteBuf} (or other empty content)
+</span><span class="cm">    *     is encountered&lt;/li&gt;
+</span><span class="cm">    *     &lt;li&gt;1 - if a single call to write data was made to the OS&lt;/li&gt;
+</span><span class="cm">    *     &lt;li&gt;{@link ChannelUtils#WRITE_STATUS_SNDBUF_FULL} - if an attempt to write data was made to the OS, but no
+</span><span class="cm">    *     data was accepted&lt;/li&gt;
+</span><span class="cm">    * &lt;/ul&gt;
+</span><span class="cm">    * @throws Exception if an I/O exception occurs during write.
+</span><span class="cm">    */</span>
+   <span class="kd">protected</span> <span class="kd">final</span> <span class="kt">int</span> <span class="nf">doWrite0</span><span class="o">(</span><span class="n">ChannelOutboundBuffer</span> <span class="n">in</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+       <span class="n">Object</span> <span class="n">msg</span> <span class="o">=</span> <span class="n">in</span><span class="o">.</span><span class="na">current</span><span class="o">();</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">msg</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="c1">// Directly return here so incompleteWrite(...) is not called.
+</span><span class="c1"></span>           <span class="k">return</span> <span class="n">0</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="k">return</span> <span class="n">doWriteInternal</span><span class="o">(</span><span class="n">in</span><span class="o">,</span> <span class="n">in</span><span class="o">.</span><span class="na">current</span><span class="o">());</span>
+   <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4niobyteunsafe-源码分析">4.NioByteUnsafe 源码分析</h2>
+<h3 id="1read">(1).read</h3>
+<ul>
+<li>RecvByteBufAllocator的实现类AdaptiveRecvByteBufAllocator构建一个最优大小的缓冲区来接收数据</li>
+<li>doReadBytes抽象方法</li>
+<li>pipeline.fireChannelRead(byteBuf)</li>
+<li>pipeline.fireChannelReadComplete();</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">read</span><span class="o">()</span> <span class="o">{</span>
+            <span class="kd">final</span> <span class="n">ChannelConfig</span> <span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">();</span>
+            <span class="kd">final</span> <span class="n">ChannelPipeline</span> <span class="n">pipeline</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">();</span>
+            <span class="kd">final</span> <span class="n">ByteBufAllocator</span> <span class="n">allocator</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="na">getAllocator</span><span class="o">();</span>
+            <span class="kd">final</span> <span class="n">RecvByteBufAllocator</span><span class="o">.</span><span class="na">Handle</span> <span class="n">allocHandle</span> <span class="o">=</span> <span class="n">recvBufAllocHandle</span><span class="o">();</span><span class="c1">//allocHandle不为空情况config().getRecvByteBufAllocator().newHandle();
+</span><span class="c1"></span>            <span class="c1">//重置统计信息
+</span><span class="c1"></span>            <span class="n">allocHandle</span><span class="o">.</span><span class="na">reset</span><span class="o">(</span><span class="n">config</span><span class="o">);</span>
+
+            <span class="n">ByteBuf</span> <span class="n">byteBuf</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="kt">boolean</span> <span class="n">close</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="k">do</span> <span class="o">{</span>
+                   <span class="c1">//获取读取大小
+</span><span class="c1"></span>                    <span class="n">byteBuf</span> <span class="o">=</span> <span class="n">allocHandle</span><span class="o">.</span><span class="na">allocate</span><span class="o">(</span><span class="n">allocator</span><span class="o">);</span>
+                    <span class="n">allocHandle</span><span class="o">.</span><span class="na">lastBytesRead</span><span class="o">(</span><span class="n">doReadBytes</span><span class="o">(</span><span class="n">byteBuf</span><span class="o">));</span><span class="c1">//doReadBytes抽象方法
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">allocHandle</span><span class="o">.</span><span class="na">lastBytesRead</span><span class="o">()</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="c1">// nothing was read. release the buffer.
+</span><span class="c1"></span>                        <span class="n">byteBuf</span><span class="o">.</span><span class="na">release</span><span class="o">();</span><span class="c1">//释放
+</span><span class="c1"></span>                        <span class="n">byteBuf</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                        <span class="n">close</span> <span class="o">=</span> <span class="n">allocHandle</span><span class="o">.</span><span class="na">lastBytesRead</span><span class="o">()</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">;</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">close</span><span class="o">)</span> <span class="o">{</span>
+                            <span class="c1">// There is nothing left to read as we received an EOF.
+</span><span class="c1"></span>                            <span class="c1">//当我们收到EOF时，没有什么可以阅读的。
+</span><span class="c1"></span>                            <span class="n">readPending</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                        <span class="o">}</span>
+                        <span class="k">break</span><span class="o">;</span>
+                    <span class="o">}</span>
+
+                    <span class="n">allocHandle</span><span class="o">.</span><span class="na">incMessagesRead</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+                    <span class="n">readPending</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                    <span class="n">pipeline</span><span class="o">.</span><span class="na">fireChannelRead</span><span class="o">(</span><span class="n">byteBuf</span><span class="o">);</span><span class="c1">//触发ChannelRead事件，用户处理
+</span><span class="c1"></span>
+                    <span class="n">byteBuf</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="o">}</span> <span class="k">while</span> <span class="o">(</span><span class="n">allocHandle</span><span class="o">.</span><span class="na">continueReading</span><span class="o">());</span> <span class="c1">//判断是否继续读取
+</span><span class="c1"></span>                <span class="c1">//重新计算下次读取的大小
+</span><span class="c1"></span>                <span class="n">allocHandle</span><span class="o">.</span><span class="na">readComplete</span><span class="o">();</span>
+                <span class="n">pipeline</span><span class="o">.</span><span class="na">fireChannelReadComplete</span><span class="o">();</span>
+
+                <span class="k">if</span> <span class="o">(</span><span class="n">close</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">closeOnRead</span><span class="o">(</span><span class="n">pipeline</span><span class="o">);</span>
+                <span class="o">}</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">handleReadException</span><span class="o">(</span><span class="n">pipeline</span><span class="o">,</span> <span class="n">byteBuf</span><span class="o">,</span> <span class="n">t</span><span class="o">,</span> <span class="n">close</span><span class="o">,</span> <span class="n">allocHandle</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+                <span class="c1">// Check if there is a readPending which was not processed yet.
+</span><span class="c1"></span>                <span class="c1">// This could be for two reasons:
+</span><span class="c1"></span>                <span class="c1">// * The user called Channel.read() or ChannelHandlerContext.read() in channelRead(...) method
+</span><span class="c1"></span>                <span class="c1">// * The user called Channel.read() or ChannelHandlerContext.read() in channelReadComplete(...) method
+</span><span class="c1"></span>                <span class="c1">//
+</span><span class="c1"></span>                <span class="c1">// See https://github.com/netty/netty/issues/2254
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(!</span><span class="n">readPending</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">config</span><span class="o">.</span><span class="na">isAutoRead</span><span class="o">())</span> <span class="o">{</span>
+                    <span class="n">removeReadOp</span><span class="o">();</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">closeOnRead</span><span class="o">(</span><span class="n">ChannelPipeline</span> <span class="n">pipeline</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">isInputShutdown0</span><span class="o">())</span> <span class="o">{</span> <span class="c1">//默认是false
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">Boolean</span><span class="o">.</span><span class="na">TRUE</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">config</span><span class="o">().</span><span class="na">getOption</span><span class="o">(</span><span class="n">ChannelOption</span><span class="o">.</span><span class="na">ALLOW_HALF_CLOSURE</span><span class="o">)))</span> <span class="o">{</span>
+                    <span class="n">shutdownInput</span><span class="o">();</span>  <span class="c1">//抽象方法
+</span><span class="c1"></span>                    <span class="n">pipeline</span><span class="o">.</span><span class="na">fireUserEventTriggered</span><span class="o">(</span><span class="n">ChannelInputShutdownEvent</span><span class="o">.</span><span class="na">INSTANCE</span><span class="o">);</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                    <span class="n">close</span><span class="o">(</span><span class="n">voidPromise</span><span class="o">());</span>
+                <span class="o">}</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="n">pipeline</span><span class="o">.</span><span class="na">fireUserEventTriggered</span><span class="o">(</span><span class="n">ChannelInputShutdownReadComplete</span><span class="o">.</span><span class="na">INSTANCE</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">handleReadException</span><span class="o">(</span><span class="n">ChannelPipeline</span> <span class="n">pipeline</span><span class="o">,</span> <span class="n">ByteBuf</span> <span class="n">byteBuf</span><span class="o">,</span> <span class="n">Throwable</span> <span class="n">cause</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">close</span><span class="o">,</span>
+                <span class="n">RecvByteBufAllocator</span><span class="o">.</span><span class="na">Handle</span> <span class="n">allocHandle</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">byteBuf</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">byteBuf</span><span class="o">.</span><span class="na">isReadable</span><span class="o">())</span> <span class="o">{</span>
+                    <span class="n">readPending</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                    <span class="n">pipeline</span><span class="o">.</span><span class="na">fireChannelRead</span><span class="o">(</span><span class="n">byteBuf</span><span class="o">);</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                    <span class="n">byteBuf</span><span class="o">.</span><span class="na">release</span><span class="o">();</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+            <span class="n">allocHandle</span><span class="o">.</span><span class="na">readComplete</span><span class="o">();</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="na">fireChannelReadComplete</span><span class="o">();</span>
+            <span class="n">pipeline</span><span class="o">.</span><span class="na">fireExceptionCaught</span><span class="o">(</span><span class="n">cause</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">close</span> <span class="o">||</span> <span class="n">cause</span> <span class="k">instanceof</span> <span class="n">IOException</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">closeOnRead</span><span class="o">(</span><span class="n">pipeline</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+       
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="八niosocketchannel源码分析">八、NioSocketChannel源码分析</h1>
+<h2 id="1构造-2">1.构造</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">NioSocketChannel</span> <span class="kd">extends</span> <span class="n">AbstractNioByteChannel</span> <span class="kd">implements</span> <span class="n">io</span><span class="o">.</span><span class="na">netty</span><span class="o">.</span><span class="na">channel</span><span class="o">.</span><span class="na">socket</span><span class="o">.</span><span class="na">SocketChannel</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">InternalLogger</span> <span class="n">logger</span> <span class="o">=</span> <span class="n">InternalLoggerFactory</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="n">NioSocketChannel</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">SelectorProvider</span> <span class="n">DEFAULT_SELECTOR_PROVIDER</span> <span class="o">=</span> <span class="n">SelectorProvider</span><span class="o">.</span><span class="na">provider</span><span class="o">();</span>
+
+    <span class="kd">private</span> <span class="kd">static</span> <span class="n">SocketChannel</span> <span class="nf">newSocket</span><span class="o">(</span><span class="n">SelectorProvider</span> <span class="n">provider</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="cm">/**
+</span><span class="cm">             *  Use the {@link SelectorProvider} to open {@link SocketChannel} and so remove condition in
+</span><span class="cm">             *  {@link SelectorProvider#provider()} which is called by each SocketChannel.open() otherwise.
+</span><span class="cm">             *
+</span><span class="cm">             *  See &lt;a href=&#34;https://github.com/netty/netty/issues/2308&#34;&gt;#2308&lt;/a&gt;.
+</span><span class="cm">             */</span>
+            <span class="k">return</span> <span class="n">provider</span><span class="o">.</span><span class="na">openSocketChannel</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">ChannelException</span><span class="o">(</span><span class="s">&#34;Failed to open a socket.&#34;</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">SocketChannelConfig</span> <span class="n">config</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="nf">NioSocketChannel</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span><span class="n">DEFAULT_SELECTOR_PROVIDER</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2doconnect-链接">2.doConnect 链接</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="kt">boolean</span> <span class="nf">doConnect</span><span class="o">(</span><span class="n">SocketAddress</span> <span class="n">remoteAddress</span><span class="o">,</span> <span class="n">SocketAddress</span> <span class="n">localAddress</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">localAddress</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">doBind0</span><span class="o">(</span><span class="n">localAddress</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="kt">boolean</span> <span class="n">success</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="kt">boolean</span> <span class="n">connected</span> <span class="o">=</span> <span class="n">SocketUtils</span><span class="o">.</span><span class="na">connect</span><span class="o">(</span><span class="n">javaChannel</span><span class="o">(),</span> <span class="n">remoteAddress</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">connected</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">selectionKey</span><span class="o">().</span><span class="na">interestOps</span><span class="o">(</span><span class="n">SelectionKey</span><span class="o">.</span><span class="na">OP_CONNECT</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="k">return</span> <span class="n">connected</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">success</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">doClose</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4dofinishconnect">4.doFinishConnect</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   protected void doFinishConnect() throws Exception {
+         if (!javaChannel().finishConnect()) {
+             throw new Error();
+         }
+     }
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="5doreadbytes">5.doReadBytes</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    @Override
+    protected int doReadBytes(ByteBuf byteBuf) throws Exception {
+        final RecvByteBufAllocator.Handle allocHandle = unsafe().recvBufAllocHandle();
+        allocHandle.attemptedBytesRead(byteBuf.writableBytes());
+        return byteBuf.writeBytes(javaChannel(), allocHandle.attemptedBytesRead());
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="6dowritebytes">6.doWriteBytes</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    @Override
+    protected int doWriteBytes(ByteBuf buf) throws Exception {
+        final int expectedWrittenBytes = buf.readableBytes();
+        return buf.readBytes(javaChannel(), expectedWrittenBytes);
+    } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="7dowritefileregion-transferto运用零cp">7.doWriteFileRegion transferTo运用零CP</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    @Override
+    protected long doWriteFileRegion(FileRegion region) throws Exception {
+        final long position = region.transferred();
+        return region.transferTo(javaChannel(), position);
+    } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="6dowrite">6.doWrite</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">doWrite</span><span class="o">(</span><span class="n">ChannelOutboundBuffer</span> <span class="n">in</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="n">SocketChannel</span> <span class="n">ch</span> <span class="o">=</span> <span class="n">javaChannel</span><span class="o">();</span>
+        <span class="c1">//循环写次数，默认16次
+</span><span class="c1"></span>        <span class="kt">int</span> <span class="n">writeSpinCount</span> <span class="o">=</span> <span class="n">config</span><span class="o">().</span><span class="na">getWriteSpinCount</span><span class="o">();</span>
+        <span class="k">do</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">in</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span> <span class="o">{</span>
+                <span class="c1">// All written so clear OP_WRITE
+</span><span class="c1"></span>                <span class="n">clearOpWrite</span><span class="o">();</span>
+                <span class="c1">// Directly return here so incompleteWrite(...) is not called.
+</span><span class="c1"></span>                <span class="k">return</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="c1">// Ensure the pending writes are made of ByteBufs only.
+</span><span class="c1"></span>            <span class="c1">//确保挂起写入操作仅由ByteBufs组成。
+</span><span class="c1"></span>            <span class="kt">int</span> <span class="n">maxBytesPerGatheringWrite</span> <span class="o">=</span> <span class="o">((</span><span class="n">NioSocketChannelConfig</span><span class="o">)</span> <span class="n">config</span><span class="o">).</span><span class="na">getMaxBytesPerGatheringWrite</span><span class="o">();</span>
+            <span class="n">ByteBuffer</span><span class="o">[]</span> <span class="n">nioBuffers</span> <span class="o">=</span> <span class="n">in</span><span class="o">.</span><span class="na">nioBuffers</span><span class="o">(</span><span class="n">1024</span><span class="o">,</span> <span class="n">maxBytesPerGatheringWrite</span><span class="o">);</span>
+            <span class="kt">int</span> <span class="n">nioBufferCnt</span> <span class="o">=</span> <span class="n">in</span><span class="o">.</span><span class="na">nioBufferCount</span><span class="o">();</span>
+
+            <span class="c1">// Always us nioBuffers() to workaround data-corruption.
+</span><span class="c1"></span>            <span class="c1">// See https://github.com/netty/netty/issues/2761
+</span><span class="c1"></span>            <span class="k">switch</span> <span class="o">(</span><span class="n">nioBufferCnt</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">case</span> <span class="n">0</span><span class="o">:</span>
+                    <span class="c1">// We have something else beside ByteBuffers to write so fallback to normal writes.
+</span><span class="c1"></span>                    <span class="c1">//除了ByteBuffers之外，FileRegion正常的写入。
+</span><span class="c1"></span>                    <span class="n">writeSpinCount</span> <span class="o">-=</span> <span class="n">doWrite0</span><span class="o">(</span><span class="n">in</span><span class="o">);</span>
+                    <span class="k">break</span><span class="o">;</span>
+                <span class="k">case</span> <span class="n">1</span><span class="o">:</span> <span class="o">{</span>
+                    <span class="c1">// Only one ByteBuf so use non-gathering write
+</span><span class="c1"></span>                    <span class="c1">// Zero length buffers are not added to nioBuffers by ChannelOutboundBuffer, so there is no need
+</span><span class="c1"></span>                    <span class="c1">// to check if the total size of all the buffers is non-zero.
+</span><span class="c1"></span>                    <span class="c1">//只有一个ByteBuf使用非收集写入零长度缓冲区不会被ChannelOutboundBuffer添加到nioBuffers，因此不需要检查所有缓冲区的总大小是否非零。
+</span><span class="c1"></span>                    <span class="n">ByteBuffer</span> <span class="n">buffer</span> <span class="o">=</span> <span class="n">nioBuffers</span><span class="o">[</span><span class="n">0</span><span class="o">];</span>
+                    <span class="kt">int</span> <span class="n">attemptedBytes</span> <span class="o">=</span> <span class="n">buffer</span><span class="o">.</span><span class="na">remaining</span><span class="o">();</span>
+                    <span class="kd">final</span> <span class="kt">int</span> <span class="n">localWrittenBytes</span> <span class="o">=</span> <span class="n">ch</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="n">buffer</span><span class="o">);</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">localWrittenBytes</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">incompleteWrite</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+                        <span class="k">return</span><span class="o">;</span>
+                    <span class="o">}</span>
+                    <span class="c1">//每次调整写入的最大字节数
+</span><span class="c1"></span>                    <span class="n">adjustMaxBytesPerGatheringWrite</span><span class="o">(</span><span class="n">attemptedBytes</span><span class="o">,</span> <span class="n">localWrittenBytes</span><span class="o">,</span> <span class="n">maxBytesPerGatheringWrite</span><span class="o">);</span>
+                    <span class="n">in</span><span class="o">.</span><span class="na">removeBytes</span><span class="o">(</span><span class="n">localWrittenBytes</span><span class="o">);</span>
+                    <span class="o">--</span><span class="n">writeSpinCount</span><span class="o">;</span>
+                    <span class="k">break</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">default</span><span class="o">:</span> <span class="o">{</span>
+                    <span class="c1">// Zero length buffers are not added to nioBuffers by ChannelOutboundBuffer, so there is no need
+</span><span class="c1"></span>                    <span class="c1">// to check if the total size of all the buffers is non-zero.
+</span><span class="c1"></span>                    <span class="c1">// We limit the max amount to int above so cast is safe
+</span><span class="c1"></span>                    <span class="c1">//零长度缓冲区不会被ChannelOutboundBuffer添加到nioBuffers，所以不需要检查所有缓冲区的总大小是否非零。 
+</span><span class="c1"></span>                    <span class="c1">// 我们把最大的数量限制在int以上，所以cast是安全的
+</span><span class="c1"></span>                    <span class="kt">long</span> <span class="n">attemptedBytes</span> <span class="o">=</span> <span class="n">in</span><span class="o">.</span><span class="na">nioBufferSize</span><span class="o">();</span>
+                    <span class="kd">final</span> <span class="kt">long</span> <span class="n">localWrittenBytes</span> <span class="o">=</span> <span class="n">ch</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="n">nioBuffers</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">nioBufferCnt</span><span class="o">);</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">localWrittenBytes</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">incompleteWrite</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+                        <span class="k">return</span><span class="o">;</span>
+                    <span class="o">}</span>
+                    <span class="c1">// Casting to int is safe because we limit the total amount of data in the nioBuffers to int above.
+</span><span class="c1"></span>                    <span class="c1">//每次调整写入的最大字节数
+</span><span class="c1"></span>                    <span class="n">adjustMaxBytesPerGatheringWrite</span><span class="o">((</span><span class="kt">int</span><span class="o">)</span> <span class="n">attemptedBytes</span><span class="o">,</span> <span class="o">(</span><span class="kt">int</span><span class="o">)</span> <span class="n">localWrittenBytes</span><span class="o">,</span>
+                            <span class="n">maxBytesPerGatheringWrite</span><span class="o">);</span>
+                    <span class="n">in</span><span class="o">.</span><span class="na">removeBytes</span><span class="o">(</span><span class="n">localWrittenBytes</span><span class="o">);</span>
+                    <span class="o">--</span><span class="n">writeSpinCount</span><span class="o">;</span>
+                    <span class="k">break</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span> <span class="k">while</span> <span class="o">(</span><span class="n">writeSpinCount</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">);</span>
+
+        <span class="n">incompleteWrite</span><span class="o">(</span><span class="n">writeSpinCount</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="a每次调整写入的最大字节数adjustmaxbytespergatheringwrite">a.每次调整写入的最大字节数(adjustMaxBytesPerGatheringWrite)</h3>
+<p>优点：</p>
+<ul>
+<li>尽可能地根据操作系统行为的变化进行调整；</li>
+<li>组装大的内容，不要分多个批次，提高点性能；</li>
+</ul>
+<p>处理逻辑：</p>
+<ul>
+<li>预计写的字节大小跟已写的字节数相同，设置为预计处理的两倍</li>
+<li>预计写的字节大小大于4096且预计写的字节的一半大于已写的字节数相同，设置为预计处理的一半</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private void adjustMaxBytesPerGatheringWrite(int attempted, int written, int oldMaxBytesPerGatheringWrite) {
+       // By default we track the SO_SNDBUF when ever it is explicitly set. However some OSes may dynamically change
+       // SO_SNDBUF (and other characteristics that determine how much data can be written at once) so we should try
+       // make a best effort to adjust as OS behavior changes.
+       //默认情况下，我们跟踪SO_SNDBUF，当它明确设置。然而，一些操作系统可能会动态地改变SO_SNDBUF（以及其他决定可以一次写入多少数据的特性）
+       // ，所以我们应该尽可能地根据操作系统行为的变化进行调整。
+       // 预计写的字节大小跟已写的字节数相同，设置为预计处理的两倍 
+       if (attempted == written) {
+           if (attempted &lt;&lt; 1 &gt; oldMaxBytesPerGatheringWrite) {
+               ((NioSocketChannelConfig) config).setMaxBytesPerGatheringWrite(attempted &lt;&lt; 1);
+           }
+        // 4096
+        // 预计写的字节大小大于4096且预计写的字节的一半大于已写的字节数相同，设置为预计处理的一半  
+       } else if (attempted &gt; MAX_BYTES_PER_GATHERING_WRITE_ATTEMPTED_LOW_THRESHOLD &amp;&amp; written &lt; attempted &gt;&gt;&gt; 1) {
+           ((NioSocketChannelConfig) config).setMaxBytesPerGatheringWrite(attempted &gt;&gt;&gt; 1);
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="九channeloutboundbuffer">九、ChannelOutboundBuffer</h1>
+<p>写的缓冲区，调用write时候，只是把发送消息添加到ChannelOutboundBuffer缓冲区，调用flush真正发送</p>
+<h2 id="1内部数据结构">1.内部数据结构</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> private Entry flushedEntry; // flush 开始第一个节点，Entry是链表
+ private Entry unflushedEntry;// 被添加的开始节点，但没有准备好被消费。
+ private Entry tailEntry;// 最后一个节点，添加 
+</code></pre></td></tr></table>
+</div>
+</div><p>三个对象变量的处理逻辑，write调用addMessage方法的时候，创建Entry将这个Entry追加到TailEntry节点后面;unflushedEntry为空把当前赋值给unflushedEntry；
+flush调用addFlush的时候，将unflushedEntry的引用赋给flushedEntry，然后将unflushedEntry置为null。</p>
+<h2 id="2addmessage">2.addMessage</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    public void addMessage(Object msg, int size, ChannelPromise promise) {
+        Entry entry = Entry.newInstance(msg, size, total(msg), promise);
+        if (tailEntry == null) {
+            flushedEntry = null;
+            tailEntry = entry;
+        } else {
+            Entry tail = tailEntry;
+            tail.next = entry;
+            tailEntry = entry;
+        }
+        if (unflushedEntry == null) {
+            unflushedEntry = entry;
+        }
+
+        // increment pending bytes after adding message to the unflushed arrays.
+        // See https://github.com/netty/netty/issues/1619
+        incrementPendingOutboundBytes(entry.pendingSize, false);
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1写一直写下去不调用调用flush发生oom">(1).写一直写下去，不调用调用Flush，发生OOM;</h3>
+<p>unwritable变量控制fireChannelWritabilityChanged事件；用户自己实现这块，控制write频率;</p>
+<h4 id="aincrementpendingoutboundbytes-写的缓冲区大于写的缓冲区的高水位就修改unwritable变量">a.incrementPendingOutboundBytes 写的缓冲区大于写的缓冲区的高水位就修改unwritable变量</h4>
+<ul>
+<li>getWriteBufferHighWaterMark 写的缓冲区的高水位，默认64k</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  private void incrementPendingOutboundBytes(long size, boolean invokeLater) {
+      if (size == 0) {
+          return;
+      }
+      long newWriteBufferSize = TOTAL_PENDING_SIZE_UPDATER.addAndGet(this, size);
+      if (newWriteBufferSize &gt; channel.config().getWriteBufferHighWaterMark()) {
+          setUnwritable(invokeLater);
+      }
+  }  
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2写的缓冲区的高水位降下去有没有通知我加快write频率呢肯定有这个就是所谓写的缓冲区的低水位这样会触发firechannelwritabilitychanged">(2).写的缓冲区的高水位降下去，有没有通知我加快write频率呢？肯定有，这个就是所谓写的缓冲区的低水位，这样会触发fireChannelWritabilityChanged</h3>
+<p>删除(remove)写缓存记录是调用decrementPendingOutboundBytes，控制缓冲区低水位</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private void decrementPendingOutboundBytes(long size, boolean invokeLater, boolean notifyWritability) {
+       if (size == 0) {
+           return;
+       }
+
+       long newWriteBufferSize = TOTAL_PENDING_SIZE_UPDATER.addAndGet(this, -size);
+       if (notifyWritability &amp;&amp; newWriteBufferSize &lt; channel.config().getWriteBufferLowWaterMark()) {
+           setWritable(invokeLater);
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3addflush">3.addFlush</h2>
+<p>动机把unflushedEntry赋值给flushedEntry；DefaultChannelPipeline在做inEventLoop验证，不存在并发写；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public void addFlush() {
+       // There is no need to process all entries if there was already a flush before and no new messages
+       // where added in the meantime.
+       //
+       // See https://github.com/netty/netty/issues/2577
+       Entry entry = unflushedEntry;
+       if (entry != null) {
+           //动机可以控制一边写一边flushed，上一批没写完，没关系，Entry是链表往下查找；
+           if (flushedEntry == null) {
+               // there is no flushedEntry yet, so start with the entry
+               flushedEntry = entry;
+           }
+           do {
+              //验证entry是否取消动作
+               flushed ++;
+               if (!entry.promise.setUncancellable()) {
+                   // Was cancelled so make sure we free up memory and notify about the freed bytes
+                   int pending = entry.cancel();
+                   decrementPendingOutboundBytes(pending, false, true);
+               }
+               entry = entry.next;
+           } while (entry != null);
+
+           // All flushed so reset unflushedEntry
+           unflushedEntry = null;
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4entry结构">4.Entry结构</h2>
+<p>运用对象池；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   static final class Entry {
+       private static final Recycler&lt;Entry&gt; RECYCLER = new Recycler&lt;Entry&gt;() {
+           @Override
+           protected Entry newObject(Handle&lt;Entry&gt; handle) {
+               return new Entry(handle);
+           }
+       };
+
+       private final Handle&lt;Entry&gt; handle;
+       Entry next;
+       Object msg;
+       //这个NIO转化ByteBuffer
+       ByteBuffer[] bufs;
+       ByteBuffer buf;
+       ChannelPromise promise;
+       long progress;
+       long total;
+       int pendingSize;
+       int count = -1;
+       boolean cancelled;
+} 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1创建">1.创建</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  static Entry newInstance(Object msg, int size, long total, ChannelPromise promise) {
+       Entry entry = RECYCLER.get();
+       entry.msg = msg;
+       // CHANNEL_OUTBOUND_BUFFER_ENTRY_OVERHEAD:96,
+       entry.pendingSize = size + CHANNEL_OUTBOUND_BUFFER_ENTRY_OVERHEAD;
+       entry.total = total;
+       entry.promise = promise;
+       return entry;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="apendingsize加9696是啥呢">a.pendingSize加96，96是啥呢？</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   // Assuming a 64-bit JVM:
+   //  - 16 bytes object header
+   //  - 8 reference fields ==&gt;改成 6 reference fields
+   //  - 2 long fields
+   //  - 2 int fields
+   //  - 1 boolean field   ==&gt; 4bytes
+   //  - padding 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="6niobuffers-提供这个主要nio的写必须用bytebuf转化bytebuffer">6.nioBuffers 提供这个，主要NIO的写必须用ByteBuf转化ByteBuffer</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="n">ByteBuffer</span><span class="o">[]</span> <span class="nf">nioBuffers</span><span class="o">(</span><span class="kt">int</span> <span class="n">maxCount</span><span class="o">,</span> <span class="kt">long</span> <span class="n">maxBytes</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">assert</span> <span class="n">maxCount</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">;</span>
+       <span class="k">assert</span> <span class="n">maxBytes</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">;</span>
+       <span class="kt">long</span> <span class="n">nioBufferSize</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+       <span class="kt">int</span> <span class="n">nioBufferCount</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+       <span class="kd">final</span> <span class="n">InternalThreadLocalMap</span> <span class="n">threadLocalMap</span> <span class="o">=</span> <span class="n">InternalThreadLocalMap</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+       <span class="n">ByteBuffer</span><span class="o">[]</span> <span class="n">nioBuffers</span> <span class="o">=</span> <span class="n">NIO_BUFFERS</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">threadLocalMap</span><span class="o">);</span>
+       <span class="n">Entry</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">flushedEntry</span><span class="o">;</span>
+       <span class="k">while</span> <span class="o">(</span><span class="n">isFlushedEntry</span><span class="o">(</span><span class="n">entry</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="n">entry</span><span class="o">.</span><span class="na">msg</span> <span class="k">instanceof</span> <span class="n">ByteBuf</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(!</span><span class="n">entry</span><span class="o">.</span><span class="na">cancelled</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">ByteBuf</span> <span class="n">buf</span> <span class="o">=</span> <span class="o">(</span><span class="n">ByteBuf</span><span class="o">)</span> <span class="n">entry</span><span class="o">.</span><span class="na">msg</span><span class="o">;</span>
+               <span class="kd">final</span> <span class="kt">int</span> <span class="n">readerIndex</span> <span class="o">=</span> <span class="n">buf</span><span class="o">.</span><span class="na">readerIndex</span><span class="o">();</span>
+               <span class="kd">final</span> <span class="kt">int</span> <span class="n">readableBytes</span> <span class="o">=</span> <span class="n">buf</span><span class="o">.</span><span class="na">writerIndex</span><span class="o">()</span> <span class="o">-</span> <span class="n">readerIndex</span><span class="o">;</span>
+
+               <span class="k">if</span> <span class="o">(</span><span class="n">readableBytes</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">maxBytes</span> <span class="o">-</span> <span class="n">readableBytes</span> <span class="o">&lt;</span> <span class="n">nioBufferSize</span> <span class="o">&amp;&amp;</span> <span class="n">nioBufferCount</span> <span class="o">!=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                       <span class="c1">// If the nioBufferSize + readableBytes will overflow maxBytes, and there is at least one entry
+</span><span class="c1"></span>                       <span class="c1">// we stop populate the ByteBuffer array. This is done for 2 reasons:
+</span><span class="c1"></span>                       <span class="c1">// 1. bsd/osx don&#39;t allow to write more bytes then Integer.MAX_VALUE with one writev(...) call
+</span><span class="c1"></span>                       <span class="c1">// and so will return &#39;EINVAL&#39;, which will raise an IOException. On Linux it may work depending
+</span><span class="c1"></span>                       <span class="c1">// on the architecture and kernel but to be safe we also enforce the limit here.
+</span><span class="c1"></span>                       <span class="c1">// 2. There is no sense in putting more data in the array than is likely to be accepted by the
+</span><span class="c1"></span>                       <span class="c1">// OS.
+</span><span class="c1"></span>                       <span class="c1">// 如果nioBufferSize + readableBytes将溢出maxBytes，并且至少存在一个条目，我们将停止填充ByteBuffer数组。这样做有两个原因：
+</span><span class="c1"></span>                       <span class="c1">//  1. bsd / osx不允许通过一次writev（...）调用写入更多字节，然后是Integer.MAX_VALUE，因此将返回&#39;EINVAL&#39;，这将引发IOException。
+</span><span class="c1"></span>                       <span class="c1">//     在Linux上，它可能会根据体系结构和内核而起作用，但是为了安全起见，我们在此处也施加了限制。 
+</span><span class="c1"></span>                       <span class="c1">//    2.在阵列中放入比操作系统可能接受的更多的数据没有任何意义
+</span><span class="c1"></span>                       <span class="c1">// See also:
+</span><span class="c1"></span>                       <span class="c1">// - https://www.freebsd.org/cgi/man.cgi?query=write&amp;sektion=2
+</span><span class="c1"></span>                       <span class="c1">// - http://linux.die.net/man/2/writev
+</span><span class="c1"></span>                       <span class="k">break</span><span class="o">;</span>
+                   <span class="o">}</span>
+                   <span class="n">nioBufferSize</span> <span class="o">+=</span> <span class="n">readableBytes</span><span class="o">;</span>
+                   <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="na">count</span><span class="o">;</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">count</span> <span class="o">==</span> <span class="o">-</span><span class="n">1</span><span class="o">)</span> <span class="o">{</span>
+                       <span class="c1">//noinspection ConstantValueVariableUse
+</span><span class="c1"></span>                       <span class="n">entry</span><span class="o">.</span><span class="na">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">=</span> <span class="n">buf</span><span class="o">.</span><span class="na">nioBufferCount</span><span class="o">();</span>
+                   <span class="o">}</span>
+                   <span class="kt">int</span> <span class="n">neededSpace</span> <span class="o">=</span> <span class="n">min</span><span class="o">(</span><span class="n">maxCount</span><span class="o">,</span> <span class="n">nioBufferCount</span> <span class="o">+</span> <span class="n">count</span><span class="o">);</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">neededSpace</span> <span class="o">&gt;</span> <span class="n">nioBuffers</span><span class="o">.</span><span class="na">length</span><span class="o">)</span> <span class="o">{</span>
+                       <span class="c1">//扩容操作，在缓存到本地缓存中，可以重复利用
+</span><span class="c1"></span>                       <span class="n">nioBuffers</span> <span class="o">=</span> <span class="n">expandNioBufferArray</span><span class="o">(</span><span class="n">nioBuffers</span><span class="o">,</span> <span class="n">neededSpace</span><span class="o">,</span> <span class="n">nioBufferCount</span><span class="o">);</span>
+                       <span class="n">NIO_BUFFERS</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">threadLocalMap</span><span class="o">,</span> <span class="n">nioBuffers</span><span class="o">);</span>
+                   <span class="o">}</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">count</span> <span class="o">==</span> <span class="n">1</span><span class="o">)</span> <span class="o">{</span>
+                       <span class="n">ByteBuffer</span> <span class="n">nioBuf</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="na">buf</span><span class="o">;</span>
+                       <span class="k">if</span> <span class="o">(</span><span class="n">nioBuf</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                           <span class="c1">// 缓存ByteBuffer，因为如果它是派生的缓冲区，则可能需要创建一个新的ByteBuffer实例
+</span><span class="c1"></span>                           <span class="c1">// DirectByteBuffer#duplicate创建一个新的ByteBuffer
+</span><span class="c1"></span>                           <span class="n">entry</span><span class="o">.</span><span class="na">buf</span> <span class="o">=</span> <span class="n">nioBuf</span> <span class="o">=</span> <span class="n">buf</span><span class="o">.</span><span class="na">internalNioBuffer</span><span class="o">(</span><span class="n">readerIndex</span><span class="o">,</span> <span class="n">readableBytes</span><span class="o">);</span>
+                       <span class="o">}</span>
+                       <span class="n">nioBuffers</span><span class="o">[</span><span class="n">nioBufferCount</span><span class="o">++]</span> <span class="o">=</span> <span class="n">nioBuf</span><span class="o">;</span>
+                   <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                       <span class="n">ByteBuffer</span><span class="o">[]</span> <span class="n">nioBufs</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="na">bufs</span><span class="o">;</span>
+                       <span class="k">if</span> <span class="o">(</span><span class="n">nioBufs</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                           <span class="c1">// cached ByteBuffers as they may be expensive to create in terms
+</span><span class="c1"></span>                           <span class="c1">// of Object allocation
+</span><span class="c1"></span>                           <span class="n">entry</span><span class="o">.</span><span class="na">bufs</span> <span class="o">=</span> <span class="n">nioBufs</span> <span class="o">=</span> <span class="n">buf</span><span class="o">.</span><span class="na">nioBuffers</span><span class="o">();</span>
+                       <span class="o">}</span>
+                       <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">nioBufs</span><span class="o">.</span><span class="na">length</span> <span class="o">&amp;&amp;</span> <span class="n">nioBufferCount</span> <span class="o">&lt;</span> <span class="n">maxCount</span><span class="o">;</span> <span class="o">++</span><span class="n">i</span><span class="o">)</span> <span class="o">{</span>
+                           <span class="n">ByteBuffer</span> <span class="n">nioBuf</span> <span class="o">=</span> <span class="n">nioBufs</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+                           <span class="k">if</span> <span class="o">(</span><span class="n">nioBuf</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                               <span class="k">break</span><span class="o">;</span>
+                           <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(!</span><span class="n">nioBuf</span><span class="o">.</span><span class="na">hasRemaining</span><span class="o">())</span> <span class="o">{</span>
+                               <span class="k">continue</span><span class="o">;</span>
+                           <span class="o">}</span>
+                           <span class="n">nioBuffers</span><span class="o">[</span><span class="n">nioBufferCount</span><span class="o">++]</span> <span class="o">=</span> <span class="n">nioBuf</span><span class="o">;</span>
+                       <span class="o">}</span>
+                   <span class="o">}</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">nioBufferCount</span> <span class="o">==</span> <span class="n">maxCount</span><span class="o">)</span> <span class="o">{</span>
+                       <span class="k">break</span><span class="o">;</span>
+                   <span class="o">}</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+           <span class="n">entry</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">nioBufferCount</span> <span class="o">=</span> <span class="n">nioBufferCount</span><span class="o">;</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">nioBufferSize</span> <span class="o">=</span> <span class="n">nioBufferSize</span><span class="o">;</span>
+
+       <span class="k">return</span> <span class="n">nioBuffers</span><span class="o">;</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="ainternalthreadlocalmap-本地添加缓冲区">a.InternalThreadLocalMap 本地添加缓冲区</h3>
+<h2 id="7removebytes-按字节删除entry">7.removeBytes 按字节删除Entry</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public void removeBytes(long writtenBytes) {
+       for (;;) {
+           Object msg = current();
+           if (!(msg instanceof ByteBuf)) {
+               assert writtenBytes == 0;
+               break;
+           }
+
+           final ByteBuf buf = (ByteBuf) msg;
+           final int readerIndex = buf.readerIndex();
+           final int readableBytes = buf.writerIndex() - readerIndex;
+
+           if (readableBytes &lt;= writtenBytes) {
+               if (writtenBytes != 0) {
+                   //ChannelProgressivePromise处理
+                   progress(readableBytes);
+                   writtenBytes -= readableBytes;
+               }
+               //删除Entry
+               //ChannelPromise成功处理，异步处理
+               remove();
+           } else { // readableBytes &gt; writtenBytes
+               if (writtenBytes != 0) {
+                   buf.readerIndex(readerIndex + (int) writtenBytes);
+                   progress(writtenBytes);
+               }
+               break;
+           }
+       }
+       //nioBufferCount赋值为零，已经本地缓存初始化操作，赋值为空
+       clearNioBuffers();
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="awrittenbytes写的字节小于entryentry中还有数据要发送主要bytebuffer在写时候把读位置也变动这里不用去初始化操作">a.writtenBytes写的字节小于Entry，Entry中还有数据要发送，主要ByteBuffer，在写时候把读位置也变动，这里不用去初始化操作；</h3>
+<h1 id="十recvbytebufallocator">十、RecvByteBufAllocator</h1>
+<p>分配一个新的接收缓冲区，其容量可能足够大以读取所有数据，而又足够小以不会浪费其空间。</p>
+<p>NioSocketChannel读取默认使用AdaptiveRecvByteBufAllocator</p>
+<h2 id="1recvbytebufallocator接口类图">1.RecvByteBufAllocator接口类图</h2>
+<p><img src="/netty/Channel08.png" alt=""></p>
+<ul>
+<li>guess 猜下次该用多大的接收缓冲区</li>
+<li>reset 重置一些统计参数</li>
+<li>其他API名称顾名思义知道啥意思</li>
+</ul>
+<h2 id="2adaptiverecvbytebufallocator">2.AdaptiveRecvByteBufAllocator</h2>
+<p>根据反馈值自动增加和减少预测的缓冲区大小。</p>
+<p>如果先前的读取完全填满了分配的缓冲区，它将逐渐增加预期的可读字节数。如果读取操作无法连续两次填充一定数量的已分配缓冲区，
+则会逐渐减少预期的可读字节数。否则，它将继续返回相同的预测。</p>
+<h3 id="a类图">a.类图</h3>
+<p><img src="/netty/Channel08.png" alt=""></p>
+<h3 id="bnewhandle-直接创建handleimpl">b.newHandle 直接创建HandleImpl</h3>
+<h2 id="3adaptiverecvbytebufallocatorhandleimpl">3.AdaptiveRecvByteBufAllocator#HandleImpl</h2>
+<h3 id="a类图结构">a.类图结构</h3>
+<p><img src="/netty/Channel10.png" alt=""></p>
+<h3 id="bmaxmessagehandle">b.MaxMessageHandle</h3>
+<ul>
+<li>读取字节数统计</li>
+<li>继续读的判断(continueReading)</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public abstract class MaxMessageHandle implements ExtendedHandle {
+       private ChannelConfig config;
+       //读取消息的次数，默认1次
+       private int maxMessagePerRead;
+       private int totalMessages;
+       private int totalBytesRead;
+       private int attemptedBytesRead;//预计读取字节数
+       private int lastBytesRead;
+       //是否读取更多数据
+       private final boolean respectMaybeMoreData = DefaultMaxMessagesRecvByteBufAllocator.this.respectMaybeMoreData;
+       private final UncheckedBooleanSupplier defaultMaybeMoreSupplier = new UncheckedBooleanSupplier() {
+           @Override
+           public boolean get() {
+               return attemptedBytesRead == lastBytesRead;
+           }
+       }; 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="1reset重置统计的数据">(1).reset重置统计的数据</h4>
+<ul>
+<li>重置总读取的记录以及总字节数量</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">     @Override
+      public void reset(ChannelConfig config) {
+          this.config = config;
+          maxMessagePerRead = maxMessagesPerRead();
+          totalMessages = totalBytesRead = 0;
+      }  
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2continuereading继续读">(2).continueReading继续读</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">       @Override
+       public boolean continueReading() {
+           return continueReading(defaultMaybeMoreSupplier);
+       }
+
+       @Override
+       public boolean continueReading(UncheckedBooleanSupplier maybeMoreDataSupplier) {
+           return config.isAutoRead() &amp;&amp;
+                  (!respectMaybeMoreData || maybeMoreDataSupplier.get()) &amp;&amp;
+                  totalMessages &lt; maxMessagePerRead &amp;&amp;
+                  totalBytesRead &gt; 0;
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>respectMaybeMoreData为false不用验证预计读取的字节大小</li>
+</ul>
+<h3 id="c数据结构">c.数据结构</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> //三个索引干嘛呢？？
+ private final int minIndex;
+ private final int maxIndex;
+ private int index;
+ //获取读取容量大小
+ private int nextReceiveBufferSize;
+ //立即减少状态
+ private boolean decreaseNow; 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="dadaptiverecvbytebufallocator的类变量定义">d.AdaptiveRecvByteBufAllocator的类变量定义</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    private static final int[] SIZE_TABLE;
+
+    static {
+        List&lt;Integer&gt; sizeTable = new ArrayList&lt;Integer&gt;();
+        for (int i = 16; i &lt; 512; i += 16) {
+            sizeTable.add(i);
+        }
+
+        for (int i = 512; i &gt; 0; i &lt;&lt;= 1) {
+            sizeTable.add(i);
+        }
+
+        SIZE_TABLE = new int[sizeTable.size()];
+        for (int i = 0; i &lt; SIZE_TABLE.length; i ++) {
+            SIZE_TABLE[i] = sizeTable.get(i);
+        }
+    }
+</code></pre></td></tr></table>
+</div>
+</div><p>SIZE_TABLE缓存大小，大小按区域，跟内存池划分有点相似；</p>
+<ul>
+<li>[16,512)按累加16</li>
+<li>[512,Int.Max)两倍增加</li>
+</ul>
+<p>上面三个索引干嘛呢？就是保存缓存的下标，主要就是获取大小值；</p>
+<h4 id="1给大小值是怎么获取大小呢可能不在等于缓存值是去最近小于还是最近大于使用getsizetableindex方法">(1).给大小值，是怎么获取大小呢？可能不在等于缓存值，是去最近小于还是最近大于；使用getSizeTableIndex方法</h4>
+<ul>
+<li>实现最常见二分查找</li>
+<li>size不在缓存中的值，取最近大于值的下标</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> private static int getSizeTableIndex(final int size) {
+       for (int low = 0, high = SIZE_TABLE.length - 1;;) {
+           if (high &lt; low) {
+               return low;
+           }
+           if (high == low) {
+               return high;
+           }
+
+           int mid = low + high &gt;&gt;&gt; 1;
+           int a = SIZE_TABLE[mid];
+           int b = SIZE_TABLE[mid + 1];
+           if (size &gt; b) {
+               low = mid + 1;
+           } else if (size &lt; a) {
+               high = mid - 1;
+           } else if (size == a) {
+               return mid;
+           } else {
+               return mid + 1;
+           }
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="elastbytesread记录读取的大小">e.lastBytesRead记录读取的大小</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">       @Override
+       public void lastBytesRead(int bytes) {
+           // If we read as much as we asked for we should check if we need to ramp up the size of our next guess.
+           // This helps adjust more quickly when large amounts of data is pending and can avoid going back to
+           // the selector to check for more data. Going back to the selector can add significant latency for large
+           // data transfers.
+           // 如果预计读取的大小等于实际读取大小相同，则应检查是否需要增加下一个读取的大小。
+           // 当有大量数据待处理时，这有助于更快地进行调整，并且可以避免返回选择器以检查更多数据。
+           // 返回选择器可能会增加大量数据传输的延迟
+           if (bytes == attemptedBytesRead()) {
+               record(bytes);
+           }
+           super.lastBytesRead(bytes);
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="frecord-计算下一个读取的大小">f.record 计算下一个读取的大小</h3>
+<ul>
+<li>实际读取大小[小于等于] SIZE_TABLE [index-2]
+<ul>
+<li>nextReceiveBufferSize等于 SIZE_TABLE [index-1]，最小值判断</li>
+</ul>
+</li>
+<li>实际读取大小[大于等于] nextReceiveBufferSize
+<ul>
+<li>nextReceiveBufferSize 等于 SIZE_TABLE [index+4]，最大值判断</li>
+</ul>
+</li>
+<li>减少读取大小，decreaseNow判断，进行二次操作；</li>
+<li>minIndex和maxIndex控制上下限制，默认1024和65536(64k)大小，调用getSizeTableIndex获取下标</li>
+<li>index默认值2，默认大小64；</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    private static final int INDEX_INCREMENT = 4;
+    private static final int INDEX_DECREMENT = 1;
+    private void record(int actualReadBytes) {
+           if (actualReadBytes &lt;= SIZE_TABLE[max(0, index - INDEX_DECREMENT - 1)]) {
+               if (decreaseNow) {
+                   index = max(index - INDEX_DECREMENT, minIndex);
+                   nextReceiveBufferSize = SIZE_TABLE[index];
+                   decreaseNow = false;
+               } else {
+                   decreaseNow = true;
+               }
+           } else if (actualReadBytes &gt;= nextReceiveBufferSize) {
+               index = min(index + INDEX_INCREMENT, maxIndex);
+               nextReceiveBufferSize = SIZE_TABLE[index];
+               decreaseNow = false;
+           }
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="greadcomplete-调用record计算下次读取的大小">g.readComplete 调用record，计算下次读取的大小</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    @Override
+       public void readComplete() {
+           record(totalBytesRead());
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="hallocate获取内存空间">h.allocate获取内存空间</h3>
+<p>MaxMessageHandle#allocate</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  @Override
+  public ByteBuf allocate(ByteBufAllocator alloc) {
+      return alloc.ioBuffer(guess());
+  }
+</code></pre></td></tr></table>
+</div>
+</div><p>HandleImpl#guess</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> @Override
+ public int guess() {
+     return nextReceiveBufferSize;
+ } 
+</code></pre></td></tr></table>
+</div>
+</div><p>就是获取下次获取内存大小分配内存，最终逻辑交给record处理；在lastBytesRead方法和readComplete方法做调用record计算;</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-03-17 21:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/netty/">netty</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/netty/05.ChannelPipeline/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Channelpipeline</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/netty/03.Recycler%E5%AF%B9%E8%B1%A1%E6%B1%A0/">
+        <span class="next-text nav-default">Recycler对象池</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ByteBuf工作原理 - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="一、ByteBuf工作原理 1.为什么Netty扩展NIO中ByteBuffer类？ 主要原因ByteBuffer设计不足几点： ByteBuff" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/netty/01.Bytebuf/" />
+<link href="/post/netty/01.Bytebuf/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/netty/01.Bytebuf/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="ByteBuf工作原理" />
+<meta property="og:description" content="一、ByteBuf工作原理 1.为什么Netty扩展NIO中ByteBuffer类？ 主要原因ByteBuffer设计不足几点： ByteBuff" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/netty/01.Bytebuf/" />
+<meta property="article:published_time" content="2019-03-02T22:18:08+00:00" />
+<meta property="article:modified_time" content="2019-03-02T22:18:08+00:00" />
+<meta itemprop="name" content="ByteBuf工作原理">
+<meta itemprop="description" content="一、ByteBuf工作原理 1.为什么Netty扩展NIO中ByteBuffer类？ 主要原因ByteBuffer设计不足几点： ByteBuff">
+<meta itemprop="datePublished" content="2019-03-02T22:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2019-03-02T22:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="7398">
+
+
+
+<meta itemprop="keywords" content="netty," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="ByteBuf工作原理"/>
+<meta name="twitter:description" content="一、ByteBuf工作原理 1.为什么Netty扩展NIO中ByteBuffer类？ 主要原因ByteBuffer设计不足几点： ByteBuff"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">ByteBuf工作原理</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2019-03-02 22:18 </span>
+      <div class="post-category">
+        <a href="/categories/netty/"> netty </a>
+        </div>
+      <span class="more-meta"> 约 7398 字 </span>
+      <span class="more-meta"> 预计阅读 15 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1为什么netty扩展nio中bytebuffer类">1.为什么Netty扩展NIO中ByteBuffer类？</a></li>
+    <li><a href="#2bytebuf工作原理">2.ByteBuf工作原理</a>
+      <ul>
+        <li><a href="#1读取实际内容">(1).读取(实际内容)</a></li>
+        <li><a href="#2写">(2).写</a></li>
+        <li><a href="#3discardable-bytes">(3).Discardable bytes</a></li>
+        <li><a href="#4清除">(4).清除</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#1bytebuf主要类继承关系图">1.ByteBuf主要类继承关系图</a></li>
+    <li><a href="#2abstractbytebuf-源码分析">2.AbstractByteBuf 源码分析</a>
+      <ul>
+        <li><a href="#1内部结构实现">(1).内部结构实现</a></li>
+        <li><a href="#2读操作">(2).读操作</a></li>
+        <li><a href="#3写操作">(3).写操作</a></li>
+        <li><a href="#3discardable-丢弃已读的数据">(3).Discardable 丢弃已读的数据</a></li>
+        <li><a href="#4-clear">(4). clear</a></li>
+        <li><a href="#5-skipbytes">(5). skipBytes</a></li>
+        <li><a href="#7slice-返回此缓冲区的可读字节的一部分修改返回的缓冲区或此缓冲区的内容会影响彼此的内容同时它们维护单独的索引和标记">(7).slice 返回此缓冲区的可读字节的一部分。修改返回的缓冲区或此缓冲区的内容会影响彼此的内容，同时它们维护单独的索引和标记。</a></li>
+      </ul>
+    </li>
+    <li><a href="#2abstractreferencecountedbytebuf-源码分析">2.AbstractReferenceCountedByteBuf 源码分析</a>
+      <ul>
+        <li><a href="#1内部结构">(1).内部结构</a></li>
+        <li><a href="#2retain-添加引用计数">(2).retain 添加引用计数</a></li>
+        <li><a href="#3release-减去引用计数">(3).release 减去引用计数</a></li>
+      </ul>
+    </li>
+    <li><a href="#4unpooledheapbytebuf-源码分析">4.UnpooledHeapByteBuf 源码分析</a>
+      <ul>
+        <li><a href="#1内部结构-1">（1).内部结构</a></li>
+        <li><a href="#2capacity扩容和缩小容量操作">（2).capacity扩容和缩小容量操作</a></li>
+        <li><a href="#3read基本数据byteshortintlong">（3).read基本数据byte,short,int,long</a></li>
+        <li><a href="#4getbytesint-index-byte-dst-int-dstindex-int-length">（4).getBytes(int index, byte[] dst, int dstIndex, int length)</a></li>
+        <li><a href="#5wirte基本操作-byteshortintlong">（5).wirte基本操作 byte,short,int,long</a></li>
+        <li><a href="#6setbytesint-index-byte-src-int-srcindex-int-length">（6).setBytes(int index, byte[] src, int srcIndex, int length)</a></li>
+      </ul>
+    </li>
+    <li><a href="#5unpooleddirectbytebuf-源码分析">5.UnpooledDirectByteBuf 源码分析</a>
+      <ul>
+        <li><a href="#1内部结构-2">(1).内部结构</a></li>
+        <li><a href="#2capacity扩容或者缩小操作">（2).capacity扩容或者缩小操作</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#1数据结构">1.数据结构</a>
+      <ul>
+        <li><a href="#1component">(1).Component</a></li>
+        <li><a href="#2componentlist继承arraylist集合把bytebuf关联起来">(2).ComponentList继承ArrayList集合，把ByteBuf关联起来</a></li>
+      </ul>
+    </li>
+    <li><a href="#2添加对集合元素添加以及offset和endoffset赋值操作">2.添加对集合元素添加以及offset和endOffset赋值操作</a></li>
+    <li><a href="#3删除集合元素的批量更新offset和endoffset赋值操作">3.删除集合元素的批量更新offset和endOffset赋值操作</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2019-03-02T22:18:08" title="March 2, 2019">March 2, 2019</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="一bytebuf工作原理">一、ByteBuf工作原理</h1>
+<h2 id="1为什么netty扩展nio中bytebuffer类">1.为什么Netty扩展NIO中ByteBuffer类？</h2>
+<p>主要原因ByteBuffer设计不足几点：</p>
+<ul>
+<li>
+<p>ByteBuffer一旦分配完成，长度固定，不支持动态扩展和收缩，当需要编码的POJO对象大于分配容量时发生索引越界异常；</p>
+</li>
+<li>
+<p>ByteBuffer的原理就是capacity(容量),position(位置),limit(限制)三个变量，来创建ByteBuffer方式&rsquo;ByteBuffer.allocate(8)',现在capacity=8,position=0,limit=8，
+进行写操作，写两个字节，现在capacity=8,position=2,limit=8;变成读模式，手动调用flip()方法才能读到数据，现在capacity=8,position=0,limit=2;手动触发flip() 才能继续读数据,对API不了解很容易出错。</p>
+</li>
+<li>
+<p>ByteBuffer的API功能有限！高级API自己扩展实现。</p>
+</li>
+</ul>
+<h2 id="2bytebuf工作原理">2.ByteBuf工作原理</h2>
+<p>ByteBuf提供了两个指针变量来支持连续的读写操作 - readerIndex用于读操作，writerIndex用于write操作。下图显示了如何通过两个指针
+将缓冲区分割成三个区域：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-text" data-lang="text">      +-------------------+------------------+------------------+
+      | discardable bytes |  readable bytes  |  writable bytes  |
+      |                   |     (CONTENT)    |                  |
+      +-------------------+------------------+------------------+
+      |                   |                  |                  |
+      0      &lt;=      readerIndex   &lt;=   writerIndex    &lt;=    capacity
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1读取实际内容">(1).读取(实际内容)</h3>
+<p>这部分是存储实际数据。方法名称以read或skip开头的任何操API作将获取或跳过当前readerIndex中的数据，并将其增加读取字节数。
+如果读操作的参数也是一个ByteBuf，并且没有指定目标索引，则指定ByteBuf的writerIndex会一起增加</p>
+<p>如果没有足够的内容，则引发IndexOutOfBoundsException。新分配，打包或复制缓冲区的readerIndex的默认值为0。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="c1">// Iterates the readable bytes of a buffer.
+</span><span class="c1"></span> <span class="n">ByteBuf</span> <span class="n">buffer</span> <span class="o">=</span> <span class="o">...;</span>
+ <span class="k">while</span> <span class="o">(</span><span class="n">buffer</span><span class="o">.</span><span class="na">isReadable</span><span class="o">())</span> <span class="o">{</span>
+     <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">buffer</span><span class="o">.</span><span class="na">readByte</span><span class="o">());</span>
+ <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2写">(2).写</h3>
+<p>这部分是一个未定义的空间，需要填写。名称以write开头的任何操作将在当前writerIndex处写入数据，并将其增加写入字节数。
+如果写操作的参数也是ByteBuf，并且没有指定源索引，则指定ByteBuf 的readerIndex会一起增加。</p>
+<p>如果没有足够的可写字节，则引发IndexOutOfBoundsException。新分配的缓冲区的writerIndex的默认值是0.
+包装或复制的缓冲区的writerIndex的默认值是缓冲区的容量。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="c1">// Fills the writable bytes of a buffer with random integers.
+</span><span class="c1"></span> <span class="n">ByteBuf</span> <span class="n">buffer</span> <span class="o">=</span> <span class="o">...;</span>
+ <span class="k">while</span> <span class="o">(</span><span class="n">buffer</span><span class="o">.</span><span class="na">maxWritableBytes</span><span class="o">()</span> <span class="o">&gt;=</span> <span class="n">4</span><span class="o">)</span> <span class="o">{</span>
+     <span class="n">buffer</span><span class="o">.</span><span class="na">writeInt</span><span class="o">(</span><span class="n">random</span><span class="o">.</span><span class="na">nextInt</span><span class="o">());</span>
+ <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3discardable-bytes">(3).Discardable bytes</h3>
+<p>这个段包含已经被读取操作读取的字节。最初，这个段的大小是0，但是随着读取操作的执行，它的大小增加到了writerIndex。
+读取的字节可以通过调用discardReadBytes（）来回收未使用的区域，如下图所示：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">BEFORE discardReadBytes()
+
+      +-------------------+------------------+------------------+
+      | discardable bytes |  readable bytes  |  writable bytes  |
+      +-------------------+------------------+------------------+
+      |                   |                  |                  |
+      0      &lt;=      readerIndex   &lt;=   writerIndex    &lt;=    capacity
+
+
+  AFTER discardReadBytes()
+
+      +------------------+--------------------------------------+
+      |  readable bytes  |    writable bytes (got more space)   |
+      +------------------+--------------------------------------+
+      |                  |                                      |
+ readerIndex (0) &lt;= writerIndex (decreased)        &lt;=        capacity
+ 
+</code></pre></td></tr></table>
+</div>
+</div><p>请注意，在调用discardReadBytes（）之后，不能保证可写字节的内容。可写入的字节在大多数情况下不会被移动，甚至可能被完全不同的数据填充，这取决于底层的缓冲区实现。</p>
+<h3 id="4清除">(4).清除</h3>
+<p>您可以通过调用clear（）将readerIndex和writerIndex设置为0。它不清除缓冲区内容（例如，用0填充），但只是清除了两个指针。
+另请注意，此操作的语义与Buffer.clear（）不同。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> BEFORE clear()
+
+      +-------------------+------------------+------------------+
+      | discardable bytes |  readable bytes  |  writable bytes  |
+      +-------------------+------------------+------------------+
+      |                   |                  |                  |
+      0      &lt;=      readerIndex   &lt;=   writerIndex    &lt;=    capacity
+
+
+  AFTER clear()
+
+      +---------------------------------------------------------+
+      |             writable bytes (got more space)             |
+      +---------------------------------------------------------+
+      |                                                         |
+      0 = readerIndex = writerIndex            &lt;=            capacity
+ 
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="二bytebuf的api说明">二、ByteBuf的API说明</h1>
+<p>ByteBuf抽象方法很多，这里只做具体方法做说明。</p>
+<p><img src="/netty/ByteBuf-API01.png" alt=""></p>
+<p><img src="/netty/ByteBuf-API02.png" alt=""></p>
+<p><img src="/netty/ByteBuf-API03.png" alt=""></p>
+<p><img src="/netty/ByteBuf-API04.png" alt=""></p>
+<p><img src="/netty/ByteBuf-API05.png" alt=""></p>
+<p><img src="/netty/ByteBuf-API06.png" alt=""></p>
+<p><img src="/netty/ByteBuf-API07.png" alt=""></p>
+<p><img src="/netty/ByteBuf-API08.png" alt=""></p>
+<p><img src="/netty/ByteBuf-API09.png" alt=""></p>
+<p><img src="/netty/ByteBuf-API10.png" alt=""></p>
+<p><img src="/netty/ByteBuf-API11.png" alt=""></p>
+<p><img src="/netty/ByteBuf-API12.png" alt=""></p>
+<h1 id="三bytebuf的源码分析">三、ByteBuf的源码分析</h1>
+<h2 id="1bytebuf主要类继承关系图">1.ByteBuf主要类继承关系图</h2>
+<p><img src="/netty/ByteBufuml.png" alt=""></p>
+<p>从内存分配的角度看，分2类：</p>
+<ul>
+<li>
+<p>(1) 堆内存(HeapByteBuf)</p>
+<p>优点是内存的分配和回收速度快，可以被自动回收，缺点是如果进行SocketIO的读写，需要额外一次的内存复制，将堆内存对应的缓冲区复制到内核Channel中，
+性能有一定程度损失。</p>
+</li>
+<li>
+<p>(2) 直接内存(DirectByteBuf)</p>
+<p>在堆外进行分配，相对分配和回收速度会慢一些，但是将它写入或者从Socket Channel读取时，少了一次内存复制，速度更快。</p>
+</li>
+</ul>
+<p>ByteBuf的最佳实践是在I/O通信线程读写缓冲区使用DirectByteBuf，后端业务消息的编解码模块使用HeapByteBuf，这样组合可以达到性能最优。</p>
+<p>从内存问收角度看，ByteBuf分为两类：基于对象池的ByteBuf和普通ByteBuf。两者的主要区別就基于对象池的ByteBuf可以重用ByteBuf对象，它自己维护了一个内存
+池，可以循环利用创建的提升内存的使用效率，降低由于高负载导致的频繁GC。测试表明使用内存池后的在高负载、大并发的冲击下内存和GC更加平稳。</p>
+<h2 id="2abstractbytebuf-源码分析">2.AbstractByteBuf 源码分析</h2>
+<h3 id="1内部结构实现">(1).内部结构实现</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-text" data-lang="text">      +-------------------+------------------+------------------+
+      | discardable bytes |  readable bytes  |  writable bytes  |
+      |                   |     (CONTENT)    |                  |
+      +-------------------+------------------+------------------+
+      |                   |                  |                  |
+      0      &lt;=      readerIndex   &lt;=   writerIndex    &lt;=    capacity
+
+</code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">AbstractByteBuf</span> <span class="kd">extends</span> <span class="n">ByteBuf</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">InternalLogger</span> <span class="n">logger</span> <span class="o">=</span> <span class="n">InternalLoggerFactory</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="n">AbstractByteBuf</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">PROP_MODE</span> <span class="o">=</span> <span class="s">&#34;io.netty.buffer.bytebuf.checkAccessible&#34;</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">checkAccessible</span><span class="o">;</span>
+
+    <span class="kd">static</span> <span class="o">{</span>
+        <span class="n">checkAccessible</span> <span class="o">=</span> <span class="n">SystemPropertyUtil</span><span class="o">.</span><span class="na">getBoolean</span><span class="o">(</span><span class="n">PROP_MODE</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+        <span class="o">...</span>
+    <span class="o">}</span>
+
+    <span class="kd">static</span> <span class="kd">final</span> <span class="n">ResourceLeakDetector</span><span class="o">&lt;</span><span class="n">ByteBuf</span><span class="o">&gt;</span> <span class="n">leakDetector</span> <span class="o">=</span>
+            <span class="n">ResourceLeakDetectorFactory</span><span class="o">.</span><span class="na">instance</span><span class="o">().</span><span class="na">newResourceLeakDetector</span><span class="o">(</span><span class="n">ByteBuf</span><span class="o">.</span><span class="na">class</span><span class="o">);</span> <span class="c1">//资源泄漏检查
+</span><span class="c1"></span>
+    <span class="kt">int</span> <span class="n">readerIndex</span><span class="o">;</span><span class="c1">//读索引
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">writerIndex</span><span class="o">;</span><span class="c1">//写索引
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kt">int</span> <span class="n">markedReaderIndex</span><span class="o">;</span><span class="c1">//标记读索引，主要用于重置作用
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kt">int</span> <span class="n">markedWriterIndex</span><span class="o">;</span><span class="c1">//标记写索引，主要用于重置作用
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">maxCapacity</span><span class="o">;</span>      <span class="c1">//最大容量
+</span><span class="c1"></span>
+    <span class="kd">protected</span> <span class="nf">AbstractByteBuf</span><span class="o">(</span><span class="kt">int</span> <span class="n">maxCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">maxCapacity</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span><span class="s">&#34;maxCapacity: &#34;</span> <span class="o">+</span> <span class="n">maxCapacity</span> <span class="o">+</span> <span class="s">&#34; (expected: &gt;= 0)&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">maxCapacity</span> <span class="o">=</span> <span class="n">maxCapacity</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2读操作">(2).读操作</h3>
+<h4 id="a-read基本类型1">a. read基本类型1</h4>
+<ol>
+<li>byte</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">byte</span> <span class="nf">readByte</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">checkReadableBytes0</span><span class="o">(</span><span class="n">1</span><span class="o">);</span> <span class="c1">//验证readerIndex
+</span><span class="c1"></span>        <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">readerIndex</span><span class="o">;</span>
+        <span class="kt">byte</span> <span class="n">b</span> <span class="o">=</span> <span class="n">_getByte</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>   <span class="c1">//_getByte是抽象方法，子类实现。这里运用模版方法模式
+</span><span class="c1"></span>        <span class="n">readerIndex</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">1</span><span class="o">;</span>    <span class="c1">//修改readerIndex
+</span><span class="c1"></span>        <span class="k">return</span> <span class="n">b</span><span class="o">;</span>
+    <span class="o">}</span>
+    
+    <span class="c1">//验证读取是否越界readerIndex
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">checkReadableBytes0</span><span class="o">(</span><span class="kt">int</span> <span class="n">minimumReadableBytes</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">ensureAccessible</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">readerIndex</span> <span class="o">&gt;</span> <span class="n">writerIndex</span> <span class="o">-</span> <span class="n">minimumReadableBytes</span><span class="o">)</span> <span class="o">{</span><span class="c1">// 判断是否越界writerIndex
+</span><span class="c1"></span>            <span class="k">throw</span> <span class="k">new</span> <span class="n">IndexOutOfBoundsException</span><span class="o">...</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="c1">//每个试图访问缓冲区内容的方法都应该调用它，以检查缓冲区是否在之前释放。
+</span><span class="c1"></span>    <span class="c1">//checkAccessible 是访问验证，在配置中设置io.netty.buffer.bytebuf.checkAccessible，默认是true
+</span><span class="c1"></span>    <span class="c1">//refCnt() 引用计数为0，说明已经释放对象
+</span><span class="c1"></span>    <span class="kd">protected</span> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">ensureAccessible</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">checkAccessible</span> <span class="o">&amp;&amp;</span> <span class="n">refCnt</span><span class="o">()</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalReferenceCountException</span><span class="o">(</span><span class="n">0</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><ol start="2">
+<li>对基本类型boolean,short,int,long,char,float,double操作</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">readBoolean</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">readByte</span><span class="o">()</span> <span class="o">!=</span> <span class="n">0</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="c1">//short占用2字节
+</span><span class="c1"></span>    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">short</span> <span class="nf">readShort</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">checkReadableBytes0</span><span class="o">(</span><span class="n">2</span><span class="o">);</span>
+        <span class="kt">short</span> <span class="n">v</span> <span class="o">=</span> <span class="n">_getShort</span><span class="o">(</span><span class="n">readerIndex</span><span class="o">);</span> <span class="c1">//_getShort 抽象方法
+</span><span class="c1"></span>        <span class="n">readerIndex</span> <span class="o">+=</span> <span class="n">2</span><span class="o">;</span>
+        <span class="k">return</span> <span class="n">v</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="c1">//int占用4字节
+</span><span class="c1"></span>    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">readInt</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">checkReadableBytes0</span><span class="o">(</span><span class="n">4</span><span class="o">);</span>
+        <span class="kt">int</span> <span class="n">v</span> <span class="o">=</span> <span class="n">_getInt</span><span class="o">(</span><span class="n">readerIndex</span><span class="o">);</span>
+        <span class="n">readerIndex</span> <span class="o">+=</span> <span class="n">4</span><span class="o">;</span>
+        <span class="k">return</span> <span class="n">v</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="c1">//long占用8字节
+</span><span class="c1"></span>    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">readLong</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">checkReadableBytes0</span><span class="o">(</span><span class="n">8</span><span class="o">);</span>
+        <span class="kt">long</span> <span class="n">v</span> <span class="o">=</span> <span class="n">_getLong</span><span class="o">(</span><span class="n">readerIndex</span><span class="o">);</span>
+        <span class="n">readerIndex</span> <span class="o">+=</span> <span class="n">8</span><span class="o">;</span>
+        <span class="k">return</span> <span class="n">v</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="c1">//char调用readShort，强转化char
+</span><span class="c1"></span>     <span class="nd">@Override</span>
+     <span class="kd">public</span> <span class="kt">char</span> <span class="nf">readChar</span><span class="o">()</span> <span class="o">{</span>
+         <span class="k">return</span> <span class="o">(</span><span class="kt">char</span><span class="o">)</span> <span class="n">readShort</span><span class="o">();</span>
+     <span class="o">}</span>
+     <span class="c1">//float调用readInt，Float.intBitsToFloat转化float
+</span><span class="c1"></span>     <span class="nd">@Override</span>
+     <span class="kd">public</span> <span class="kt">float</span> <span class="nf">readFloat</span><span class="o">()</span> <span class="o">{</span>
+         <span class="k">return</span> <span class="n">Float</span><span class="o">.</span><span class="na">intBitsToFloat</span><span class="o">(</span><span class="n">readInt</span><span class="o">());</span>
+     <span class="o">}</span>
+     <span class="c1">//double调用readInt，Double.longBitsToDouble转化double
+</span><span class="c1"></span>     <span class="nd">@Override</span>
+     <span class="kd">public</span> <span class="kt">double</span> <span class="nf">readDouble</span><span class="o">()</span> <span class="o">{</span>
+         <span class="k">return</span> <span class="n">Double</span><span class="o">.</span><span class="na">longBitsToDouble</span><span class="o">(</span><span class="n">readLong</span><span class="o">());</span>
+     <span class="o">}</span>   
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="b-readbytesbyte-dst-int-dstindex-int-length">b. readBytes(byte[] dst, int dstIndex, int length)</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">readBytes</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">dst</span><span class="o">,</span> <span class="kt">int</span> <span class="n">dstIndex</span><span class="o">,</span> <span class="kt">int</span> <span class="n">length</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">checkReadableBytes</span><span class="o">(</span><span class="n">length</span><span class="o">);</span>        <span class="c1">//验证
+</span><span class="c1"></span>        <span class="n">getBytes</span><span class="o">(</span><span class="n">readerIndex</span><span class="o">,</span> <span class="n">dst</span><span class="o">,</span> <span class="n">dstIndex</span><span class="o">,</span> <span class="n">length</span><span class="o">);</span> <span class="c1">//getBytes抽象方法
+</span><span class="c1"></span>        <span class="n">readerIndex</span> <span class="o">+=</span> <span class="n">length</span><span class="o">;</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>   
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3写操作">(3).写操作</h3>
+<h4 id="awrite基本类型">a.write基本类型</h4>
+<ol>
+<li>byte</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">writeByte</span><span class="o">(</span><span class="kt">int</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">ensureWritable0</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>    <span class="c1">//验证，动态扩容
+</span><span class="c1"></span>        <span class="n">_setByte</span><span class="o">(</span><span class="n">writerIndex</span><span class="o">++,</span> <span class="n">value</span><span class="o">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+   <span class="kd">final</span> <span class="kt">void</span> <span class="nf">ensureWritable0</span><span class="o">(</span><span class="kt">int</span> <span class="n">minWritableBytes</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">ensureAccessible</span><span class="o">();</span>
+        <span class="c1">//writableBytes:capacity() - writerIndex
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">minWritableBytes</span> <span class="o">&lt;=</span> <span class="n">writableBytes</span><span class="o">())</span> <span class="o">{</span><span class="c1">//判断写的容量
+</span><span class="c1"></span>            <span class="k">return</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">minWritableBytes</span> <span class="o">&gt;</span> <span class="n">maxCapacity</span> <span class="o">-</span> <span class="n">writerIndex</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IndexOutOfBoundsException</span><span class="o">...</span>
+        <span class="o">}</span>
+        <span class="c1">//alloc()获取ByteBufAllocator#calculateNewCapacity获取新容量大小，以及大小2次方
+</span><span class="c1"></span>        <span class="kt">int</span> <span class="n">newCapacity</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">().</span><span class="na">calculateNewCapacity</span><span class="o">(</span><span class="n">writerIndex</span> <span class="o">+</span> <span class="n">minWritableBytes</span><span class="o">,</span> <span class="n">maxCapacity</span><span class="o">);</span> <span class="c1">//动态扩容
+</span><span class="c1"></span>        <span class="c1">// 扩容新容量
+</span><span class="c1"></span>        <span class="n">capacity</span><span class="o">(</span><span class="n">newCapacity</span><span class="o">);</span>
+    <span class="o">}</span>   
+</code></pre></td></tr></table>
+</div>
+</div><p><strong>为什么需要动态扩展？</strong></p>
+<p>很多时候都是依据经验来判断Pojo对象的大小，如果这个估计值偏大则造成内存浪费，如果偏小直接抛出异常，这种做法对用户非常不友好。
+而Netty的ByteBuf支持动态扩展，为了保证安全，可以指定最大容量。</p>
+<p>calculateNewCapacity方法AbstractByteBufAllocator抽象类实现；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">calculateNewCapacity</span><span class="o">(</span><span class="kt">int</span> <span class="n">minNewCapacity</span><span class="o">,</span> <span class="kt">int</span> <span class="n">maxCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="o">...</span><span class="na">参数验证</span>
+        <span class="c1">//CALCULATE_THRESHOLD = 1048576 * 4
+</span><span class="c1"></span>        <span class="kd">final</span> <span class="kt">int</span> <span class="n">threshold</span> <span class="o">=</span> <span class="n">CALCULATE_THRESHOLD</span><span class="o">;</span> <span class="c1">// 4 MiB page 
+</span><span class="c1"></span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">minNewCapacity</span> <span class="o">==</span> <span class="n">threshold</span><span class="o">)</span> <span class="o">{</span> 
+            <span class="k">return</span> <span class="n">threshold</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="c1">// If over threshold, do not double but just increase by threshold.
+</span><span class="c1"></span>        <span class="c1">//如果超过阈值，按阈值累加
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">minNewCapacity</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kt">int</span> <span class="n">newCapacity</span> <span class="o">=</span> <span class="n">minNewCapacity</span> <span class="o">/</span> <span class="n">threshold</span> <span class="o">*</span> <span class="n">threshold</span><span class="o">;</span>
+            <span class="c1">//minNewCapacity / threshold 处理成newCapacity是threshold倍数
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(</span><span class="n">newCapacity</span> <span class="o">&gt;</span> <span class="n">maxCapacity</span> <span class="o">-</span> <span class="n">threshold</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">newCapacity</span> <span class="o">=</span> <span class="n">maxCapacity</span><span class="o">;</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="n">newCapacity</span> <span class="o">+=</span> <span class="n">threshold</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="n">newCapacity</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="c1">// Not over threshold. Double up to 4 MiB, starting from 64.
+</span><span class="c1"></span>        <span class="c1">//不超过阈值。从64开始，以2倍扩容，增加到4Min。
+</span><span class="c1"></span>        <span class="kt">int</span> <span class="n">newCapacity</span> <span class="o">=</span> <span class="n">64</span><span class="o">;</span>
+        <span class="k">while</span> <span class="o">(</span><span class="n">newCapacity</span> <span class="o">&lt;</span> <span class="n">minNewCapacity</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">newCapacity</span> <span class="o">&lt;&lt;=</span> <span class="n">1</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="k">return</span> <span class="n">Math</span><span class="o">.</span><span class="na">min</span><span class="o">(</span><span class="n">newCapacity</span><span class="o">,</span> <span class="n">maxCapacity</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>计算扩容新容量大小原理：</p>
+<p>设置阀门值是4MB，如果新增的内存空间大于这个值，不采用倍增，而采用每次步进4MB的方式。如果扩容之后的新容量小于阀值，则以64进行倍增 。</p>
+<p>为什么这样做原因？</p>
+<p>不希望一次增加容量太小，导致需要频繁的扩容，不希望一次增加太多，造成空间上的浪费。因此，在内存比较小的时候(&lt;4MB)的时候，倍增64-&gt;128-&gt;256字节，这种方式大多数应用可以接收
+当内存达到阀值时，再倍增就会带来额外的内存浪费，例如10MB-&gt;20MB，因此使用步增的方式进行扩张。</p>
+<ol start="2">
+<li>写操作基本数据boolean,short,int,long,char,float,double</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">writeBoolean</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">writeByte</span><span class="o">(</span><span class="n">value</span> <span class="o">?</span> <span class="n">1</span> <span class="o">:</span> <span class="n">0</span><span class="o">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">writeShort</span><span class="o">(</span><span class="kt">int</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">ensureWritable0</span><span class="o">(</span><span class="n">2</span><span class="o">);</span>
+        <span class="n">_setShort</span><span class="o">(</span><span class="n">writerIndex</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+        <span class="n">writerIndex</span> <span class="o">+=</span> <span class="n">2</span><span class="o">;</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">writeInt</span><span class="o">(</span><span class="kt">int</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">ensureWritable0</span><span class="o">(</span><span class="n">4</span><span class="o">);</span>
+        <span class="n">_setInt</span><span class="o">(</span><span class="n">writerIndex</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+        <span class="n">writerIndex</span> <span class="o">+=</span> <span class="n">4</span><span class="o">;</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">writeLong</span><span class="o">(</span><span class="kt">long</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">ensureWritable0</span><span class="o">(</span><span class="n">8</span><span class="o">);</span>
+        <span class="n">_setLong</span><span class="o">(</span><span class="n">writerIndex</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+        <span class="n">writerIndex</span> <span class="o">+=</span> <span class="n">8</span><span class="o">;</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">writeChar</span><span class="o">(</span><span class="kt">int</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">writeShort</span><span class="o">(</span><span class="n">value</span><span class="o">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+   <span class="c1">//Float.floatToRawIntBits 转化int
+</span><span class="c1"></span>    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">writeFloat</span><span class="o">(</span><span class="kt">float</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">writeInt</span><span class="o">(</span><span class="n">Float</span><span class="o">.</span><span class="na">floatToRawIntBits</span><span class="o">(</span><span class="n">value</span><span class="o">));</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="c1">//Double.doubleToRawLongBits 转化long
+</span><span class="c1"></span>    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">writeDouble</span><span class="o">(</span><span class="kt">double</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">writeLong</span><span class="o">(</span><span class="n">Double</span><span class="o">.</span><span class="na">doubleToRawLongBits</span><span class="o">(</span><span class="n">value</span><span class="o">));</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="b--writebytesbyte-src-int-srcindex-int-length">b.  writeBytes(byte[] src, int srcIndex, int length)</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">writeBytes</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">src</span><span class="o">,</span> <span class="kt">int</span> <span class="n">srcIndex</span><span class="o">,</span> <span class="kt">int</span> <span class="n">length</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">ensureWritable</span><span class="o">(</span><span class="n">length</span><span class="o">);</span>
+        <span class="n">setBytes</span><span class="o">(</span><span class="n">writerIndex</span><span class="o">,</span> <span class="n">src</span><span class="o">,</span> <span class="n">srcIndex</span><span class="o">,</span> <span class="n">length</span><span class="o">);</span><span class="c1">//setBytes抽象方法
+</span><span class="c1"></span>        <span class="n">writerIndex</span> <span class="o">+=</span> <span class="n">length</span><span class="o">;</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3discardable-丢弃已读的数据">(3).Discardable 丢弃已读的数据</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">discardReadBytes</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">ensureAccessible</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">readerIndex</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">readerIndex</span> <span class="o">!=</span> <span class="n">writerIndex</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">setBytes</span><span class="o">(</span><span class="n">0</span><span class="o">,</span> <span class="k">this</span><span class="o">,</span> <span class="n">readerIndex</span><span class="o">,</span> <span class="n">writerIndex</span> <span class="o">-</span> <span class="n">readerIndex</span><span class="o">);</span><span class="c1">//移动元素
+</span><span class="c1"></span>            <span class="n">writerIndex</span> <span class="o">-=</span> <span class="n">readerIndex</span><span class="o">;</span>
+            <span class="n">adjustMarkers</span><span class="o">(</span><span class="n">readerIndex</span><span class="o">);</span>
+            <span class="n">readerIndex</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="n">adjustMarkers</span><span class="o">(</span><span class="n">readerIndex</span><span class="o">);</span>
+            <span class="n">writerIndex</span> <span class="o">=</span> <span class="n">readerIndex</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="c1">//调整标记markedReaderIndex，markedWriterIndex
+</span><span class="c1"></span>    <span class="kd">protected</span> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">adjustMarkers</span><span class="o">(</span><span class="kt">int</span> <span class="n">decrement</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">markedReaderIndex</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">markedReaderIndex</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">markedReaderIndex</span> <span class="o">&lt;=</span> <span class="n">decrement</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">markedReaderIndex</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+            <span class="kt">int</span> <span class="n">markedWriterIndex</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">markedWriterIndex</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">markedWriterIndex</span> <span class="o">&lt;=</span> <span class="n">decrement</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">this</span><span class="o">.</span><span class="na">markedWriterIndex</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="k">this</span><span class="o">.</span><span class="na">markedWriterIndex</span> <span class="o">=</span> <span class="n">markedWriterIndex</span> <span class="o">-</span> <span class="n">decrement</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">markedReaderIndex</span> <span class="o">=</span> <span class="n">markedReaderIndex</span> <span class="o">-</span> <span class="n">decrement</span><span class="o">;</span>
+            <span class="n">markedWriterIndex</span> <span class="o">-=</span> <span class="n">decrement</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><p>discardSomeReadBytes一个判断<code>readerIndex &gt;= capacity() &gt;&gt;&gt; 1</code>,就是说readerIndex大于等容量大小一半进行回收操作。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">discardSomeReadBytes</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">ensureAccessible</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">readerIndex</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">readerIndex</span> <span class="o">==</span> <span class="n">writerIndex</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">adjustMarkers</span><span class="o">(</span><span class="n">readerIndex</span><span class="o">);</span>
+            <span class="n">writerIndex</span> <span class="o">=</span> <span class="n">readerIndex</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+            <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">readerIndex</span> <span class="o">&gt;=</span> <span class="n">capacity</span><span class="o">()</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">1</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">setBytes</span><span class="o">(</span><span class="n">0</span><span class="o">,</span> <span class="k">this</span><span class="o">,</span> <span class="n">readerIndex</span><span class="o">,</span> <span class="n">writerIndex</span> <span class="o">-</span> <span class="n">readerIndex</span><span class="o">);</span>
+            <span class="n">writerIndex</span> <span class="o">-=</span> <span class="n">readerIndex</span><span class="o">;</span>
+            <span class="n">adjustMarkers</span><span class="o">(</span><span class="n">readerIndex</span><span class="o">);</span>
+            <span class="n">readerIndex</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4-clear">(4). clear</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">clear</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">readerIndex</span> <span class="o">=</span> <span class="n">writerIndex</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="5-skipbytes">(5). skipBytes</h3>
+<p>在解码的时候，有时候需要丢弃非法的数据报文。非常简单，修改readerIndex即可;</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">skipBytes</span><span class="o">(</span><span class="kt">int</span> <span class="n">length</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">checkReadableBytes</span><span class="o">(</span><span class="n">length</span><span class="o">);</span>
+        <span class="n">readerIndex</span> <span class="o">+=</span> <span class="n">length</span><span class="o">;</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="7slice-返回此缓冲区的可读字节的一部分修改返回的缓冲区或此缓冲区的内容会影响彼此的内容同时它们维护单独的索引和标记">(7).slice 返回此缓冲区的可读字节的一部分。修改返回的缓冲区或此缓冲区的内容会影响彼此的内容，同时它们维护单独的索引和标记。</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">
+   @Override
+   public ByteBuf slice() {
+       return slice(readerIndex, readableBytes());
+   }
+
+   @Override
+   public ByteBuf slice(int index, int length) {
+       return new UnpooledSlicedByteBuf(this, index, length);
+   }
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>创建UnpooledSlicedByteBuf，包装当前ByteBuf,控制下标反问</li>
+</ul>
+<h2 id="2abstractreferencecountedbytebuf-源码分析">2.AbstractReferenceCountedByteBuf 源码分析</h2>
+<p>从类的名字可以看出，该类的功能主要是引用计数，类似于JVM内存回收的对象引用计数器，用于跟踪对象的分配和销毁，用于自动的内存回收。</p>
+<h3 id="1内部结构">(1).内部结构</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">AbstractReferenceCountedByteBuf</span> <span class="kd">extends</span> <span class="n">AbstractByteBuf</span> <span class="o">{</span>
+
+   <span class="c1">//CAS操作refCnt属性
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">AtomicIntegerFieldUpdater</span><span class="o">&lt;</span><span class="n">AbstractReferenceCountedByteBuf</span><span class="o">&gt;</span> <span class="n">refCntUpdater</span> <span class="o">=</span>
+            <span class="n">AtomicIntegerFieldUpdater</span><span class="o">.</span><span class="na">newUpdater</span><span class="o">(</span><span class="n">AbstractReferenceCountedByteBuf</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="s">&#34;refCnt&#34;</span><span class="o">);</span>
+
+    <span class="kd">private</span> <span class="kd">volatile</span> <span class="kt">int</span> <span class="n">refCnt</span><span class="o">;</span><span class="c1">//引用计数 
+</span><span class="c1"></span>
+    <span class="kd">protected</span> <span class="nf">AbstractReferenceCountedByteBuf</span><span class="o">(</span><span class="kt">int</span> <span class="n">maxCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">maxCapacity</span><span class="o">);</span>
+        <span class="n">refCntUpdater</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">1</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2retain-添加引用计数">(2).retain 添加引用计数</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">retain</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">retain0</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="kd">private</span> <span class="n">ByteBuf</span> <span class="nf">retain0</span><span class="o">(</span><span class="kd">final</span> <span class="kt">int</span> <span class="n">increment</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">oldRef</span> <span class="o">=</span> <span class="n">refCntUpdater</span><span class="o">.</span><span class="na">getAndAdd</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">increment</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">oldRef</span> <span class="o">&lt;=</span> <span class="n">0</span> <span class="o">||</span> <span class="n">oldRef</span> <span class="o">+</span> <span class="n">increment</span> <span class="o">&lt;</span> <span class="n">oldRef</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// Ensure we don&#39;t resurrect (which means the refCnt was 0) and also that we encountered an overflow.
+</span><span class="c1"></span>            <span class="c1">//确保我们不复活(这意味着refCnt是0)，并且我们遇到了溢出。
+</span><span class="c1"></span>            <span class="n">refCntUpdater</span><span class="o">.</span><span class="na">getAndAdd</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="o">-</span><span class="n">increment</span><span class="o">);</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalReferenceCountException</span><span class="o">(</span><span class="n">oldRef</span><span class="o">,</span> <span class="n">increment</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>     
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3release-减去引用计数">(3).release 减去引用计数</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">release</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">release0</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+    <span class="o">}</span>
+   <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">release0</span><span class="o">(</span><span class="kt">int</span> <span class="n">decrement</span><span class="o">)</span> <span class="o">{</span>
+           <span class="kt">int</span> <span class="n">oldRef</span> <span class="o">=</span> <span class="n">refCntUpdater</span><span class="o">.</span><span class="na">getAndAdd</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="o">-</span><span class="n">decrement</span><span class="o">);</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">oldRef</span> <span class="o">==</span> <span class="n">decrement</span><span class="o">)</span> <span class="o">{</span> <span class="c1">//说明减去refCnt为零
+</span><span class="c1"></span>               <span class="n">deallocate</span><span class="o">();</span>  <span class="c1">//调用deallocate方法来释放ByteBuf对象
+</span><span class="c1"></span>               <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+           <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">oldRef</span> <span class="o">&lt;</span> <span class="n">decrement</span> <span class="o">||</span> <span class="n">oldRef</span> <span class="o">-</span> <span class="n">decrement</span> <span class="o">&gt;</span> <span class="n">oldRef</span><span class="o">)</span> <span class="o">{</span>
+               <span class="c1">// Ensure we don&#39;t over-release, and avoid underflow.
+</span><span class="c1"></span>               <span class="n">refCntUpdater</span><span class="o">.</span><span class="na">getAndAdd</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">decrement</span><span class="o">);</span>
+               <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalReferenceCountException</span><span class="o">(</span><span class="n">oldRef</span><span class="o">,</span> <span class="n">decrement</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+       <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4unpooledheapbytebuf-源码分析">4.UnpooledHeapByteBuf 源码分析</h2>
+<p>基于堆内存，没有对象池，意味着每次I/O的读写都会创建一个新的UnpooledHeapByteBuf，频繁进行大块内存的分配和
+回收可能会对性能有一定的影响，但是相比于堆外内存的申请和释放，成本还是要低一些。</p>
+<p>相比于PooledHeapByteBuf，其原理更加的简单，也不容易出现内存管理方面的问题，因此在满足性能的情况下，推荐使用
+UnpooledHeapByteBuf。</p>
+<h3 id="1内部结构-1">（1).内部结构</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">UnpooledHeapByteBuf</span> <span class="kd">extends</span> <span class="n">AbstractReferenceCountedByteBuf</span> <span class="o">{</span>
+
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">ByteBufAllocator</span> <span class="n">alloc</span><span class="o">;</span>
+    <span class="kt">byte</span><span class="o">[]</span> <span class="n">array</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">ByteBuffer</span> <span class="n">tmpNioBuf</span><span class="o">;</span> <span class="c1">//写入或者读取NIO通道，就用到这个属性
+</span><span class="c1"></span>
+    <span class="kd">public</span> <span class="nf">UnpooledHeapByteBuf</span><span class="o">(</span><span class="n">ByteBufAllocator</span> <span class="n">alloc</span><span class="o">,</span> <span class="kt">int</span> <span class="n">initialCapacity</span><span class="o">,</span> <span class="kt">int</span> <span class="n">maxCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">maxCapacity</span><span class="o">);</span>
+        <span class="o">...</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">alloc</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">;</span>
+        <span class="n">setArray</span><span class="o">(</span><span class="n">allocateArray</span><span class="o">(</span><span class="n">initialCapacity</span><span class="o">));</span>
+        <span class="n">setIndex</span><span class="o">(</span><span class="n">0</span><span class="o">,</span> <span class="n">0</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">protected</span> <span class="nf">UnpooledHeapByteBuf</span><span class="o">(</span><span class="n">ByteBufAllocator</span> <span class="n">alloc</span><span class="o">,</span> <span class="kt">byte</span><span class="o">[]</span> <span class="n">initialArray</span><span class="o">,</span> <span class="kt">int</span> <span class="n">maxCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">maxCapacity</span><span class="o">);</span>
+        <span class="o">...</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">alloc</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">;</span>
+        <span class="n">setArray</span><span class="o">(</span><span class="n">initialArray</span><span class="o">);</span>
+        <span class="n">setIndex</span><span class="o">(</span><span class="n">0</span><span class="o">,</span> <span class="n">initialArray</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kt">byte</span><span class="o">[]</span> <span class="nf">allocateArray</span><span class="o">(</span><span class="kt">int</span> <span class="n">initialCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[</span><span class="n">initialCapacity</span><span class="o">];</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">setArray</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">initialArray</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">initialArray</span><span class="o">;</span>
+        <span class="n">tmpNioBuf</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+ <span class="o">}</span>   
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2capacity扩容和缩小容量操作">（2).capacity扩容和缩小容量操作</h3>
+<p>运用System.arraycopy赋值数组元素；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">capacity</span><span class="o">(</span><span class="kt">int</span> <span class="n">newCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">checkNewCapacity</span><span class="o">(</span><span class="n">newCapacity</span><span class="o">);</span>
+
+        <span class="kt">int</span> <span class="n">oldCapacity</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+        <span class="kt">byte</span><span class="o">[]</span> <span class="n">oldArray</span> <span class="o">=</span> <span class="n">array</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">newCapacity</span> <span class="o">&gt;</span> <span class="n">oldCapacity</span><span class="o">)</span> <span class="o">{</span> <span class="c1">//扩大容量
+</span><span class="c1"></span>            <span class="kt">byte</span><span class="o">[]</span> <span class="n">newArray</span> <span class="o">=</span> <span class="n">allocateArray</span><span class="o">(</span><span class="n">newCapacity</span><span class="o">);</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">oldArray</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">newArray</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">oldArray</span><span class="o">.</span><span class="na">length</span><span class="o">);</span><span class="c1">//复制元素
+</span><span class="c1"></span>            <span class="n">setArray</span><span class="o">(</span><span class="n">newArray</span><span class="o">);</span>
+            <span class="n">freeArray</span><span class="o">(</span><span class="n">oldArray</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">newCapacity</span> <span class="o">&lt;</span> <span class="n">oldCapacity</span><span class="o">)</span> <span class="o">{</span><span class="c1">//缩小容量
+</span><span class="c1"></span>            <span class="kt">byte</span><span class="o">[]</span> <span class="n">newArray</span> <span class="o">=</span> <span class="n">allocateArray</span><span class="o">(</span><span class="n">newCapacity</span><span class="o">);</span>
+            <span class="kt">int</span> <span class="n">readerIndex</span> <span class="o">=</span> <span class="n">readerIndex</span><span class="o">();</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">readerIndex</span> <span class="o">&lt;</span> <span class="n">newCapacity</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kt">int</span> <span class="n">writerIndex</span> <span class="o">=</span> <span class="n">writerIndex</span><span class="o">();</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">writerIndex</span> <span class="o">&gt;</span> <span class="n">newCapacity</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">writerIndex</span><span class="o">(</span><span class="n">writerIndex</span> <span class="o">=</span> <span class="n">newCapacity</span><span class="o">);</span>
+                <span class="o">}</span>
+                <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">oldArray</span><span class="o">,</span> <span class="n">readerIndex</span><span class="o">,</span> <span class="n">newArray</span><span class="o">,</span> <span class="n">readerIndex</span><span class="o">,</span> <span class="n">writerIndex</span> <span class="o">-</span> <span class="n">readerIndex</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="n">setIndex</span><span class="o">(</span><span class="n">newCapacity</span><span class="o">,</span> <span class="n">newCapacity</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="n">setArray</span><span class="o">(</span><span class="n">newArray</span><span class="o">);</span>
+            <span class="c1">//空方法
+</span><span class="c1"></span>            <span class="n">freeArray</span><span class="o">(</span><span class="n">oldArray</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3read基本数据byteshortintlong">（3).read基本数据byte,short,int,long</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="kt">byte</span> <span class="nf">_getByte</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">HeapByteBufUtil</span><span class="o">.</span><span class="na">getByte</span><span class="o">(</span><span class="n">array</span><span class="o">,</span> <span class="n">index</span><span class="o">);</span>
+    <span class="o">}</span>
+  <span class="nd">@Override</span>
+   <span class="kd">protected</span> <span class="kt">short</span> <span class="nf">_getShort</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">return</span> <span class="n">HeapByteBufUtil</span><span class="o">.</span><span class="na">getShort</span><span class="o">(</span><span class="n">array</span><span class="o">,</span> <span class="n">index</span><span class="o">);</span>
+   <span class="o">}</span>
+   <span class="nd">@Override</span>
+   <span class="kd">protected</span> <span class="kt">int</span> <span class="nf">_getInt</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">return</span> <span class="n">HeapByteBufUtil</span><span class="o">.</span><span class="na">getInt</span><span class="o">(</span><span class="n">array</span><span class="o">,</span> <span class="n">index</span><span class="o">);</span>
+   <span class="o">}</span>
+   <span class="nd">@Override</span>
+   <span class="kd">protected</span> <span class="kt">long</span> <span class="nf">_getLong</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">return</span> <span class="n">HeapByteBufUtil</span><span class="o">.</span><span class="na">getLong</span><span class="o">(</span><span class="n">array</span><span class="o">,</span> <span class="n">index</span><span class="o">);</span>
+   <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>最终调用HeapByteBufUtil，部分源码</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="kd">static</span> <span class="kt">byte</span> <span class="nf">getByte</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">memory</span><span class="o">,</span> <span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">memory</span><span class="o">[</span><span class="n">index</span><span class="o">];</span>
+    <span class="o">}</span>
+   
+    <span class="kd">static</span> <span class="kt">short</span> <span class="nf">getShort</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">memory</span><span class="o">,</span> <span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="o">(</span><span class="kt">short</span><span class="o">)</span> <span class="o">(</span><span class="n">memory</span><span class="o">[</span><span class="n">index</span><span class="o">]</span> <span class="o">&lt;&lt;</span> <span class="n">8</span> <span class="o">|</span> <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">1</span><span class="o">]</span> <span class="o">&amp;</span> <span class="n">0xFF</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="kd">static</span> <span class="kt">int</span> <span class="nf">getInt</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">memory</span><span class="o">,</span> <span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span>  <span class="o">(</span><span class="n">memory</span><span class="o">[</span><span class="n">index</span><span class="o">]</span>     <span class="o">&amp;</span> <span class="n">0xff</span><span class="o">)</span> <span class="o">&lt;&lt;</span> <span class="n">24</span> <span class="o">|</span>
+                <span class="o">(</span><span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">1</span><span class="o">]</span> <span class="o">&amp;</span> <span class="n">0xff</span><span class="o">)</span> <span class="o">&lt;&lt;</span> <span class="n">16</span> <span class="o">|</span>
+                <span class="o">(</span><span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">2</span><span class="o">]</span> <span class="o">&amp;</span> <span class="n">0xff</span><span class="o">)</span> <span class="o">&lt;&lt;</span>  <span class="n">8</span> <span class="o">|</span>
+                <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">3</span><span class="o">]</span> <span class="o">&amp;</span> <span class="n">0xff</span><span class="o">;</span>
+    <span class="o">}</span>
+ <span class="kd">static</span> <span class="kt">long</span> <span class="nf">getLong</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">memory</span><span class="o">,</span> <span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span>  <span class="o">((</span><span class="kt">long</span><span class="o">)</span> <span class="n">memory</span><span class="o">[</span><span class="n">index</span><span class="o">]</span>     <span class="o">&amp;</span> <span class="n">0xff</span><span class="o">)</span> <span class="o">&lt;&lt;</span> <span class="n">56</span> <span class="o">|</span>
+                <span class="o">((</span><span class="kt">long</span><span class="o">)</span> <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">1</span><span class="o">]</span> <span class="o">&amp;</span> <span class="n">0xff</span><span class="o">)</span> <span class="o">&lt;&lt;</span> <span class="n">48</span> <span class="o">|</span>
+                <span class="o">((</span><span class="kt">long</span><span class="o">)</span> <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">2</span><span class="o">]</span> <span class="o">&amp;</span> <span class="n">0xff</span><span class="o">)</span> <span class="o">&lt;&lt;</span> <span class="n">40</span> <span class="o">|</span>
+                <span class="o">((</span><span class="kt">long</span><span class="o">)</span> <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">3</span><span class="o">]</span> <span class="o">&amp;</span> <span class="n">0xff</span><span class="o">)</span> <span class="o">&lt;&lt;</span> <span class="n">32</span> <span class="o">|</span>
+                <span class="o">((</span><span class="kt">long</span><span class="o">)</span> <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">4</span><span class="o">]</span> <span class="o">&amp;</span> <span class="n">0xff</span><span class="o">)</span> <span class="o">&lt;&lt;</span> <span class="n">24</span> <span class="o">|</span>
+                <span class="o">((</span><span class="kt">long</span><span class="o">)</span> <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">5</span><span class="o">]</span> <span class="o">&amp;</span> <span class="n">0xff</span><span class="o">)</span> <span class="o">&lt;&lt;</span> <span class="n">16</span> <span class="o">|</span>
+                <span class="o">((</span><span class="kt">long</span><span class="o">)</span> <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">6</span><span class="o">]</span> <span class="o">&amp;</span> <span class="n">0xff</span><span class="o">)</span> <span class="o">&lt;&lt;</span>  <span class="n">8</span> <span class="o">|</span>
+                <span class="o">(</span><span class="kt">long</span><span class="o">)</span> <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">7</span><span class="o">]</span> <span class="o">&amp;</span> <span class="n">0xff</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>说明一下，byte=8位，short=2byte=16位，int=4byte=32位,long=8byte=64位;
+0xff=1111 1111；上面代码只是做位移处理获取相应值；</p>
+<h3 id="4getbytesint-index-byte-dst-int-dstindex-int-length">（4).getBytes(int index, byte[] dst, int dstIndex, int length)</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">getBytes</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="kt">byte</span><span class="o">[]</span> <span class="n">dst</span><span class="o">,</span> <span class="kt">int</span> <span class="n">dstIndex</span><span class="o">,</span> <span class="kt">int</span> <span class="n">length</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">checkDstIndex</span><span class="o">(</span><span class="n">index</span><span class="o">,</span> <span class="n">length</span><span class="o">,</span> <span class="n">dstIndex</span><span class="o">,</span> <span class="n">dst</span><span class="o">.</span><span class="na">length</span><span class="o">);</span> <span class="c1">//验证
+</span><span class="c1"></span>        <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">array</span><span class="o">,</span> <span class="n">index</span><span class="o">,</span> <span class="n">dst</span><span class="o">,</span> <span class="n">dstIndex</span><span class="o">,</span> <span class="n">length</span><span class="o">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="5wirte基本操作-byteshortintlong">（5).wirte基本操作 byte,short,int,long</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">_setByte</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="kt">int</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">HeapByteBufUtil</span><span class="o">.</span><span class="na">setByte</span><span class="o">(</span><span class="n">array</span><span class="o">,</span> <span class="n">index</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+    <span class="o">}</span>
+ <span class="nd">@Override</span>
+   <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">_setShort</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="kt">int</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+       <span class="n">HeapByteBufUtil</span><span class="o">.</span><span class="na">setShort</span><span class="o">(</span><span class="n">array</span><span class="o">,</span> <span class="n">index</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+   <span class="o">}</span>
+
+   <span class="nd">@Override</span>
+   <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">_setInt</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="kt">int</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+       <span class="n">HeapByteBufUtil</span><span class="o">.</span><span class="na">setInt</span><span class="o">(</span><span class="n">array</span><span class="o">,</span> <span class="n">index</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+   <span class="o">}</span>
+   <span class="nd">@Override</span>
+   <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">_setLong</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="kt">long</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+       <span class="n">HeapByteBufUtil</span><span class="o">.</span><span class="na">setLong</span><span class="o">(</span><span class="n">array</span><span class="o">,</span> <span class="n">index</span><span class="o">,</span> <span class="n">value</span><span class="o">);</span>
+   <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>最终调用HeapByteBufUtil,部分源码</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">static</span> <span class="kt">void</span> <span class="nf">setByte</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">memory</span><span class="o">,</span> <span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="kt">int</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="n">value</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="kd">static</span> <span class="kt">void</span> <span class="nf">setShort</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">memory</span><span class="o">,</span> <span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="kt">int</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span><span class="o">]</span>     <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="o">(</span><span class="n">value</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">8</span><span class="o">);</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">1</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="n">value</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="kd">static</span> <span class="kt">void</span> <span class="nf">setInt</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">memory</span><span class="o">,</span> <span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="kt">int</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span><span class="o">]</span>     <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="o">(</span><span class="n">value</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">24</span><span class="o">);</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">1</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="o">(</span><span class="n">value</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">16</span><span class="o">);</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">2</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="o">(</span><span class="n">value</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">8</span><span class="o">);</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">3</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="n">value</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="kd">static</span> <span class="kt">void</span> <span class="nf">setLong</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">memory</span><span class="o">,</span> <span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="kt">long</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span><span class="o">]</span>     <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="o">(</span><span class="n">value</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">56</span><span class="o">);</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">1</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="o">(</span><span class="n">value</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">48</span><span class="o">);</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">2</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="o">(</span><span class="n">value</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">40</span><span class="o">);</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">3</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="o">(</span><span class="n">value</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">32</span><span class="o">);</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">4</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="o">(</span><span class="n">value</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">24</span><span class="o">);</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">5</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="o">(</span><span class="n">value</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">16</span><span class="o">);</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">6</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="o">(</span><span class="n">value</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">8</span><span class="o">);</span>
+        <span class="n">memory</span><span class="o">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">7</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="n">value</span><span class="o">;</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="6setbytesint-index-byte-src-int-srcindex-int-length">（6).setBytes(int index, byte[] src, int srcIndex, int length)</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">setBytes</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="kt">byte</span><span class="o">[]</span> <span class="n">src</span><span class="o">,</span> <span class="kt">int</span> <span class="n">srcIndex</span><span class="o">,</span> <span class="kt">int</span> <span class="n">length</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">checkSrcIndex</span><span class="o">(</span><span class="n">index</span><span class="o">,</span> <span class="n">length</span><span class="o">,</span> <span class="n">srcIndex</span><span class="o">,</span> <span class="n">src</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">src</span><span class="o">,</span> <span class="n">srcIndex</span><span class="o">,</span> <span class="n">array</span><span class="o">,</span> <span class="n">index</span><span class="o">,</span> <span class="n">length</span><span class="o">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="5unpooleddirectbytebuf-源码分析">5.UnpooledDirectByteBuf 源码分析</h2>
+<p>直接内存操作DirectByteBuffer类</p>
+<h3 id="1内部结构-2">(1).内部结构</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">UnpooledDirectByteBuf</span> <span class="kd">extends</span> <span class="n">AbstractReferenceCountedByteBuf</span> <span class="o">{</span>
+
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">ByteBufAllocator</span> <span class="n">alloc</span><span class="o">;</span>
+
+    <span class="kd">private</span> <span class="n">ByteBuffer</span> <span class="n">buffer</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">ByteBuffer</span> <span class="n">tmpNioBuf</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kt">int</span> <span class="n">capacity</span><span class="o">;</span>  <span class="c1">//容量
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">doNotFree</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="nf">UnpooledDirectByteBuf</span><span class="o">(</span><span class="n">ByteBufAllocator</span> <span class="n">alloc</span><span class="o">,</span> <span class="kt">int</span> <span class="n">initialCapacity</span><span class="o">,</span> <span class="kt">int</span> <span class="n">maxCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">maxCapacity</span><span class="o">);</span>
+        <span class="o">...</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">alloc</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">;</span>
+        <span class="n">setByteBuffer</span><span class="o">(</span><span class="n">ByteBuffer</span><span class="o">.</span><span class="na">allocateDirect</span><span class="o">(</span><span class="n">initialCapacity</span><span class="o">));</span>
+    <span class="o">}</span>
+
+    <span class="kd">protected</span> <span class="nf">UnpooledDirectByteBuf</span><span class="o">(</span><span class="n">ByteBufAllocator</span> <span class="n">alloc</span><span class="o">,</span> <span class="n">ByteBuffer</span> <span class="n">initialBuffer</span><span class="o">,</span> <span class="kt">int</span> <span class="n">maxCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">maxCapacity</span><span class="o">);</span>
+        <span class="o">...</span>
+        <span class="kt">int</span> <span class="n">initialCapacity</span> <span class="o">=</span> <span class="n">initialBuffer</span><span class="o">.</span><span class="na">remaining</span><span class="o">();</span>
+        <span class="o">...</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">alloc</span> <span class="o">=</span> <span class="n">alloc</span><span class="o">;</span>
+        <span class="n">doNotFree</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="n">setByteBuffer</span><span class="o">(</span><span class="n">initialBuffer</span><span class="o">.</span><span class="na">slice</span><span class="o">().</span><span class="na">order</span><span class="o">(</span><span class="n">ByteOrder</span><span class="o">.</span><span class="na">BIG_ENDIAN</span><span class="o">));</span>
+        <span class="n">writerIndex</span><span class="o">(</span><span class="n">initialCapacity</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">protected</span> <span class="n">ByteBuffer</span> <span class="nf">allocateDirect</span><span class="o">(</span><span class="kt">int</span> <span class="n">initialCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">ByteBuffer</span><span class="o">.</span><span class="na">allocateDirect</span><span class="o">(</span><span class="n">initialCapacity</span><span class="o">);</span> <span class="c1">//创建直接内存 new DirectByteBuffer(capacity)
+</span><span class="c1"></span>    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Free a direct {@link ByteBuffer}
+</span><span class="cm">     */</span>
+    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">freeDirect</span><span class="o">(</span><span class="n">ByteBuffer</span> <span class="n">buffer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">PlatformDependent</span><span class="o">.</span><span class="na">freeDirectBuffer</span><span class="o">(</span><span class="n">buffer</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">setByteBuffer</span><span class="o">(</span><span class="n">ByteBuffer</span> <span class="n">buffer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">ByteBuffer</span> <span class="n">oldBuffer</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">buffer</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">oldBuffer</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">doNotFree</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">doNotFree</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="n">freeDirect</span><span class="o">(</span><span class="n">oldBuffer</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="k">this</span><span class="o">.</span><span class="na">buffer</span> <span class="o">=</span> <span class="n">buffer</span><span class="o">;</span>
+        <span class="n">tmpNioBuf</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="n">capacity</span> <span class="o">=</span> <span class="n">buffer</span><span class="o">.</span><span class="na">remaining</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2capacity扩容或者缩小操作">（2).capacity扩容或者缩小操作</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ByteBuf</span> <span class="nf">capacity</span><span class="o">(</span><span class="kt">int</span> <span class="n">newCapacity</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">checkNewCapacity</span><span class="o">(</span><span class="n">newCapacity</span><span class="o">);</span>
+
+        <span class="kt">int</span> <span class="n">readerIndex</span> <span class="o">=</span> <span class="n">readerIndex</span><span class="o">();</span>
+        <span class="kt">int</span> <span class="n">writerIndex</span> <span class="o">=</span> <span class="n">writerIndex</span><span class="o">();</span>
+
+        <span class="kt">int</span> <span class="n">oldCapacity</span> <span class="o">=</span> <span class="n">capacity</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">newCapacity</span> <span class="o">&gt;</span> <span class="n">oldCapacity</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">ByteBuffer</span> <span class="n">oldBuffer</span> <span class="o">=</span> <span class="n">buffer</span><span class="o">;</span>
+            <span class="n">ByteBuffer</span> <span class="n">newBuffer</span> <span class="o">=</span> <span class="n">allocateDirect</span><span class="o">(</span><span class="n">newCapacity</span><span class="o">);</span>
+            <span class="n">oldBuffer</span><span class="o">.</span><span class="na">position</span><span class="o">(</span><span class="n">0</span><span class="o">).</span><span class="na">limit</span><span class="o">(</span><span class="n">oldBuffer</span><span class="o">.</span><span class="na">capacity</span><span class="o">());</span>
+            <span class="n">newBuffer</span><span class="o">.</span><span class="na">position</span><span class="o">(</span><span class="n">0</span><span class="o">).</span><span class="na">limit</span><span class="o">(</span><span class="n">oldBuffer</span><span class="o">.</span><span class="na">capacity</span><span class="o">());</span>
+            <span class="n">newBuffer</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">oldBuffer</span><span class="o">);</span>
+            <span class="n">newBuffer</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+            <span class="n">setByteBuffer</span><span class="o">(</span><span class="n">newBuffer</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">newCapacity</span> <span class="o">&lt;</span> <span class="n">oldCapacity</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">ByteBuffer</span> <span class="n">oldBuffer</span> <span class="o">=</span> <span class="n">buffer</span><span class="o">;</span>
+            <span class="n">ByteBuffer</span> <span class="n">newBuffer</span> <span class="o">=</span> <span class="n">allocateDirect</span><span class="o">(</span><span class="n">newCapacity</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">readerIndex</span> <span class="o">&lt;</span> <span class="n">newCapacity</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">writerIndex</span> <span class="o">&gt;</span> <span class="n">newCapacity</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">writerIndex</span><span class="o">(</span><span class="n">writerIndex</span> <span class="o">=</span> <span class="n">newCapacity</span><span class="o">);</span>
+                <span class="o">}</span>
+                <span class="n">oldBuffer</span><span class="o">.</span><span class="na">position</span><span class="o">(</span><span class="n">readerIndex</span><span class="o">).</span><span class="na">limit</span><span class="o">(</span><span class="n">writerIndex</span><span class="o">);</span>
+                <span class="n">newBuffer</span><span class="o">.</span><span class="na">position</span><span class="o">(</span><span class="n">readerIndex</span><span class="o">).</span><span class="na">limit</span><span class="o">(</span><span class="n">writerIndex</span><span class="o">);</span>
+                <span class="n">newBuffer</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">oldBuffer</span><span class="o">);</span>
+                <span class="n">newBuffer</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="n">setIndex</span><span class="o">(</span><span class="n">newCapacity</span><span class="o">,</span> <span class="n">newCapacity</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="n">setByteBuffer</span><span class="o">(</span><span class="n">newBuffer</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>不做具体说明，所有操作都是基于NIO的ByteBuffer类；</p>
+<h1 id="四bytebufallocator">四、ByteBufAllocator</h1>
+<p>ByteBufAllocator是字节缓冲区分配器，根据Netty字节缓冲区的实现不同，分为两种不同的分配器
+PooledByteBufAllocator和UnpooledByteBufAllocator。他们提供了不同ByteBuf的分配方法。</p>
+<p><img src="/netty/ByteBufAllocator.png" alt=""></p>
+<h1 id="五compositebytebuf-源码分析">五、CompositeByteBuf 源码分析</h1>
+<p>CompositeByteBuf是一个虚拟的Buffer，它可以将多个ByteBuf组装为一个ByteBuf视图。在Java NIO中，我们有两种实现的方法：</p>
+<ul>
+<li>将其他ByteBuffer的数据复制到一个ByteBuffer中，或者重新创建一个新的ByteBuffer，将其他的ByteBuffer复制到新建的ByteBuffer中。</li>
+<li>通过容器将多个ByteBuffer存储在一起，进行统一的管理和维护。</li>
+</ul>
+<h2 id="1数据结构">1.数据结构</h2>
+<h3 id="1component">(1).Component</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private static final class Component {
+       final ByteBuf buf; 
+       final int length;  //长度
+       int offset;        //开始偏移量
+       int endOffset;     //截止偏移量
+
+       Component(ByteBuf buf) {
+           this.buf = buf;
+           length = buf.readableBytes();
+       }
+
+       void freeIfNecessary() {
+           buf.release(); // 我们不应该在这里得到NPE。如果是这样，那一定是一个错误
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2componentlist继承arraylist集合把bytebuf关联起来">(2).ComponentList继承ArrayList集合，把ByteBuf关联起来</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    private static final class ComponentList extends ArrayList&lt;Component&gt; {
+
+        ComponentList(int initialCapacity) {
+            super(initialCapacity);
+        }
+
+        // Expose this methods so we not need to create a new subList just to remove a range of elements.
+        @Override
+        public void removeRange(int fromIndex, int toIndex) {
+            super.removeRange(fromIndex, toIndex);
+        }
+    }   
+</code></pre></td></tr></table>
+</div>
+</div><p>形成ComponentList结构</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-text" data-lang="text">      +-------------------++-------------------++-------------------+
+      | Component 0       || Component 1       || Component 2       |
+      | length=10         || length=12         || length=10         |
+      | offset=0          || offset=10         || offset=22         |
+      | endOffset=10      || endOffset=22      || endOffset=32      |
+      +-------------------++-------------------++-------------------+
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2添加对集合元素添加以及offset和endoffset赋值操作">2.添加对集合元素添加以及offset和endOffset赋值操作</h2>
+<h2 id="3删除集合元素的批量更新offset和endoffset赋值操作">3.删除集合元素的批量更新offset和endOffset赋值操作</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    
+    <span class="kd">public</span> <span class="n">CompositeByteBuf</span> <span class="nf">removeComponent</span><span class="o">(</span><span class="kt">int</span> <span class="n">cIndex</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">checkComponentIndex</span><span class="o">(</span><span class="n">cIndex</span><span class="o">);</span>
+        <span class="n">Component</span> <span class="n">comp</span> <span class="o">=</span> <span class="n">components</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">cIndex</span><span class="o">);</span>
+        <span class="n">comp</span><span class="o">.</span><span class="na">freeIfNecessary</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">comp</span><span class="o">.</span><span class="na">length</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// Only need to call updateComponentOffsets if the length was &gt; 0
+</span><span class="c1"></span>            <span class="n">updateComponentOffsets</span><span class="o">(</span><span class="n">cIndex</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+   <span class="kd">private</span> <span class="kt">void</span> <span class="nf">updateComponentOffsets</span><span class="o">(</span><span class="kt">int</span> <span class="n">cIndex</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">size</span> <span class="o">=</span> <span class="n">components</span><span class="o">.</span><span class="na">size</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">size</span> <span class="o">&lt;=</span> <span class="n">cIndex</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="n">Component</span> <span class="n">c</span> <span class="o">=</span> <span class="n">components</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">cIndex</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">cIndex</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">c</span><span class="o">.</span><span class="na">offset</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+            <span class="n">c</span><span class="o">.</span><span class="na">endOffset</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="n">cIndex</span> <span class="o">++;</span>
+        <span class="o">}</span>
+
+        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">cIndex</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">size</span><span class="o">;</span> <span class="n">i</span> <span class="o">++)</span> <span class="o">{</span>
+            <span class="n">Component</span> <span class="n">prev</span> <span class="o">=</span> <span class="n">components</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">i</span> <span class="o">-</span> <span class="n">1</span><span class="o">);</span>
+            <span class="n">Component</span> <span class="n">cur</span> <span class="o">=</span> <span class="n">components</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+            <span class="n">cur</span><span class="o">.</span><span class="na">offset</span> <span class="o">=</span> <span class="n">prev</span><span class="o">.</span><span class="na">endOffset</span><span class="o">;</span>
+            <span class="n">cur</span><span class="o">.</span><span class="na">endOffset</span> <span class="o">=</span> <span class="n">cur</span><span class="o">.</span><span class="na">offset</span> <span class="o">+</span> <span class="n">cur</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-03-02 22:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/netty/">netty</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/netty/02.PooledByteBuf%E5%86%85%E5%AD%98%E6%B1%A0/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">PooledByteBuf内存池</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/dubbo/03.dubbo%E5%BC%95%E7%94%A8%E6%9C%8D%E5%8A%A1/">
+        <span class="next-text nav-default">dubbo引用服务</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Codec - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="一、ByteToMessageDecoder 1.Cumulator累加器 1 2 3 4 5 6 7 8 9 10 11 /** * 累积ByteBuf */ public interface Cumulator { /** * Cumulate the given {@link ByteBuf}s" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/netty/11.Codec/" />
+<link href="/post/netty/11.Codec/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/netty/11.Codec/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="Codec" />
+<meta property="og:description" content="一、ByteToMessageDecoder 1.Cumulator累加器 1 2 3 4 5 6 7 8 9 10 11 /** * 累积ByteBuf */ public interface Cumulator { /** * Cumulate the given {@link ByteBuf}s" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/netty/11.Codec/" />
+<meta property="article:published_time" content="2019-04-25T21:08:08+00:00" />
+<meta property="article:modified_time" content="2019-04-25T21:08:08+00:00" />
+<meta itemprop="name" content="Codec">
+<meta itemprop="description" content="一、ByteToMessageDecoder 1.Cumulator累加器 1 2 3 4 5 6 7 8 9 10 11 /** * 累积ByteBuf */ public interface Cumulator { /** * Cumulate the given {@link ByteBuf}s">
+<meta itemprop="datePublished" content="2019-04-25T21:08:08&#43;00:00" />
+<meta itemprop="dateModified" content="2019-04-25T21:08:08&#43;00:00" />
+<meta itemprop="wordCount" content="1490">
+
+
+
+<meta itemprop="keywords" content="netty," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Codec"/>
+<meta name="twitter:description" content="一、ByteToMessageDecoder 1.Cumulator累加器 1 2 3 4 5 6 7 8 9 10 11 /** * 累积ByteBuf */ public interface Cumulator { /** * Cumulate the given {@link ByteBuf}s"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">Codec</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2019-04-25 21:08 </span>
+      <div class="post-category">
+        <a href="/categories/netty/"> netty </a>
+        </div>
+      <span class="more-meta"> 约 1490 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1cumulator累加器">1.Cumulator累加器</a>
+      <ul>
+        <li><a href="#amerge_cumulator-合并累加器累加到同一个bytebuf">a.MERGE_CUMULATOR 合并累加器，累加到同一个ByteBuf</a></li>
+        <li><a href="#bcomposite_cumulator-利用compositebytebuf把bytebuf组装不用重新分配内存相对性能好">b.COMPOSITE_CUMULATOR 利用CompositeByteBuf把ByteBuf组装，不用重新分配内存，相对性能好</a></li>
+      </ul>
+    </li>
+    <li><a href="#2channelread">2.channelRead</a>
+      <ul>
+        <li><a href="#acalldecode-调用解码">a.callDecode 调用解码</a></li>
+        <li><a href="#bdecoderemovalreentryprotection">b.decodeRemovalReentryProtection</a></li>
+        <li><a href="#chandlerremoved-移除channelhandler操作做清除操作">c.handlerRemoved 移除ChannelHandler操作，做清除操作</a></li>
+      </ul>
+    </li>
+    <li><a href="#3channelreadcomplete-读取完做优化处理">3.channelReadComplete 读取完，做优化处理</a></li>
+    <li><a href="#4实现类">4.实现类</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2019-04-25T21:08:08" title="April 25, 2019">April 25, 2019</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="一bytetomessagedecoder">一、ByteToMessageDecoder</h1>
+<h2 id="1cumulator累加器">1.Cumulator累加器</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   /**
+    * 累积ByteBuf
+    */
+   public interface Cumulator {
+       /**
+        * Cumulate the given {@link ByteBuf}s and return the {@link ByteBuf} that holds the cumulated bytes.
+        * The implementation is responsible to correctly handle the life-cycle of the given {@link ByteBuf}s and so
+        * call {@link ByteBuf#release()} if a {@link ByteBuf} is fully consumed.
+        */
+       ByteBuf cumulate(ByteBufAllocator alloc, ByteBuf cumulation, ByteBuf in);
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="amerge_cumulator-合并累加器累加到同一个bytebuf">a.MERGE_CUMULATOR 合并累加器，累加到同一个ByteBuf</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    public static final Cumulator MERGE_CUMULATOR = new Cumulator() {
+        @Override
+        public ByteBuf cumulate(ByteBufAllocator alloc, ByteBuf cumulation, ByteBuf in) {
+            final ByteBuf buffer;
+            if (cumulation.writerIndex() &gt; cumulation.maxCapacity() - in.readableBytes()
+                    || cumulation.refCnt() &gt; 1 || cumulation.isReadOnly()) {
+                // 当缓冲区中没有更多空间或者如果refCnt大于1时扩展累积（通过替换），当用户使用slice()。retain()或plicate()。retain()或如果只读。
+                //
+                // See:
+                // - https://github.com/netty/netty/issues/2327
+                // - https://github.com/netty/netty/issues/1764
+                //重新分配内存空间
+                buffer = expandCumulation(alloc, cumulation, in.readableBytes());
+            } else {
+                buffer = cumulation;
+            }
+            buffer.writeBytes(in);
+            in.release();
+            return buffer;
+        }
+    };
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="bcomposite_cumulator-利用compositebytebuf把bytebuf组装不用重新分配内存相对性能好">b.COMPOSITE_CUMULATOR 利用CompositeByteBuf把ByteBuf组装，不用重新分配内存，相对性能好</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public static final Cumulator COMPOSITE_CUMULATOR = new Cumulator() {
+       @Override
+       public ByteBuf cumulate(ByteBufAllocator alloc, ByteBuf cumulation, ByteBuf in) {
+           ByteBuf buffer;
+           if (cumulation.refCnt() &gt; 1) {
+               // 当refCnt大于1时扩展累积量（通过替换）（当用户使用slice（）。retain（）或plicate（）。retain（）时可能会发生）。
+               //
+               // See:
+               // - https://github.com/netty/netty/issues/2327
+               // - https://github.com/netty/netty/issues/1764
+               buffer = expandCumulation(alloc, cumulation, in.readableBytes());
+               buffer.writeBytes(in);
+               in.release();
+           } else {
+               CompositeByteBuf composite;
+               if (cumulation instanceof CompositeByteBuf) {
+                   composite = (CompositeByteBuf) cumulation;
+               } else {
+                   composite = alloc.compositeBuffer(Integer.MAX_VALUE);
+                   composite.addComponent(true, cumulation);
+               }
+               composite.addComponent(true, in);
+               buffer = composite;
+           }
+           return buffer;
+       }
+   }; 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2channelread">2.channelRead</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   @Override
+   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+       if (msg instanceof ByteBuf) {
+           //保存编码成对象的集合
+           CodecOutputList out = CodecOutputList.newInstance();
+           try {
+               ByteBuf data = (ByteBuf) msg;
+               first = cumulation == null;
+               if (first) {
+                   cumulation = data;
+               } else {
+                   cumulation = cumulator.cumulate(ctx.alloc(), cumulation, data);
+               }
+               callDecode(ctx, cumulation, out);
+           } catch (DecoderException e) {
+               throw e;
+           } catch (Exception e) {
+               throw new DecoderException(e);
+           } finally {
+               if (cumulation != null &amp;&amp; !cumulation.isReadable()) {
+                   numReads = 0;
+                   cumulation.release();
+                   cumulation = null;
+               } else if (++ numReads &gt;= discardAfterReads) {
+                   // 我们已经进行了足够的读取，并尝试丢弃一些字节，因此我们不会冒看到OOME的风险。
+                   // See https://github.com/netty/netty/issues/4275
+                   numReads = 0;
+                   discardSomeReadBytes();
+               }
+
+               int size = out.size();
+               decodeWasNull = !out.insertSinceRecycled();
+               fireChannelRead(ctx, out, size);
+               out.recycle();
+           }
+       } else {
+           ctx.fireChannelRead(msg);
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="acalldecode-调用解码">a.callDecode 调用解码</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    protected void callDecode(ChannelHandlerContext ctx, ByteBuf in, List&lt;Object&gt; out) {
+        try {
+            while (in.isReadable()) {
+                int outSize = out.size();
+
+                if (outSize &gt; 0) {
+                    //循环调用ctx.fireChannelRead(out.getUnsafe(i));
+                    fireChannelRead(ctx, out, outSize);
+                    out.clear();
+
+                    // 在继续解码之前，请检查是否已删除此处理程序。如果将其删除，则继续在缓冲区上操作是不安全的。
+                    //
+                    // See:
+                    // - https://github.com/netty/netty/issues/4635
+                    if (ctx.isRemoved()) {
+                        break;
+                    }
+                    outSize = 0;
+                }
+
+                int oldInputLength = in.readableBytes();
+                //最终调用decode抽象方法，按子类解码
+                decodeRemovalReentryProtection(ctx, in, out);
+
+                // 在继续循环之前，请检查是否已删除此处理程序。如果将其删除，则继续在缓冲区上操作是不安全的。
+                //
+                // See https://github.com/netty/netty/issues/1664
+                if (ctx.isRemoved()) {
+                    break;
+                }
+                
+                if (outSize == out.size()) {
+                    if (oldInputLength == in.readableBytes()) {
+                        break;
+                    } else {
+                        continue;
+                    }
+                }
+                if (oldInputLength == in.readableBytes()) {
+                    throw new DecoderException(...);
+                }
+                 //是否只处理一次解码
+                if (isSingleDecode()) {
+                    break;
+                }
+            }
+        }...
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="bdecoderemovalreentryprotection">b.decodeRemovalReentryProtection</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   final void decodeRemovalReentryProtection(ChannelHandlerContext ctx, ByteBuf in, List&lt;Object&gt; out)
+           throws Exception {
+       decodeState = STATE_CALLING_CHILD_DECODE;
+       try {
+           //抽象方法子类去处理解码
+           decode(ctx, in, out);
+       } finally {
+           boolean removePending = decodeState == STATE_HANDLER_REMOVED_PENDING;
+           decodeState = STATE_INIT;
+           if (removePending) {
+               handlerRemoved(ctx);
+           }
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="chandlerremoved-移除channelhandler操作做清除操作">c.handlerRemoved 移除ChannelHandler操作，做清除操作</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    @Override
+    public final void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+        if (decodeState == STATE_CALLING_CHILD_DECODE) {
+            decodeState = STATE_HANDLER_REMOVED_PENDING;
+            return;
+        }
+        ByteBuf buf = cumulation;
+        if (buf != null) {
+            // 直接将其设置为null，因此我们确定在此不再使用任何其他方法访问它
+            cumulation = null;
+
+            int readable = buf.readableBytes();
+            if (readable &gt; 0) {
+                ByteBuf bytes = buf.readBytes(readable);
+                buf.release();
+                ctx.fireChannelRead(bytes);
+            } else {
+                buf.release();
+            }
+
+            numReads = 0;
+            ctx.fireChannelReadComplete();
+        }
+        //钩子方法
+        handlerRemoved0(ctx);
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="3channelreadcomplete-读取完做优化处理">3.channelReadComplete 读取完，做优化处理</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        numReads = 0;
+        //cumulation.discardSomeReadBytes();释放一些内存
+        discardSomeReadBytes();
+        if (decodeWasNull) {
+            decodeWasNull = false;
+            if (!ctx.channel().config().isAutoRead()) {
+                ctx.read();
+            }
+        }
+        ctx.fireChannelReadComplete();
+    }
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4实现类">4.实现类</h2>
+<ul>
+<li>FixedLengthFrameDecoder ，基于固定长度消息进行粘包拆包处理的。
+<ul>
+<li>frameLength 指定长度</li>
+<li>in.readRetainedSlice(frameLength)读取内容</li>
+</ul>
+</li>
+<li>LengthFieldBasedFrameDecoder ，基于消息头指定消息长度进行粘包拆包处理的。</li>
+<li>LineBasedFrameDecoder ，基于换行来进行消息粘包拆包处理的。</li>
+<li>DelimiterBasedFrameDecoder ，基于指定消息边界方式进行粘包拆包处理的。</li>
+</ul>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-04-25 21:08
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/netty/">netty</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/netty/13.HashedWheelTimer/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">HashedWheelTimer</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/netty/12.IdleStateHandler/">
+        <span class="next-text nav-default">IdleStateHandler</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

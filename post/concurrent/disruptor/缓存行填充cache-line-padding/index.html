@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>神奇的缓存行填充 - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="神奇的缓存行填充 原文地址 计算机入门 我喜欢在LMAX工作的原因之一是，在这里工作让我明白从大学和A Level Computing所学的东西实际上还是有意" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/disruptor/%E7%BC%93%E5%AD%98%E8%A1%8C%E5%A1%AB%E5%85%85cache-line-padding/" />
+<link href="/post/concurrent/disruptor/%E7%BC%93%E5%AD%98%E8%A1%8C%E5%A1%AB%E5%85%85cache-line-padding/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/disruptor/%E7%BC%93%E5%AD%98%E8%A1%8C%E5%A1%AB%E5%85%85cache-line-padding/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="神奇的缓存行填充" />
+<meta property="og:description" content="神奇的缓存行填充 原文地址 计算机入门 我喜欢在LMAX工作的原因之一是，在这里工作让我明白从大学和A Level Computing所学的东西实际上还是有意" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/disruptor/%E7%BC%93%E5%AD%98%E8%A1%8C%E5%A1%AB%E5%85%85cache-line-padding/" />
+<meta property="article:published_time" content="2018-08-15T18:18:08+00:00" />
+<meta property="article:modified_time" content="2018-08-15T18:18:08+00:00" />
+<meta itemprop="name" content="神奇的缓存行填充">
+<meta itemprop="description" content="神奇的缓存行填充 原文地址 计算机入门 我喜欢在LMAX工作的原因之一是，在这里工作让我明白从大学和A Level Computing所学的东西实际上还是有意">
+<meta itemprop="datePublished" content="2018-08-15T18:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2018-08-15T18:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="2253">
+
+
+
+<meta itemprop="keywords" content="disruptor," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="神奇的缓存行填充"/>
+<meta name="twitter:description" content="神奇的缓存行填充 原文地址 计算机入门 我喜欢在LMAX工作的原因之一是，在这里工作让我明白从大学和A Level Computing所学的东西实际上还是有意"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">神奇的缓存行填充</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2018-08-15 18:18 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 2253 字 </span>
+      <span class="more-meta"> 预计阅读 5 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#计算机入门">计算机入门</a></li>
+    <li><a href="#缓存行">缓存行</a></li>
+    <li><a href="#解决方案神奇的缓存行填充">解决方案－神奇的缓存行填充</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2018-08-15T18:18:08" title="August 15, 2018">August 15, 2018</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="神奇的缓存行填充">神奇的缓存行填充</h1>
+<p><a href="http://ifeve.com/disruptor-cacheline-padding/">原文地址</a></p>
+<h2 id="计算机入门">计算机入门</h2>
+<p>我喜欢在<a href="http://www.lmaxtrader.co.uk/">LMAX</a>工作的原因之一是，在这里工作让我明白从大学和A Level Computing所学的东西实际上还是有意义的。
+做为一个开发者你可以逃避不去了解CPU，数据结构或者<a href="http://en.wikipedia.org/wiki/Big_O_notation">大O符号</a>&mdash;&mdash; 而我用了10年的职业生涯来
+忘记这些东西。但是现在看来，如果你知道这些知识并应用它，你能写出一些非常巧妙和非常快速的代码。</p>
+<p>因此，对在学校学过的人是种复习，对未学过的人是个简单介绍。但是请注意，这篇文章包含了大量的过度简化。</p>
+<p>CPU是你机器的心脏，最终由它来执行所有运算和程序。主内存（RAM）是你的数据（包括代码行）存放的地方。本文将忽略硬件驱动和网络之类的东西，因为
+Disruptor的目标是尽可能多的在内存中运行。</p>
+<p>CPU和主内存之间有好几层缓存，因为即使直接访问主内存也是非常慢的。如果你正在多次对一块数据做相同的运算，那么在执行运算的时候把它加载到离CPU很
+近的地方就有意义了（比如一个循环计数－你不想每次循环都跑到主内存去取这个数据来增长它吧）。</p>
+<p><img src="/concurrent//disruptor04.png" alt=""></p>
+<p>越靠近CPU的缓存越快也越小。所以L1缓存很小但很快(译注：L1表示一级缓存)，并且紧靠着在使用它的CPU内核。L2大一些，也慢一些，并且仍然只能被一个单独
+的 CPU 核使用。L3在现代多核机器中更普遍，仍然更大，更慢，并且被单个插槽上的所有 CPU 核共享。最后，你拥有一块主存，由全部插槽上的所有 CPU 核共享。</p>
+<p>当CPU执行运算的时候，它先去L1查找所需的数据，再去L2，然后是L3，最后如果这些缓存中都没有，所需的数据就要去主内存拿。走得越远，运算耗费的时间就
+越长。所以如果你在做一些很频繁的事，你要确保数据在L1缓存中。</p>
+<p>Martin和Mike的 <a href="http://www.infoq.com/presentations/LMAX">QCon presentation</a>演讲中给出了一些缓存未命中的消耗数据：</p>
+<table>
+<thead>
+<tr>
+<th><strong>从CPU到</strong></th>
+<th><strong>大约需要的 CPU 周期</strong></th>
+<th><strong>大约需要的时间</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主存</td>
+<td></td>
+<td>约60-80纳秒</td>
+</tr>
+<tr>
+<td>QPI 总线传输 (between sockets, not drawn)</td>
+<td></td>
+<td>约20ns</td>
+</tr>
+<tr>
+<td>L3 cache</td>
+<td>约40-45 cycles,</td>
+<td>约15ns</td>
+</tr>
+<tr>
+<td>L2 cache</td>
+<td>约10 cycles,</td>
+<td>约3ns</td>
+</tr>
+<tr>
+<td>L1 cache</td>
+<td>约3-4 cycles,</td>
+<td>约1ns</td>
+</tr>
+<tr>
+<td>寄存器</td>
+<td>1 cycle</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>如果你的目标是让端到端的延迟只有 10毫秒，而其中花80纳秒去主存拿一些未命中数据的过程将占很重的一块。</p>
+<h2 id="缓存行">缓存行</h2>
+<p>现在需要注意一件有趣的事情，数据在缓存中不是以独立的项来存储的，如不是一个单独的变量，也不是一个单独的指针。缓存是由缓存行组成的，
+通常是64字节（译注：这篇文章发表时常用处理器的缓存行是64字节的，比较旧的处理器缓存行是32字节），并且它有效地引用主内存中的一块地址。
+一个Java的long类型是8字节，因此在一个缓存行中可以存8个long类型的变量。
+<img src="/concurrent//disruptor05.png" alt="">(为了简化，我将忽略多级缓存)</p>
+<p>非常奇妙的是如果你访问一个long数组，当数组中的一个值被加载到缓存中，它会额外加载另外7个。因此你能非常快地遍历这个数组。事实上，你
+可以非常快速的遍历在连续的内存块中分配的任意数据结构。我在第一篇<a href="http://mechanitis.blogspot.com/2011/06/dissecting-disruptor-whats-so-special.html">关于ring buffer的文章</a>
+中顺便提到过这个，它解释了我们的ring buffer使用数组的原因。</p>
+<p>因此如果你数据结构中的项在内存中不是彼此相邻的（链表，我正在关注你呢），你将得不到免费缓存加载所带来的优势。并且在这些数据结构中的
+每一个项都可能会出现缓存未命中。</p>
+<p>不过，所有这种免费加载有一个弊端。设想你的long类型的数据不是数组的一部分。设想它只是一个单独的变量。让我们称它为<code>head</code>，这么称呼它其实
+没有什么原因。然后再设想在你的类中有另一个变量紧挨着它。让我们直接称它为<code>tail</code>。现在，当你加载<code>head</code>到缓存的时候，你也免费加载了<code>tail</code>。
+<img src="/concurrent//disruptor06.png" alt=""></p>
+<p>听想来不错。直到你意识到<code>tail</code>正在被你的生产者写入，而<code>head</code>正在被你的消费者写入。这两个变量实际上并不是密切相关的，而事实上却要被两个不
+同内核中运行的线程所使用。
+<img src="/concurrent//disruptor07.png" alt=""></p>
+<p>设想你的消费者更新了<code>head</code>的值。缓存中的值和内存中的值都被更新了，而其他所有存储<code>head</code>的缓存行都会都会失效，因为其它缓存中<code>head</code>不是最新
+值了。请记住我们必须以整个缓存行作为单位来处理（译注：这是CPU的实现所规定的，详细可参见<a href="http://ifeve.com/volatile">深入分析Volatile的实现原理</a>），
+不能只把<code>head</code>标记为无效。
+<img src="/concurrent//disruptor07.png" alt=""></p>
+<p>现在如果一些正在其他内核中运行的进程只是想读<code>tail</code>的值，整个缓存行需要从主内存重新读取。那么一个和你的消费者无关的线程读一个和<code>head</code>无关的值，
+它被缓存未命中给拖慢了。</p>
+<p>当然如果两个独立的线程同时写两个不同的值会更糟。因为每次线程对缓存行进行写操作时，每个内核都要把另一个内核上的缓存块无效掉并重新读取里面的数据。
+你基本上是遇到两个线程之间的写冲突了，尽管它们写入的是不同的变量。</p>
+<p>这叫作&quot;伪共享&rdquo;（译注：可以理解为错误的共享），因为每次你访问<code>head</code>你也会得到<code>tail</code>，而且每次你访问<code>tail</code>，你也会得到<code>head</code>。这一切都在后台发生，
+并且没有任何编译警告会告诉你，你正在写一个并发访问效率很低的代码。</p>
+<h2 id="解决方案神奇的缓存行填充">解决方案－神奇的缓存行填充</h2>
+<p>你会看到Disruptor消除这个问题，至少对于缓存行大小是64字节或更少的处理器架构来说是这样的（译注：有可能处理器的缓存行是128字节，那么使用64字节填充
+还是会存在伪共享问题），通过增加补全来确保ring buffer的序列号不会和其他东西同时存在于一个缓存行中。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">long</span> <span class="n">p1</span><span class="o">,</span> <span class="n">p2</span><span class="o">,</span> <span class="n">p3</span><span class="o">,</span> <span class="n">p4</span><span class="o">,</span> <span class="n">p5</span><span class="o">,</span> <span class="n">p6</span><span class="o">,</span> <span class="n">p7</span><span class="o">;</span> <span class="c1">// cache line padding 
+</span><span class="c1"></span><span class="kd">private</span> <span class="kd">volatile</span> <span class="kt">long</span> <span class="n">cursor</span> <span class="o">=</span> <span class="n">INITIAL_CURSOR_VALUE</span><span class="o">;</span> 
+<span class="kd">public</span> <span class="kt">long</span> <span class="n">p8</span><span class="o">,</span> <span class="n">p9</span><span class="o">,</span> <span class="n">p10</span><span class="o">,</span> <span class="n">p11</span><span class="o">,</span> <span class="n">p12</span><span class="o">,</span> <span class="n">p13</span><span class="o">,</span> <span class="n">p14</span><span class="o">;</span> <span class="c1">// cache line padding 
+</span></code></pre></td></tr></table>
+</div>
+</div><p>因此没有伪共享，就没有和其它任何变量的意外冲突，没有不必要的缓存未命中。</p>
+<p>在你的<code>Entry</code>类中也值得这样做，如果你有不同的消费者往不同的字段写入，你需要确保各个字段间不会出现伪共享。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2018-08-15 18:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/disruptor/">disruptor</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/jdk1.8/ForkJoin1.8%E6%A8%A1%E5%BC%8F%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">ForkJoin1.8 模式分析</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/disruptor/%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9Cmemory-barriers/">
+        <span class="next-text nav-default">揭秘内存屏障</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

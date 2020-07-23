@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>LinkedHashMap - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="一、 LinkedHashMap概述: LinkedHashMap是HashMap的子类，与HashMap有着同样的存储结构，但它加入了一个双向" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/collection/09.LinkedHashMap/" />
+<link href="/post/collection/09.LinkedHashMap/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/collection/09.LinkedHashMap/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="LinkedHashMap" />
+<meta property="og:description" content="一、 LinkedHashMap概述: LinkedHashMap是HashMap的子类，与HashMap有着同样的存储结构，但它加入了一个双向" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/collection/09.LinkedHashMap/" />
+<meta property="article:published_time" content="2017-02-17T23:30:11+00:00" />
+<meta property="article:modified_time" content="2017-02-17T23:30:11+00:00" />
+<meta itemprop="name" content="LinkedHashMap">
+<meta itemprop="description" content="一、 LinkedHashMap概述: LinkedHashMap是HashMap的子类，与HashMap有着同样的存储结构，但它加入了一个双向">
+<meta itemprop="datePublished" content="2017-02-17T23:30:11&#43;00:00" />
+<meta itemprop="dateModified" content="2017-02-17T23:30:11&#43;00:00" />
+<meta itemprop="wordCount" content="3860">
+
+
+
+<meta itemprop="keywords" content="LinkedHashMap," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="LinkedHashMap"/>
+<meta name="twitter:description" content="一、 LinkedHashMap概述: LinkedHashMap是HashMap的子类，与HashMap有着同样的存储结构，但它加入了一个双向"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">LinkedHashMap</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-02-17 23:30 </span>
+      <div class="post-category">
+        <a href="/categories/java%E9%9B%86%E5%90%88/"> java集合 </a>
+        </div>
+      <span class="more-meta"> 约 3860 字 </span>
+      <span class="more-meta"> 预计阅读 8 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#一-linkedhashmap概述">一、 LinkedHashMap概述:</a></li>
+        <li><a href="#二-linkedhashmap实现">二、 LinkedHashMap实现:</a></li>
+        <li><a href="#三-总结">三、 总结:</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-02-17T23:30:11" title="February 17, 2017">February 17, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h3 id="一-linkedhashmap概述">一、 LinkedHashMap概述:</h3>
+<ul>
+<li>LinkedHashMap是HashMap的子类，与HashMap有着同样的存储结构，但它加入了一个双向链表的头结点，将所有put到LinkedHashmap的节点一一串成了一个双向循环链表，
+因此它保留了节点插入的顺序，可以使节点的输出顺序与输入顺序相同。</li>
+<li>LinkedHashMap可以用来实现LRU算法</li>
+<li>LinkedHashMap同样是非线程安全的</li>
+</ul>
+<h3 id="二-linkedhashmap实现">二、 LinkedHashMap实现:</h3>
+<ul>
+<li>(1).LinkedHashMap数据结构
+LinkedHashMap采用的hash算法和HashMap相同，但是它重新定义了数组中保存的元素Entry，该Entry除了保存当前对象的引用外，还保存了其上一个元素before和下一个元素after的引用，从而在哈希表的基础上又构成了双向链接列表。</li>
+</ul>
+<p><img src="/collection/LinkedHashMap/structure.png" alt=""></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">   * The head of the doubly linked list.
+</span><span class="cm">   * 双向循环链表的头结点 添加上一个元素before和下一个元素after的引用
+</span><span class="cm">   */</span>
+  <span class="kd">private</span> <span class="kd">transient</span> <span class="n">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">header</span><span class="o">;</span>
+
+
+  <span class="cm">/**
+</span><span class="cm">   * LinkedHashMap entry.
+</span><span class="cm">   * 重新定义Entry,
+</span><span class="cm">   */</span>
+  <span class="kd">private</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">HashMap</span><span class="o">.</span><span class="na">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="o">{</span>
+      <span class="c1">// These fields comprise the doubly linked list used for iteration.
+</span><span class="c1"></span>      <span class="n">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">before</span><span class="o">,</span> <span class="n">after</span><span class="o">;</span>
+
+      <span class="n">Entry</span><span class="o">(</span><span class="kt">int</span> <span class="n">hash</span><span class="o">,</span> <span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">,</span> <span class="n">HashMap</span><span class="o">.</span><span class="na">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">next</span><span class="o">)</span> <span class="o">{</span>
+          <span class="kd">super</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">next</span><span class="o">);</span>
+      <span class="o">}</span>
+
+      <span class="cm">/**
+</span><span class="cm">       * Removes this entry from the linked list.
+</span><span class="cm">       * 删除
+</span><span class="cm">       */</span>
+      <span class="kd">private</span> <span class="kt">void</span> <span class="nf">remove</span><span class="o">()</span> <span class="o">{</span>
+          <span class="n">before</span><span class="o">.</span><span class="na">after</span> <span class="o">=</span> <span class="n">after</span><span class="o">;</span>
+          <span class="n">after</span><span class="o">.</span><span class="na">before</span> <span class="o">=</span> <span class="n">before</span><span class="o">;</span>
+      <span class="o">}</span>
+
+      <span class="cm">/**
+</span><span class="cm">       * Inserts this entry before the specified existing entry in the list.
+</span><span class="cm">       * 在列表中指定的现有Entry之前插入此Entry 。
+</span><span class="cm">       */</span>
+      <span class="kd">private</span> <span class="kt">void</span> <span class="nf">addBefore</span><span class="o">(</span><span class="n">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">existingEntry</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">after</span>  <span class="o">=</span> <span class="n">existingEntry</span><span class="o">;</span>
+          <span class="n">before</span> <span class="o">=</span> <span class="n">existingEntry</span><span class="o">.</span><span class="na">before</span><span class="o">;</span>
+          <span class="n">before</span><span class="o">.</span><span class="na">after</span> <span class="o">=</span> <span class="k">this</span><span class="o">;</span>
+          <span class="n">after</span><span class="o">.</span><span class="na">before</span> <span class="o">=</span> <span class="k">this</span><span class="o">;</span>
+      <span class="o">}</span>
+
+      <span class="cm">/**
+</span><span class="cm">       * This method is invoked by the superclass whenever the value
+</span><span class="cm">       * of a pre-existing entry is read by Map.get or modified by Map.set.
+</span><span class="cm">       * If the enclosing Map is access-ordered, it moves the entry
+</span><span class="cm">       * to the end of the list; otherwise, it does nothing.
+</span><span class="cm">       * 覆写HashMap中的recordAccess方法（HashMap中该方法为空），  
+</span><span class="cm">       *当调用父类的put方法，在发现插入的key已经存在时，会调用该方法，  
+</span><span class="cm">       *调用LinkedHashmap覆写的get方法时，也会调用到该方法，  
+</span><span class="cm">       *该方法提供了LRU算法的实现，它将最近使用的Entry放到双向循环链表的尾部，  
+</span><span class="cm">       *accessOrder为true时，get方法会调用recordAccess方法  
+</span><span class="cm">       *put方法在覆盖key-value对时也会调用recordAccess方法  
+</span><span class="cm">       *它们导致Entry最近使用，因此将其移到双向链表的末尾  
+</span><span class="cm">       */</span>
+      <span class="kt">void</span> <span class="nf">recordAccess</span><span class="o">(</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">m</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">LinkedHashMap</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">lm</span> <span class="o">=</span> <span class="o">(</span><span class="n">LinkedHashMap</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;)</span><span class="n">m</span><span class="o">;</span>
+          <span class="c1">//如果链表中元素按照访问顺序排序，则将当前访问的Entry移到双向循环链表的尾部，  
+</span><span class="c1"></span>          <span class="c1">//如果是按照插入的先后顺序排序，则不做任何事情。  
+</span><span class="c1"></span>          <span class="k">if</span> <span class="o">(</span><span class="n">lm</span><span class="o">.</span><span class="na">accessOrder</span><span class="o">)</span> <span class="o">{</span>
+              <span class="n">lm</span><span class="o">.</span><span class="na">modCount</span><span class="o">++;</span>
+              <span class="n">remove</span><span class="o">();</span>
+              <span class="c1">//将当前访问的Entry插入到链表的尾部  
+</span><span class="c1"></span>              <span class="n">addBefore</span><span class="o">(</span><span class="n">lm</span><span class="o">.</span><span class="na">header</span><span class="o">);</span>
+          <span class="o">}</span>
+      <span class="o">}</span>
+
+      <span class="kt">void</span> <span class="nf">recordRemoval</span><span class="o">(</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">m</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">remove</span><span class="o">();</span>
+      <span class="o">}</span>
+  <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>(2).私有属性</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">  * The head of the doubly linked list.
+</span><span class="cm">  * 双向循环链表的头结点 添加上一个元素before和下一个元素after的引用
+</span><span class="cm">  */</span>
+ <span class="kd">private</span> <span class="kd">transient</span> <span class="n">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">header</span><span class="o">;</span>
+
+ <span class="cm">/**
+</span><span class="cm">  * The iteration ordering method for this linked hash map: &lt;tt&gt;true&lt;/tt&gt;
+</span><span class="cm">  * for access-order, &lt;tt&gt;false&lt;/tt&gt; for insertion-order.
+</span><span class="cm">  * 双向链表中元素排序规则的标志位。  
+</span><span class="cm">  *accessOrder为false，表示按插入顺序排序  
+</span><span class="cm">  *accessOrder为true，表示按访问顺序排序  
+</span><span class="cm">  * @serial
+</span><span class="cm">  */</span>
+ <span class="kd">private</span> <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">accessOrder</span><span class="o">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>(3).构造方法</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">   * Constructs an empty insertion-ordered &lt;tt&gt;LinkedHashMap&lt;/tt&gt; instance
+</span><span class="cm">   * with the specified initial capacity and load factor.
+</span><span class="cm">   *
+</span><span class="cm">   * 默认按照插入顺序排序                 
+</span><span class="cm">   * @param  initialCapacity the initial capacity
+</span><span class="cm">   * @param  loadFactor      the load factor
+</span><span class="cm">   * @throws IllegalArgumentException if the initial capacity is negative
+</span><span class="cm">   *         or the load factor is nonpositive
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="nf">LinkedHashMap</span><span class="o">(</span><span class="kt">int</span> <span class="n">initialCapacity</span><span class="o">,</span> <span class="kt">float</span> <span class="n">loadFactor</span><span class="o">)</span> <span class="o">{</span>
+      <span class="kd">super</span><span class="o">(</span><span class="n">initialCapacity</span><span class="o">,</span> <span class="n">loadFactor</span><span class="o">);</span>
+      <span class="n">accessOrder</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+  <span class="o">}</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Constructs an empty insertion-ordered &lt;tt&gt;LinkedHashMap&lt;/tt&gt; instance
+</span><span class="cm">   * with the specified initial capacity and a default load factor (0.75).
+</span><span class="cm">   *
+</span><span class="cm">   * 默认按照插入顺序排序               
+</span><span class="cm">   * @param  initialCapacity the initial capacity
+</span><span class="cm">   * @throws IllegalArgumentException if the initial capacity is negative
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="nf">LinkedHashMap</span><span class="o">(</span><span class="kt">int</span> <span class="n">initialCapacity</span><span class="o">)</span> <span class="o">{</span>
+      <span class="kd">super</span><span class="o">(</span><span class="n">initialCapacity</span><span class="o">);</span>
+      <span class="n">accessOrder</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+  <span class="o">}</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Constructs an empty insertion-ordered &lt;tt&gt;LinkedHashMap&lt;/tt&gt; instance
+</span><span class="cm">   * with the default initial capacity (16) and load factor (0.75).
+</span><span class="cm">   * 
+</span><span class="cm">   * 默认按照插入顺序排序
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="nf">LinkedHashMap</span><span class="o">()</span> <span class="o">{</span>
+      <span class="kd">super</span><span class="o">();</span>
+      <span class="n">accessOrder</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+  <span class="o">}</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Constructs an insertion-ordered &lt;tt&gt;LinkedHashMap&lt;/tt&gt; instance with
+</span><span class="cm">   * the same mappings as the specified map.  The &lt;tt&gt;LinkedHashMap&lt;/tt&gt;
+</span><span class="cm">   * instance is created with a default load factor (0.75) and an initial
+</span><span class="cm">   * capacity sufficient to hold the mappings in the specified map.
+</span><span class="cm">   *
+</span><span class="cm">   *  默认按照插入顺序排序 
+</span><span class="cm">   * @param  m the map whose mappings are to be placed in this map
+</span><span class="cm">   * @throws NullPointerException if the specified map is null
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="nf">LinkedHashMap</span><span class="o">(</span><span class="n">Map</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">K</span><span class="o">,</span> <span class="o">?</span> <span class="kd">extends</span> <span class="n">V</span><span class="o">&gt;</span> <span class="n">m</span><span class="o">)</span> <span class="o">{</span>
+      <span class="kd">super</span><span class="o">(</span><span class="n">m</span><span class="o">);</span>
+      <span class="n">accessOrder</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+  <span class="o">}</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Constructs an empty &lt;tt&gt;LinkedHashMap&lt;/tt&gt; instance with the
+</span><span class="cm">   * specified initial capacity, load factor and ordering mode.
+</span><span class="cm">   *
+</span><span class="cm">   * 指定链表中的元素排序的规则                  
+</span><span class="cm">   * @param  initialCapacity the initial capacity
+</span><span class="cm">   * @param  loadFactor      the load factor
+</span><span class="cm">   * @param  accessOrder     the ordering mode - &lt;tt&gt;true&lt;/tt&gt; for
+</span><span class="cm">   *         access-order, &lt;tt&gt;false&lt;/tt&gt; for insertion-order
+</span><span class="cm">   * @throws IllegalArgumentException if the initial capacity is negative
+</span><span class="cm">   *         or the load factor is nonpositive
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="nf">LinkedHashMap</span><span class="o">(</span><span class="kt">int</span> <span class="n">initialCapacity</span><span class="o">,</span>
+                       <span class="kt">float</span> <span class="n">loadFactor</span><span class="o">,</span>
+                       <span class="kt">boolean</span> <span class="n">accessOrder</span><span class="o">)</span> <span class="o">{</span>
+      <span class="kd">super</span><span class="o">(</span><span class="n">initialCapacity</span><span class="o">,</span> <span class="n">loadFactor</span><span class="o">);</span>
+      <span class="k">this</span><span class="o">.</span><span class="na">accessOrder</span> <span class="o">=</span> <span class="n">accessOrder</span><span class="o">;</span>
+  <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>(4).重写HashMap方法</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span><span class="lnt">157
+</span><span class="lnt">158
+</span><span class="lnt">159
+</span><span class="lnt">160
+</span><span class="lnt">161
+</span><span class="lnt">162
+</span><span class="lnt">163
+</span><span class="lnt">164
+</span><span class="lnt">165
+</span><span class="lnt">166
+</span><span class="lnt">167
+</span><span class="lnt">168
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm">  * Called by superclass constructors and pseudoconstructors (clone,
+</span><span class="cm">  * readObject) before any entries are inserted into the map.  Initializes
+</span><span class="cm">  * the chain.
+</span><span class="cm">  *重写父类的init()方法（HashMap中的init方法为空），  
+</span><span class="cm">  *该方法在父类的构造方法和Clone、readObject中在插入元素前被调用，  
+</span><span class="cm">  *初始化一个空的双向循环链表，头结点中不保存数据，头结点的下一个节点才开始保存数据。
+</span><span class="cm">  */</span>
+ <span class="nd">@Override</span>
+ <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
+     <span class="n">header</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Entry</span><span class="o">&lt;&gt;(-</span><span class="n">1</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+     <span class="n">header</span><span class="o">.</span><span class="na">before</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="na">after</span> <span class="o">=</span> <span class="n">header</span><span class="o">;</span>
+ <span class="o">}</span>
+
+ <span class="cm">/**
+</span><span class="cm">  * Transfers all entries to new table array.  This method is called
+</span><span class="cm">  * by superclass resize.  It is overridden for performance, as it is
+</span><span class="cm">  * faster to iterate using our linked list.
+</span><span class="cm">  *覆写HashMap中的transfer方法，它在父类的resize方法中被调用， 扩容后，将key-value对重新映射到新的newTable中  
+</span><span class="cm">  *重写该方法的目的是为了提高复制的效率，  这里充分利用双向循环链表的特点进行迭代，不用对底层的数组进行for循环。 
+</span><span class="cm">  */</span>
+ <span class="nd">@Override</span>
+ <span class="kt">void</span> <span class="nf">transfer</span><span class="o">(</span><span class="n">HashMap</span><span class="o">.</span><span class="na">Entry</span><span class="o">[]</span> <span class="n">newTable</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">rehash</span><span class="o">)</span> <span class="o">{</span>
+     <span class="kt">int</span> <span class="n">newCapacity</span> <span class="o">=</span> <span class="n">newTable</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+     <span class="k">for</span> <span class="o">(</span><span class="n">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="na">after</span><span class="o">;</span> <span class="n">e</span> <span class="o">!=</span> <span class="n">header</span><span class="o">;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">after</span><span class="o">)</span> <span class="o">{</span>
+         <span class="k">if</span> <span class="o">(</span><span class="n">rehash</span><span class="o">)</span>
+             <span class="n">e</span><span class="o">.</span><span class="na">hash</span> <span class="o">=</span> <span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">key</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span> <span class="n">0</span> <span class="o">:</span> <span class="n">hash</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">key</span><span class="o">);</span>
+         <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="n">indexFor</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">hash</span><span class="o">,</span> <span class="n">newCapacity</span><span class="o">);</span>
+         <span class="n">e</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">newTable</span><span class="o">[</span><span class="n">index</span><span class="o">];</span>
+         <span class="n">newTable</span><span class="o">[</span><span class="n">index</span><span class="o">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">;</span>
+     <span class="o">}</span>
+ <span class="o">}}</span>
+
+
+ <span class="cm">/**
+</span><span class="cm">  * Returns &lt;tt&gt;true&lt;/tt&gt; if this map maps one or more keys to the
+</span><span class="cm">  * specified value.
+</span><span class="cm">  *
+</span><span class="cm">  *重写写该方法的目的同样是为了提高查询的效率，  利用双向循环链表的特点进行查询，少了对数组的外层for循环  
+</span><span class="cm">  * @param value value whose presence in this map is to be tested
+</span><span class="cm">  * @return &lt;tt&gt;true&lt;/tt&gt; if this map maps one or more keys to the
+</span><span class="cm">  *         specified value
+</span><span class="cm">  */</span>
+ <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">containsValue</span><span class="o">(</span><span class="n">Object</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+     <span class="c1">// Overridden to take advantage of faster iterator
+</span><span class="c1"></span>     <span class="k">if</span> <span class="o">(</span><span class="n">value</span><span class="o">==</span><span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+         <span class="k">for</span> <span class="o">(</span><span class="n">Entry</span> <span class="n">e</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="na">after</span><span class="o">;</span> <span class="n">e</span> <span class="o">!=</span> <span class="n">header</span><span class="o">;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">after</span><span class="o">)</span>
+             <span class="k">if</span> <span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">value</span><span class="o">==</span><span class="kc">null</span><span class="o">)</span>
+                 <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+     <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+         <span class="k">for</span> <span class="o">(</span><span class="n">Entry</span> <span class="n">e</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="na">after</span><span class="o">;</span> <span class="n">e</span> <span class="o">!=</span> <span class="n">header</span><span class="o">;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">after</span><span class="o">)</span>
+             <span class="k">if</span> <span class="o">(</span><span class="n">value</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">value</span><span class="o">))</span>
+                 <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+     <span class="o">}</span>
+     <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+ <span class="o">}</span>
+
+ <span class="cm">/**
+</span><span class="cm">  * Returns the value to which the specified key is mapped,
+</span><span class="cm">  * or {@code null} if this map contains no mapping for the key.
+</span><span class="cm">  *
+</span><span class="cm">  * &lt;p&gt;More formally, if this map contains a mapping from a key
+</span><span class="cm">  * {@code k} to a value {@code v} such that {@code (key==null ? k==null :
+</span><span class="cm">  * key.equals(k))}, then this method returns {@code v}; otherwise
+</span><span class="cm">  * it returns {@code null}.  (There can be at most one such mapping.)
+</span><span class="cm">  *
+</span><span class="cm">  * 注意这里的recordAccess方法，  
+</span><span class="cm">  *如果链表中元素的排序规则是按照插入的先后顺序排序的话，该方法什么也不做，  
+</span><span class="cm">  *如果链表中元素的排序规则是按照访问的先后顺序排序的话，则将e移到链表的末尾处。
+</span><span class="cm">  * &lt;p&gt;A return value of {@code null} does not &lt;i&gt;necessarily&lt;/i&gt;
+</span><span class="cm">  * indicate that the map contains no mapping for the key; it&#39;s also
+</span><span class="cm">  * possible that the map explicitly maps the key to {@code null}.
+</span><span class="cm">  * The {@link #containsKey containsKey} operation may be used to
+</span><span class="cm">  * distinguish these two cases.
+</span><span class="cm">  */</span>
+ <span class="kd">public</span> <span class="n">V</span> <span class="nf">get</span><span class="o">(</span><span class="n">Object</span> <span class="n">key</span><span class="o">)</span> <span class="o">{</span>
+     <span class="n">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">=</span> <span class="o">(</span><span class="n">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;)</span><span class="n">getEntry</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+     <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+         <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+     <span class="n">e</span><span class="o">.</span><span class="na">recordAccess</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+     <span class="k">return</span> <span class="n">e</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
+ <span class="o">}</span>
+
+ <span class="cm">/**
+</span><span class="cm">  * Removes all of the mappings from this map.
+</span><span class="cm">  * The map will be empty after this call returns.
+</span><span class="cm">  * 清空HashMap，并将双向链表还原为只有头结点的空链表  
+</span><span class="cm">  */</span>
+ <span class="kd">public</span> <span class="kt">void</span> <span class="nf">clear</span><span class="o">()</span> <span class="o">{</span>
+     <span class="kd">super</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+     <span class="n">header</span><span class="o">.</span><span class="na">before</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="na">after</span> <span class="o">=</span> <span class="n">header</span><span class="o">;</span>
+ <span class="o">}</span>
+ <span class="cm">/**
+</span><span class="cm">  * This override alters behavior of superclass put method. It causes newly
+</span><span class="cm">  * allocated entry to get inserted at the end of the linked list and
+</span><span class="cm">  * removes the eldest entry if appropriate.
+</span><span class="cm">  */</span>
+ <span class="kt">void</span> <span class="nf">addEntry</span><span class="o">(</span><span class="kt">int</span> <span class="n">hash</span><span class="o">,</span> <span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">,</span> <span class="kt">int</span> <span class="n">bucketIndex</span><span class="o">)</span> <span class="o">{</span>
+     <span class="kd">super</span><span class="o">.</span><span class="na">addEntry</span><span class="o">(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">bucketIndex</span><span class="o">);</span>
+
+     <span class="c1">// Remove eldest entry if instructed
+</span><span class="c1"></span>     <span class="n">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">eldest</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="na">after</span><span class="o">;</span>
+     <span class="cm">/**删除最老条目判断*/</span>
+     <span class="k">if</span> <span class="o">(</span><span class="n">removeEldestEntry</span><span class="o">(</span><span class="n">eldest</span><span class="o">))</span> <span class="o">{</span>
+         <span class="n">removeEntryForKey</span><span class="o">(</span><span class="n">eldest</span><span class="o">.</span><span class="na">key</span><span class="o">);</span>
+     <span class="o">}</span>
+ <span class="o">}</span>
+
+ <span class="cm">/**
+</span><span class="cm">  * This override differs from addEntry in that it doesn&#39;t resize the
+</span><span class="cm">  * table or remove the eldest entry.
+</span><span class="cm">  */</span>
+ <span class="kt">void</span> <span class="nf">createEntry</span><span class="o">(</span><span class="kt">int</span> <span class="n">hash</span><span class="o">,</span> <span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">value</span><span class="o">,</span> <span class="kt">int</span> <span class="n">bucketIndex</span><span class="o">)</span> <span class="o">{</span>
+     <span class="n">HashMap</span><span class="o">.</span><span class="na">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">old</span> <span class="o">=</span> <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">];</span>
+     <span class="n">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Entry</span><span class="o">&lt;&gt;(</span><span class="n">hash</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">value</span><span class="o">,</span> <span class="n">old</span><span class="o">);</span>
+     <span class="n">table</span><span class="o">[</span><span class="n">bucketIndex</span><span class="o">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">;</span>
+     <span class="cm">/**每次插入Entry时，都将其移到双向链表的尾部*/</span>
+     <span class="n">e</span><span class="o">.</span><span class="na">addBefore</span><span class="o">(</span><span class="n">header</span><span class="o">);</span>
+     <span class="n">size</span><span class="o">++;</span>
+ <span class="o">}</span>
+
+ <span class="cm">/**
+</span><span class="cm">  * Returns &lt;tt&gt;true&lt;/tt&gt; if this map should remove its eldest entry.
+</span><span class="cm">  * This method is invoked by &lt;tt&gt;put&lt;/tt&gt; and &lt;tt&gt;putAll&lt;/tt&gt; after
+</span><span class="cm">  * inserting a new entry into the map.  It provides the implementor
+</span><span class="cm">  * with the opportunity to remove the eldest entry each time a new one
+</span><span class="cm">  * is added.  This is useful if the map represents a cache: it allows
+</span><span class="cm">  * the map to reduce memory consumption by deleting stale entries.
+</span><span class="cm">  * 如果此Map应删除其最老的条目，则返回&lt;tt&gt; true &lt;/ tt&gt;。 在将新条目插入到Map中之后，
+</span><span class="cm">  * 该方法由&lt;tt&gt; put &lt;/ tt&gt;和&lt;tt&gt; putAll &lt;/ tt&gt;调用。
+</span><span class="cm">   * 它为实施者提供每次添加新的条目时删除最老条目的机会。
+</span><span class="cm">    * 如果地图代表一个缓存，这是非常有用的：它允许地图通过删除陈旧的条目来减少内存消耗。
+</span><span class="cm">  * &lt;p&gt;Sample use: this override will allow the map to grow up to 100
+</span><span class="cm">  * entries and then delete the eldest entry each time a new entry is
+</span><span class="cm">  * added, maintaining a steady state of 100 entries.
+</span><span class="cm">  * &lt;pre&gt;
+</span><span class="cm">  *     private static final int MAX_ENTRIES = 100;
+</span><span class="cm">  *
+</span><span class="cm">  *     protected boolean removeEldestEntry(Map.Entry eldest) {
+</span><span class="cm">  *        return size() &gt; MAX_ENTRIES;
+</span><span class="cm">  *     }
+</span><span class="cm">  * &lt;/pre&gt;
+</span><span class="cm">  *
+</span><span class="cm">  * &lt;p&gt;This method typically does not modify the map in any way,
+</span><span class="cm">  * instead allowing the map to modify itself as directed by its
+</span><span class="cm">  * return value.  It &lt;i&gt;is&lt;/i&gt; permitted for this method to modify
+</span><span class="cm">  * the map directly, but if it does so, it &lt;i&gt;must&lt;/i&gt; return
+</span><span class="cm">  * &lt;tt&gt;false&lt;/tt&gt; (indicating that the map should not attempt any
+</span><span class="cm">  * further modification).  The effects of returning &lt;tt&gt;true&lt;/tt&gt;
+</span><span class="cm">  * after modifying the map from within this method are unspecified.
+</span><span class="cm">  *
+</span><span class="cm">  * &lt;p&gt;This implementation merely returns &lt;tt&gt;false&lt;/tt&gt; (so that this
+</span><span class="cm">  * map acts like a normal map - the eldest element is never removed).
+</span><span class="cm">  *
+</span><span class="cm">  * @param    eldest The least recently inserted entry in the map, or if
+</span><span class="cm">  *           this is an access-ordered map, the least recently accessed
+</span><span class="cm">  *           entry.  This is the entry that will be removed it this
+</span><span class="cm">  *           method returns &lt;tt&gt;true&lt;/tt&gt;.  If the map was empty prior
+</span><span class="cm">  *           to the &lt;tt&gt;put&lt;/tt&gt; or &lt;tt&gt;putAll&lt;/tt&gt; invocation resulting
+</span><span class="cm">  *           in this invocation, this will be the entry that was just
+</span><span class="cm">  *           inserted; in other words, if the map contains a single
+</span><span class="cm">  *           entry, the eldest entry is also the newest.
+</span><span class="cm">  * @return   &lt;tt&gt;true&lt;/tt&gt; if the eldest entry should be removed
+</span><span class="cm">  *           from the map; &lt;tt&gt;false&lt;/tt&gt; if it should be retained.
+</span><span class="cm">  */</span>
+ <span class="kd">protected</span> <span class="kt">boolean</span> <span class="nf">removeEldestEntry</span><span class="o">(</span><span class="n">Map</span><span class="o">.</span><span class="na">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">eldest</span><span class="o">)</span> <span class="o">{</span>
+     <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+ <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>
+<p>(5).Iterator 迭代器实现</p>
+<ul>
+<li>按双向循环链表实现迭代器实现</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">LinkedHashIterator</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="kd">implements</span> <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">{</span>
+      <span class="n">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">nextEntry</span>    <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="na">after</span><span class="o">;</span>
+      <span class="n">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">lastReturned</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+
+      <span class="cm">/**
+</span><span class="cm">       * The modCount value that the iterator believes that the backing
+</span><span class="cm">       * List should have.  If this expectation is violated, the iterator
+</span><span class="cm">       * has detected concurrent modification.
+</span><span class="cm">       */</span>
+      <span class="kt">int</span> <span class="n">expectedModCount</span> <span class="o">=</span> <span class="n">modCount</span><span class="o">;</span>
+
+      <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">hasNext</span><span class="o">()</span> <span class="o">{</span>
+          <span class="k">return</span> <span class="n">nextEntry</span> <span class="o">!=</span> <span class="n">header</span><span class="o">;</span>
+      <span class="o">}</span>
+
+      <span class="kd">public</span> <span class="kt">void</span> <span class="nf">remove</span><span class="o">()</span> <span class="o">{</span>
+          <span class="k">if</span> <span class="o">(</span><span class="n">lastReturned</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+              <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">();</span>
+          <span class="k">if</span> <span class="o">(</span><span class="n">modCount</span> <span class="o">!=</span> <span class="n">expectedModCount</span><span class="o">)</span>
+              <span class="k">throw</span> <span class="k">new</span> <span class="n">ConcurrentModificationException</span><span class="o">();</span>
+
+          <span class="n">LinkedHashMap</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">lastReturned</span><span class="o">.</span><span class="na">key</span><span class="o">);</span>
+          <span class="n">lastReturned</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+          <span class="n">expectedModCount</span> <span class="o">=</span> <span class="n">modCount</span><span class="o">;</span>
+      <span class="o">}</span>
+
+      <span class="n">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">nextEntry</span><span class="o">()</span> <span class="o">{</span>
+          <span class="k">if</span> <span class="o">(</span><span class="n">modCount</span> <span class="o">!=</span> <span class="n">expectedModCount</span><span class="o">)</span>
+              <span class="k">throw</span> <span class="k">new</span> <span class="n">ConcurrentModificationException</span><span class="o">();</span>
+          <span class="k">if</span> <span class="o">(</span><span class="n">nextEntry</span> <span class="o">==</span> <span class="n">header</span><span class="o">)</span>
+              <span class="k">throw</span> <span class="k">new</span> <span class="n">NoSuchElementException</span><span class="o">();</span>
+
+          <span class="n">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">=</span> <span class="n">lastReturned</span> <span class="o">=</span> <span class="n">nextEntry</span><span class="o">;</span>
+          <span class="n">nextEntry</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">after</span><span class="o">;</span>
+          <span class="k">return</span> <span class="n">e</span><span class="o">;</span>
+      <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="kd">private</span> <span class="kd">class</span> <span class="nc">KeyIterator</span> <span class="kd">extends</span> <span class="n">LinkedHashIterator</span><span class="o">&lt;</span><span class="n">K</span><span class="o">&gt;</span> <span class="o">{</span>
+      <span class="kd">public</span> <span class="n">K</span> <span class="nf">next</span><span class="o">()</span> <span class="o">{</span> <span class="k">return</span> <span class="n">nextEntry</span><span class="o">().</span><span class="na">getKey</span><span class="o">();</span> <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="kd">private</span> <span class="kd">class</span> <span class="nc">ValueIterator</span> <span class="kd">extends</span> <span class="n">LinkedHashIterator</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="o">{</span>
+      <span class="kd">public</span> <span class="n">V</span> <span class="nf">next</span><span class="o">()</span> <span class="o">{</span> <span class="k">return</span> <span class="n">nextEntry</span><span class="o">().</span><span class="na">value</span><span class="o">;</span> <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="kd">private</span> <span class="kd">class</span> <span class="nc">EntryIterator</span> <span class="kd">extends</span> <span class="n">LinkedHashIterator</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">.</span><span class="na">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;&gt;</span> <span class="o">{</span>
+      <span class="kd">public</span> <span class="n">Map</span><span class="o">.</span><span class="na">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">next</span><span class="o">()</span> <span class="o">{</span> <span class="k">return</span> <span class="n">nextEntry</span><span class="o">();</span> <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="c1">// These Overrides alter the behavior of superclass view iterator() methods
+</span><span class="c1"></span>  <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">K</span><span class="o">&gt;</span> <span class="nf">newKeyIterator</span><span class="o">()</span>   <span class="o">{</span> <span class="k">return</span> <span class="k">new</span> <span class="n">KeyIterator</span><span class="o">();</span>   <span class="o">}</span>
+  <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">newValueIterator</span><span class="o">()</span> <span class="o">{</span> <span class="k">return</span> <span class="k">new</span> <span class="n">ValueIterator</span><span class="o">();</span> <span class="o">}</span>
+  <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">.</span><span class="na">Entry</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span><span class="n">V</span><span class="o">&gt;&gt;</span> <span class="nf">newEntryIterator</span><span class="o">()</span> <span class="o">{</span> <span class="k">return</span> <span class="k">new</span> <span class="n">EntryIterator</span><span class="o">();</span> <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="三-总结">三、 总结:</h3>
+<ul>
+<li>LinkedHashMap由于继承自HashMap，因此它具有HashMap的所有特性，同样允许key和value为null。</li>
+<li>accessOrder标志位，当它false时，表示双向链表中的元素按照Entry插入LinkedHashMap到中的先后顺序排序。当它为true时，表示双向链表中的元素按照访问的先后顺序排列</li>
+<li>LinkedHashMap是如何实现LRU的。首先，当accessOrder为true时，才会开启按访问顺序排序的模式，才能用来实现LRU(Least Recently Used 近期最少使用)算法。</li>
+<li>removeEldestEntry方法判断删除其最老的条目，默认false</li>
+</ul>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-02-17 23:30
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/LinkedHashMap/">LinkedHashMap</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/collection/10.IdentityHashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">IdentityHashMap</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/collection/08.HashMap_1.7/">
+        <span class="next-text nav-default">HashMap_1.7</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

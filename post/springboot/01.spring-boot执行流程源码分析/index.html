@@ -1,0 +1,3211 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>spring boot执行流程源码分析 - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="spring boot 源码分析 一、spring boot 执行流程 例子： 1 2 3 4 public static void main(String[] args) { SpringApplication.run(SampleWebFluxApplication.class); } 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 /** * Static helper that can be used to run a {@link SpringApplication}" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/springboot/01.spring-boot%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<link href="/post/springboot/01.spring-boot%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/springboot/01.spring-boot%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="spring boot执行流程源码分析" />
+<meta property="og:description" content="spring boot 源码分析 一、spring boot 执行流程 例子： 1 2 3 4 public static void main(String[] args) { SpringApplication.run(SampleWebFluxApplication.class); } 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 /** * Static helper that can be used to run a {@link SpringApplication}" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/springboot/01.spring-boot%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2018-11-01T23:18:08+00:00" />
+<meta property="article:modified_time" content="2018-11-01T23:18:08+00:00" />
+<meta itemprop="name" content="spring boot执行流程源码分析">
+<meta itemprop="description" content="spring boot 源码分析 一、spring boot 执行流程 例子： 1 2 3 4 public static void main(String[] args) { SpringApplication.run(SampleWebFluxApplication.class); } 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 /** * Static helper that can be used to run a {@link SpringApplication}">
+<meta itemprop="datePublished" content="2018-11-01T23:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2018-11-01T23:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="11652">
+
+
+
+<meta itemprop="keywords" content="spring boot," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="spring boot执行流程源码分析"/>
+<meta name="twitter:description" content="spring boot 源码分析 一、spring boot 执行流程 例子： 1 2 3 4 public static void main(String[] args) { SpringApplication.run(SampleWebFluxApplication.class); } 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 /** * Static helper that can be used to run a {@link SpringApplication}"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">spring boot执行流程源码分析</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2018-11-01 23:18 </span>
+      <div class="post-category">
+        <a href="/categories/spring-boot/"> spring boot </a>
+        </div>
+      <span class="more-meta"> 约 11652 字 </span>
+      <span class="more-meta"> 预计阅读 24 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#一spring-boot-执行流程">一、spring boot 执行流程</a></li>
+    <li><a href="#二-springapplication-构造进行初始化操作">二. SpringApplication 构造，进行初始化操作</a>
+      <ul>
+        <li><a href="#1deducewebapplicationtype-获取应用类型">1.deduceWebApplicationType 获取应用类型</a></li>
+      </ul>
+    </li>
+    <li><a href="#三-springapplication-run">三. SpringApplication run</a>
+      <ul>
+        <li><a href="#1-springapplicationrunlistener">1. SpringApplicationRunListener</a></li>
+        <li><a href="#2-applicationarguments">2. ApplicationArguments</a></li>
+        <li><a href="#3-prepareenvironment">3. prepareEnvironment</a></li>
+        <li><a href="#3failureanalyzers">3.FailureAnalyzers</a></li>
+        <li><a href="#4preparecontext">4.prepareContext</a></li>
+      </ul>
+    </li>
+    <li><a href="#四annotatedbeandefinitionreader-解说">四、AnnotatedBeanDefinitionReader 解说</a>
+      <ul>
+        <li><a href="#1构造">1.构造</a></li>
+      </ul>
+    </li>
+    <li><a href="#五configurationclasspostprocessor-解说">五、ConfigurationClassPostProcessor 解说</a>
+      <ul>
+        <li><a href="#1postprocessbeandefinitionregistry">1.postProcessBeanDefinitionRegistry</a></li>
+        <li><a href="#2configurationclassparser-解说">2.ConfigurationClassParser 解说</a></li>
+        <li><a href="#3configurationclassbeandefinitionreaderloadbeandefinitions">3.ConfigurationClassBeanDefinitionReader.loadBeanDefinitions</a></li>
+      </ul>
+    </li>
+    <li><a href="#六importbeandefinitionregistrar接口自动配置">六、ImportBeanDefinitionRegistrar接口自动配置</a>
+      <ul>
+        <li><a href="#1springbootapplication">1.@SpringBootApplication</a></li>
+        <li><a href="#2enableautoconfigurationautoconfigurationpackage">2.@EnableAutoConfiguration,@AutoConfigurationPackage</a></li>
+        <li><a href="#3autoconfigurationimportselectorselectimports-获取自动配置信息进行管理">3.AutoConfigurationImportSelector.selectImports 获取自动配置信息进行管理</a></li>
+      </ul>
+    </li>
+    <li><a href="#七conditionevaluator处理conditional">七、ConditionEvaluator处理@Conditional</a>
+      <ul>
+        <li><a href="#1shouldskip">1.shouldSkip</a></li>
+        <li><a href="#2condition-接口">2.Condition 接口</a></li>
+        <li><a href="#3spring注解">3.spring注解</a></li>
+      </ul>
+    </li>
+    <li><a href="#八conditionevaluator处理conditional">八、ConditionEvaluator处理@Conditional</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2018-11-01T23:18:08" title="November 1, 2018">November 1, 2018</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="spring-boot-源码分析">spring boot 源码分析</h1>
+<h2 id="一spring-boot-执行流程">一、spring boot 执行流程</h2>
+<p>例子：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+       <span class="n">SpringApplication</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="n">SampleWebFluxApplication</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+   <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm"> 	 * Static helper that can be used to run a {@link SpringApplication} from the
+</span><span class="cm"> 	 * specified source using default settings.
+</span><span class="cm"> 	 * @param primarySource the primary source to load
+</span><span class="cm"> 	 * @param args the application arguments (usually passed from a Java main method)
+</span><span class="cm"> 	 * @return the running {@link ApplicationContext}
+</span><span class="cm"> 	 */</span>
+ 	<span class="kd">public</span> <span class="kd">static</span> <span class="n">ConfigurableApplicationContext</span> <span class="nf">run</span><span class="o">(</span><span class="n">Class</span><span class="o">&lt;?&gt;</span> <span class="n">primarySource</span><span class="o">,</span>
+ 			<span class="n">String</span><span class="o">...</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+ 		<span class="k">return</span> <span class="n">run</span><span class="o">(</span><span class="k">new</span> <span class="n">Class</span><span class="o">&lt;?&gt;[]</span> <span class="o">{</span> <span class="n">primarySource</span> <span class="o">},</span> <span class="n">args</span><span class="o">);</span>
+ 	<span class="o">}</span>
+ 
+ 	<span class="cm">/**
+</span><span class="cm"> 	 * Static helper that can be used to run a {@link SpringApplication} from the
+</span><span class="cm"> 	 * specified sources using default settings and user supplied arguments.
+</span><span class="cm"> 	 * @param primarySources the primary sources to load
+</span><span class="cm"> 	 * @param args the application arguments (usually passed from a Java main method)
+</span><span class="cm"> 	 * @return the running {@link ApplicationContext}
+</span><span class="cm"> 	 */</span>
+ 	<span class="kd">public</span> <span class="kd">static</span> <span class="n">ConfigurableApplicationContext</span> <span class="nf">run</span><span class="o">(</span><span class="n">Class</span><span class="o">&lt;?&gt;[]</span> <span class="n">primarySources</span><span class="o">,</span>
+ 			<span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+ 		<span class="k">return</span> <span class="k">new</span> <span class="n">SpringApplication</span><span class="o">(</span><span class="n">primarySources</span><span class="o">).</span><span class="na">run</span><span class="o">(</span><span class="n">args</span><span class="o">);</span>
+ 	<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二-springapplication-构造进行初始化操作">二. SpringApplication 构造，进行初始化操作</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="kd">public</span> <span class="nf">SpringApplication</span><span class="o">(</span><span class="n">Class</span><span class="o">&lt;?&gt;...</span> <span class="n">primarySources</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">this</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="n">primarySources</span><span class="o">);</span>
+   <span class="o">}</span>
+
+   <span class="cm">/**
+</span><span class="cm">    * Create a new {@link SpringApplication} instance. The application context will load
+</span><span class="cm">    * beans from the specified primary sources (see {@link SpringApplication class-level}
+</span><span class="cm">    * documentation for details. The instance can be customized before calling
+</span><span class="cm">    * {@link #run(String...)}.
+</span><span class="cm">    * @param resourceLoader the resource loader to use
+</span><span class="cm">    * @param primarySources the primary bean sources
+</span><span class="cm">    * @see #run(Class, String[])
+</span><span class="cm">    * @see #setSources(Set)
+</span><span class="cm">    */</span>
+   <span class="nd">@SuppressWarnings</span><span class="o">({</span> <span class="s">&#34;unchecked&#34;</span><span class="o">,</span> <span class="s">&#34;rawtypes&#34;</span> <span class="o">})</span>
+   <span class="kd">public</span> <span class="nf">SpringApplication</span><span class="o">(</span><span class="n">ResourceLoader</span> <span class="n">resourceLoader</span><span class="o">,</span> <span class="n">Class</span><span class="o">&lt;?&gt;...</span> <span class="n">primarySources</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">resourceLoader</span> <span class="o">=</span> <span class="n">resourceLoader</span><span class="o">;</span>
+       <span class="n">Assert</span><span class="o">.</span><span class="na">notNull</span><span class="o">(</span><span class="n">primarySources</span><span class="o">,</span> <span class="s">&#34;PrimarySources must not be null&#34;</span><span class="o">);</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">primarySources</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LinkedHashSet</span><span class="o">&lt;&gt;(</span><span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="n">primarySources</span><span class="o">));</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">webApplicationType</span> <span class="o">=</span> <span class="n">deduceWebApplicationType</span><span class="o">();</span>
+       <span class="c1">//spring boot实现自己SPI，在META-INF/spring.factories中查询定义ApplicationContextInitializer
+</span><span class="c1"></span>       <span class="n">setInitializers</span><span class="o">((</span><span class="n">Collection</span><span class="o">)</span> <span class="n">getSpringFactoriesInstances</span><span class="o">(</span>
+               <span class="n">ApplicationContextInitializer</span><span class="o">.</span><span class="na">class</span><span class="o">));</span>
+       <span class="c1">//监听集合ApplicationListener
+</span><span class="c1"></span>       <span class="n">setListeners</span><span class="o">((</span><span class="n">Collection</span><span class="o">)</span> <span class="n">getSpringFactoriesInstances</span><span class="o">(</span><span class="n">ApplicationListener</span><span class="o">.</span><span class="na">class</span><span class="o">));</span>
+       <span class="c1">//运用异常堆栈跟踪(RuntimeException().getStackTrace())查询main类的Class
+</span><span class="c1"></span>       <span class="k">this</span><span class="o">.</span><span class="na">mainApplicationClass</span> <span class="o">=</span> <span class="n">deduceMainApplicationClass</span><span class="o">();</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1deducewebapplicationtype-获取应用类型">1.deduceWebApplicationType 获取应用类型</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  private WebApplicationType deduceWebApplicationType() {
+      if (ClassUtils.isPresent(REACTIVE_WEB_ENVIRONMENT_CLASS, null)
+              &amp;&amp; !ClassUtils.isPresent(MVC_WEB_ENVIRONMENT_CLASS, null)
+              &amp;&amp; !ClassUtils.isPresent(JERSEY_WEB_ENVIRONMENT_CLASS, null)) {
+          return WebApplicationType.REACTIVE;
+      }
+      for (String className : WEB_ENVIRONMENT_CLASSES) {
+          if (!ClassUtils.isPresent(className, null)) {
+              return WebApplicationType.NONE;
+          }
+      }
+      return WebApplicationType.SERVLET;
+  }  
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="1reactive_web_environment_class--orgspringframeworkwebreactivedispatcherhandler">(1).REACTIVE_WEB_ENVIRONMENT_CLASS ==&gt; org.springframework.web.reactive.DispatcherHandler</h4>
+<h2 id="三-springapplication-run">三. SpringApplication run</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="n">ConfigurableApplicationContext</span> <span class="nf">run</span><span class="o">(</span><span class="n">String</span><span class="o">...</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+       <span class="c1">//记录执行时间
+</span><span class="c1"></span>       <span class="n">StopWatch</span> <span class="n">stopWatch</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StopWatch</span><span class="o">();</span>
+       <span class="n">stopWatch</span><span class="o">.</span><span class="na">start</span><span class="o">();</span>
+       <span class="n">ConfigurableApplicationContext</span> <span class="n">context</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+       <span class="n">Collection</span><span class="o">&lt;</span><span class="n">SpringBootExceptionReporter</span><span class="o">&gt;</span> <span class="n">exceptionReporters</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;();</span>
+       <span class="c1">//调用configureHeadlessProperty设置系统属性java.awt.headless，这里设置为true，
+</span><span class="c1"></span>       <span class="c1">// 表示运行在服务器端，在没有显示器和鼠标键盘的模式下工作，模拟输入输出设备功能,显示服务器端运行
+</span><span class="c1"></span>       <span class="n">configureHeadlessProperty</span><span class="o">();</span>
+       <span class="c1">//1.创建SpringApplicationRunListener集合，做事件广播
+</span><span class="c1"></span>       <span class="n">SpringApplicationRunListeners</span> <span class="n">listeners</span> <span class="o">=</span> <span class="n">getRunListeners</span><span class="o">(</span><span class="n">args</span><span class="o">);</span>
+       <span class="c1">// 触发starting
+</span><span class="c1"></span>       <span class="n">listeners</span><span class="o">.</span><span class="na">starting</span><span class="o">();</span>
+       <span class="k">try</span> <span class="o">{</span>
+           <span class="c1">//2.解析运行参数；提供对用于运行{@link SpringApplication}的参数的访问。
+</span><span class="c1"></span>           <span class="n">ApplicationArguments</span> <span class="n">applicationArguments</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DefaultApplicationArguments</span><span class="o">(</span>
+                   <span class="n">args</span><span class="o">);</span>
+           <span class="c1">//3.ConfigurableEnvironment
+</span><span class="c1"></span>           <span class="n">ConfigurableEnvironment</span> <span class="n">environment</span> <span class="o">=</span> <span class="n">prepareEnvironment</span><span class="o">(</span><span class="n">listeners</span><span class="o">,</span>
+                   <span class="n">applicationArguments</span><span class="o">);</span>
+           <span class="n">configureIgnoreBeanInfo</span><span class="o">(</span><span class="n">environment</span><span class="o">);</span>
+           <span class="c1">//4.Banner
+</span><span class="c1"></span>           <span class="n">Banner</span> <span class="n">printedBanner</span> <span class="o">=</span> <span class="n">printBanner</span><span class="o">(</span><span class="n">environment</span><span class="o">);</span>
+           <span class="c1">//5.根据webApplicationType创建不同的ApplicationContext；
+</span><span class="c1"></span>           <span class="c1">//  默认:AnnotationConfigApplicationContext
+</span><span class="c1"></span>           <span class="c1">//  SERVLET:AnnotationConfigServletWebServerApplicationContext
+</span><span class="c1"></span>           <span class="c1">//  REACTIVE:AnnotationConfigReactiveWebServerApplicationContext
+</span><span class="c1"></span>           <span class="n">context</span> <span class="o">=</span> <span class="n">createApplicationContext</span><span class="o">();</span>
+           <span class="c1">//6.异常上报分析；
+</span><span class="c1"></span>           <span class="c1">// # Error Reporters
+</span><span class="c1"></span>           <span class="c1">//   org.springframework.boot.SpringBootExceptionReporter=\
+</span><span class="c1"></span>           <span class="c1">//   org.springframework.boot.diagnostics.FailureAnalyzers
+</span><span class="c1"></span>           <span class="n">exceptionReporters</span> <span class="o">=</span> <span class="n">getSpringFactoriesInstances</span><span class="o">(</span>
+                   <span class="n">SpringBootExceptionReporter</span><span class="o">.</span><span class="na">class</span><span class="o">,</span>
+                   <span class="k">new</span> <span class="n">Class</span><span class="o">[]</span> <span class="o">{</span> <span class="n">ConfigurableApplicationContext</span><span class="o">.</span><span class="na">class</span> <span class="o">},</span> <span class="n">context</span><span class="o">);</span>
+           <span class="c1">//7.准备ApplicationContext
+</span><span class="c1"></span>           <span class="n">prepareContext</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">environment</span><span class="o">,</span> <span class="n">listeners</span><span class="o">,</span> <span class="n">applicationArguments</span><span class="o">,</span>
+                   <span class="n">printedBanner</span><span class="o">);</span>
+           <span class="c1">//8.调用ApplicationContext.refresh方法
+</span><span class="c1"></span>           <span class="n">refreshContext</span><span class="o">(</span><span class="n">context</span><span class="o">);</span>
+           <span class="c1">//9.钩子方法
+</span><span class="c1"></span>           <span class="n">afterRefresh</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">applicationArguments</span><span class="o">);</span>
+           <span class="n">stopWatch</span><span class="o">.</span><span class="na">stop</span><span class="o">();</span>
+           <span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">logStartupInfo</span><span class="o">)</span> <span class="o">{</span>
+               <span class="k">new</span> <span class="n">StartupInfoLogger</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">mainApplicationClass</span><span class="o">)</span>
+                       <span class="o">.</span><span class="na">logStarted</span><span class="o">(</span><span class="n">getApplicationLog</span><span class="o">(),</span> <span class="n">stopWatch</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="c1">//10.触发started事件
+</span><span class="c1"></span>           <span class="n">listeners</span><span class="o">.</span><span class="na">started</span><span class="o">(</span><span class="n">context</span><span class="o">);</span>
+           <span class="c1">//11.BeanFactory查询ApplicationRunner和CommandLineRunner集合触发run方法
+</span><span class="c1"></span>           <span class="n">callRunners</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">applicationArguments</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">handleRunFailure</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">ex</span><span class="o">,</span> <span class="n">exceptionReporters</span><span class="o">,</span> <span class="n">listeners</span><span class="o">);</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+       <span class="o">}</span>
+
+       <span class="k">try</span> <span class="o">{</span>
+           <span class="n">listeners</span><span class="o">.</span><span class="na">running</span><span class="o">(</span><span class="n">context</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">handleRunFailure</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">ex</span><span class="o">,</span> <span class="n">exceptionReporters</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="k">return</span> <span class="n">context</span><span class="o">;</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1-springapplicationrunlistener">1. SpringApplicationRunListener</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="kd">interface</span> <span class="nc">SpringApplicationRunListener</span> <span class="o">{</span>
+   
+       <span class="cm">/**
+</span><span class="cm">        * Called immediately when the run method has first started. Can be used for very
+</span><span class="cm">        * early initialization.
+</span><span class="cm">        * 首次启动run方法时立即调用。, 可用于非常早期的初始化。
+</span><span class="cm">        */</span>
+       <span class="kt">void</span> <span class="nf">starting</span><span class="o">();</span>
+   
+       <span class="cm">/**
+</span><span class="cm">        * Called once the environment has been prepared, but before the
+</span><span class="cm">        * {@link ApplicationContext} has been created.
+</span><span class="cm">        * 一旦准备好环境，但在创建{@link ApplicationContext}之前调用。
+</span><span class="cm">        * @param environment the environment
+</span><span class="cm">        */</span>
+       <span class="kt">void</span> <span class="nf">environmentPrepared</span><span class="o">(</span><span class="n">ConfigurableEnvironment</span> <span class="n">environment</span><span class="o">);</span>
+   
+       <span class="cm">/**
+</span><span class="cm">        * Called once the {@link ApplicationContext} has been created and prepared, but
+</span><span class="cm">        * before sources have been loaded.
+</span><span class="cm">        * 一旦{@link ApplicationContext}被创建并准备好，但在加载源之前调用。
+</span><span class="cm">        * @param context the application context
+</span><span class="cm">        */</span>
+       <span class="kt">void</span> <span class="nf">contextPrepared</span><span class="o">(</span><span class="n">ConfigurableApplicationContext</span> <span class="n">context</span><span class="o">);</span>
+   
+       <span class="cm">/**
+</span><span class="cm">        * Called once the application context has been loaded but before it has been
+</span><span class="cm">        * refreshed.
+</span><span class="cm">        * 在应用程序上下文加载之后但在刷新之前调用。
+</span><span class="cm">        * @param context the application context
+</span><span class="cm">        */</span>
+       <span class="kt">void</span> <span class="nf">contextLoaded</span><span class="o">(</span><span class="n">ConfigurableApplicationContext</span> <span class="n">context</span><span class="o">);</span>
+   
+       <span class="cm">/**
+</span><span class="cm">        * The context has been refreshed and the application has started but
+</span><span class="cm">        * {@link CommandLineRunner CommandLineRunners} and {@link ApplicationRunner
+</span><span class="cm">        * ApplicationRunners} have not been called.
+</span><span class="cm">        * 上下文已刷新且应用程序已启动，但尚未调用{@link CommandLineRunner CommandLineRunners}
+</span><span class="cm">        * 和{@link ApplicationRunner ApplicationRunners}。
+</span><span class="cm">        * @param context the application context.
+</span><span class="cm">        * @since 2.0.0
+</span><span class="cm">        */</span>
+       <span class="kt">void</span> <span class="nf">started</span><span class="o">(</span><span class="n">ConfigurableApplicationContext</span> <span class="n">context</span><span class="o">);</span>
+   
+       <span class="cm">/**
+</span><span class="cm">        * Called immediately before the run method finishes, when the application context has
+</span><span class="cm">        * been refreshed and all {@link CommandLineRunner CommandLineRunners} and
+</span><span class="cm">        * {@link ApplicationRunner ApplicationRunners} have been called.
+</span><span class="cm">        * 在run方法完成之前立即调用，刷新应用程序上下文并调用所有{@link CommandLineRunner CommandLineRunners}
+</span><span class="cm">        * 和{@link ApplicationRunner ApplicationRunners}。
+</span><span class="cm">        * @param context the application context.
+</span><span class="cm">        * @since 2.0.0
+</span><span class="cm">        */</span>
+       <span class="kt">void</span> <span class="nf">running</span><span class="o">(</span><span class="n">ConfigurableApplicationContext</span> <span class="n">context</span><span class="o">);</span>
+   
+       <span class="cm">/**
+</span><span class="cm">        * Called when a failure occurs when running the application.
+</span><span class="cm">        * 在运行应用程序时发生故障时调用。
+</span><span class="cm">        * @param context the application context or {@code null} if a failure occurred before
+</span><span class="cm">        * the context was created
+</span><span class="cm">        * @param exception the failure
+</span><span class="cm">        * @since 2.0.0
+</span><span class="cm">        */</span>
+       <span class="kt">void</span> <span class="nf">failed</span><span class="o">(</span><span class="n">ConfigurableApplicationContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">Throwable</span> <span class="n">exception</span><span class="o">);</span>
+   
+   <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>从接口方法描述来看，SpringApplicationRunListener就是启动事件监听；在在META-INF/spring.factories中查询定义ApplicationContextInitializer</p>
+<p><img src="images/springboot01.png" alt=""></p>
+<p>EventPublishingRunListener实现SpringApplicationRunListener接口；</p>
+<h4 id="1eventpublishingrunlistener">(1).EventPublishingRunListener</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="nf">EventPublishingRunListener</span><span class="o">(</span><span class="n">SpringApplication</span> <span class="n">application</span><span class="o">,</span> <span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">application</span> <span class="o">=</span> <span class="n">application</span><span class="o">;</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">args</span> <span class="o">=</span> <span class="n">args</span><span class="o">;</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">initialMulticaster</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SimpleApplicationEventMulticaster</span><span class="o">();</span>
+       <span class="k">for</span> <span class="o">(</span><span class="n">ApplicationListener</span><span class="o">&lt;?&gt;</span> <span class="n">listener</span> <span class="o">:</span> <span class="n">application</span><span class="o">.</span><span class="na">getListeners</span><span class="o">())</span> <span class="o">{</span>
+           <span class="k">this</span><span class="o">.</span><span class="na">initialMulticaster</span><span class="o">.</span><span class="na">addApplicationListener</span><span class="o">(</span><span class="n">listener</span><span class="o">);</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>从EventPublishingRunListener构造来看，主要用到spring的事件广播做事件触发，这里主要观察模式，实现事件触发；监听ApplicationListener接口；</p>
+<h4 id="2getlisteners">(2).getListeners()</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  // spring.factories
+
+# Application Listeners
+org.springframework.context.ApplicationListener=\
+# 接受ContextRefreshedEvent事件，清楚缓存
+org.springframework.boot.ClearCachesApplicationListener,\
+# ParentContextAvailableEvent，关闭父类上下文
+org.springframework.boot.builder.ParentContextCloserApplicationListener,\
+# ApplicationEnvironmentPreparedEvent environment环境做验证
+org.springframework.boot.context.FileEncodingApplicationListener,\
+# ApplicationEnvironmentPreparedEvent
+org.springframework.boot.context.config.AnsiOutputApplicationListener,\
+# ApplicationEnvironmentPreparedEvent，ApplicationPreparedEvent
+org.springframework.boot.context.config.ConfigFileApplicationListener,\
+# ApplicationEnvironmentPreparedEvent
+org.springframework.boot.context.config.DelegatingApplicationListener,\
+# ApplicationEnvironmentPreparedEvent ApplicationFailedEvent 日志打印
+org.springframework.boot.context.logging.ClasspathLoggingApplicationListener,\
+# ApplicationStartingEvent，ApplicationEnvironmentPreparedEvent，ApplicationPreparedEvent，ContextClosedEvent，ApplicationFailedEvent
+org.springframework.boot.context.logging.LoggingApplicationListener,\
+# ApplicationStartingEvent
+# Liquibase 是一个用于跟踪，管理和应用数据库变化的开源的数据库重构工具
+org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener
+</code></pre></td></tr></table>
+</div>
+</div><p>这里在构造初始化就加载；</p>
+<h3 id="2-applicationarguments">2. ApplicationArguments</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">ApplicationArguments</span> <span class="o">{</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Return the raw unprocessed arguments that were passed to the application.
+</span><span class="cm">   * 返回传递给应用程序的原始未处理参数。
+</span><span class="cm">   * @return the arguments
+</span><span class="cm">   */</span>
+  <span class="n">String</span><span class="o">[]</span> <span class="nf">getSourceArgs</span><span class="o">();</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Return the names of all option arguments. For example, if the arguments were
+</span><span class="cm">   * &#34;--foo=bar --debug&#34; would return the values {@code [&#34;foo&#34;, &#34;debug&#34;]}.
+</span><span class="cm">   * 返回所有选项参数的名称。, 例如，如果参数为“--foo = bar --debug”，则返回值{@code [“foo”，“debug”]}。
+</span><span class="cm">   * @return the option names or an empty set
+</span><span class="cm">   */</span>
+  <span class="n">Set</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">getOptionNames</span><span class="o">();</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Return whether the set of option arguments parsed from the arguments contains an
+</span><span class="cm">   * option with the given name.
+</span><span class="cm">   * 返回从参数解析的选项参数集是否包含具有给定名称的选项。
+</span><span class="cm">   * @param name the name to check
+</span><span class="cm">   * @return {@code true} if the arguments contain an option with the given name
+</span><span class="cm">   */</span>
+  <span class="kt">boolean</span> <span class="nf">containsOption</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">);</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Return the collection of values associated with the arguments option having the
+</span><span class="cm">   * given name.
+</span><span class="cm">   * 返回与具有给定名称的arguments选项关联的值集合。
+</span><span class="cm">   * &lt;ul&gt;
+</span><span class="cm">   * &lt;li&gt;if the option is present and has no argument (e.g.: &#34;--foo&#34;), return an empty
+</span><span class="cm">   * collection ({@code []})&lt;/li&gt;
+</span><span class="cm">   * 如果选项存在但没有参数（例如：“ -  foo”），则返回一个空的集合（{@code []}
+</span><span class="cm">   * &lt;li&gt;if the option is present and has a single value (e.g. &#34;--foo=bar&#34;), return a
+</span><span class="cm">   * collection having one element ({@code [&#34;bar&#34;]})&lt;/li&gt;
+</span><span class="cm">   * 如果该选项存在并且具有单个值（例如“--foo = bar”），则返回具有一个元素的集合（{@code [“bar”]}）
+</span><span class="cm">   * &lt;li&gt;if the option is present and has multiple values (e.g. &#34;--foo=bar --foo=baz&#34;),
+</span><span class="cm">   * return a collection having elements for each value ({@code [&#34;bar&#34;, &#34;baz&#34;]})&lt;/li&gt;
+</span><span class="cm">   * 如果该选项存在且具有多个值（例如“--foo = bar --foo = baz”），返回一个包含每个值元素的集合（{@code [“bar”，“baz”]}）
+</span><span class="cm">   * &lt;li&gt;if the option is not present, return {@code null}&lt;/li&gt;
+</span><span class="cm">   * 如果该选项不存在，请返回{@code null}
+</span><span class="cm">   * &lt;/ul&gt;
+</span><span class="cm">   * @param name the name of the option
+</span><span class="cm">   * @return a list of option values for the given name
+</span><span class="cm">   */</span>
+  <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">getOptionValues</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">);</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Return the collection of non-option arguments parsed.
+</span><span class="cm">   * 返回已解析的非选项参数的集合。
+</span><span class="cm">   * @return the non-option arguments or an empty list
+</span><span class="cm">   */</span>
+  <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">getNonOptionArgs</span><span class="o">();</span>
+  <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>DefaultApplicationArguments实现ApplicationArguments接口;</p>
+<h4 id="1-defaultapplicationarguments">(1). DefaultApplicationArguments</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="nf">DefaultApplicationArguments</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+       <span class="n">Assert</span><span class="o">.</span><span class="na">notNull</span><span class="o">(</span><span class="n">args</span><span class="o">,</span> <span class="s">&#34;Args must not be null&#34;</span><span class="o">);</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">source</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Source</span><span class="o">(</span><span class="n">args</span><span class="o">);</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">args</span> <span class="o">=</span> <span class="n">args</span><span class="o">;</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>从DefaultApplicationArguments构造看出，委托Source处理运行参数解析；最终用SimpleCommandLineArgsParser解析运行参数解析；</p>
+<h3 id="3-prepareenvironment">3. prepareEnvironment</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="kd">private</span> <span class="n">ConfigurableEnvironment</span> <span class="nf">prepareEnvironment</span><span class="o">(</span>
+          <span class="n">SpringApplicationRunListeners</span> <span class="n">listeners</span><span class="o">,</span>
+          <span class="n">ApplicationArguments</span> <span class="n">applicationArguments</span><span class="o">)</span> <span class="o">{</span>
+      <span class="c1">// Create and configure the environment
+</span><span class="c1"></span>      <span class="c1">//创建和配置环境,根据web类型创建不同的ConfigurableEnvironment；
+</span><span class="c1"></span>      <span class="n">ConfigurableEnvironment</span> <span class="n">environment</span> <span class="o">=</span> <span class="n">getOrCreateEnvironment</span><span class="o">();</span>
+      <span class="c1">//配置ConfigurableEnvironment
+</span><span class="c1"></span>      <span class="c1">// 运行参数添加到配置环境中
+</span><span class="c1"></span>      <span class="c1">// 配置Profiles
+</span><span class="c1"></span>      <span class="n">configureEnvironment</span><span class="o">(</span><span class="n">environment</span><span class="o">,</span> <span class="n">applicationArguments</span><span class="o">.</span><span class="na">getSourceArgs</span><span class="o">());</span>
+      <span class="c1">//触发environmentPrepared事件，ApplicationEnvironmentPreparedEvent
+</span><span class="c1"></span>      <span class="n">listeners</span><span class="o">.</span><span class="na">environmentPrepared</span><span class="o">(</span><span class="n">environment</span><span class="o">);</span>
+      <span class="n">bindToSpringApplication</span><span class="o">(</span><span class="n">environment</span><span class="o">);</span>
+      <span class="k">if</span> <span class="o">(!</span><span class="k">this</span><span class="o">.</span><span class="na">isCustomEnvironment</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">environment</span> <span class="o">=</span> <span class="k">new</span> <span class="n">EnvironmentConverter</span><span class="o">(</span><span class="n">getClassLoader</span><span class="o">())</span>
+                  <span class="o">.</span><span class="na">convertEnvironmentIfNecessary</span><span class="o">(</span><span class="n">environment</span><span class="o">,</span> <span class="n">deduceEnvironmentClass</span><span class="o">());</span>
+      <span class="o">}</span>
+      <span class="n">ConfigurationPropertySources</span><span class="o">.</span><span class="na">attach</span><span class="o">(</span><span class="n">environment</span><span class="o">);</span>
+      <span class="k">return</span> <span class="n">environment</span><span class="o">;</span>
+  <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="1根据不同类型获取不同的environment">(1).根据不同类型获取不同的Environment</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private ConfigurableEnvironment getOrCreateEnvironment() {
+       if (this.environment != null) {
+           return this.environment;
+       }
+       switch (this.webApplicationType) {
+       case SERVLET:
+           return new StandardServletEnvironment();
+       case REACTIVE:
+           return new StandardReactiveWebEnvironment();
+       default:
+           return new StandardEnvironment();
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2-prepareenvironment触发applicationenvironmentpreparedevent事件触发configfileapplicationlistener监听">(2). prepareEnvironment触发ApplicationEnvironmentPreparedEvent事件,触发ConfigFileApplicationListener监听</h4>
+<p>EnvironmentPostProcessor，通过从众所周知的文件位置加载属性来配置上下文环境。默认情况下，
+属性将从以下位置的“application.properties”和/或“application.yml”文件加载：</p>
+<p>classpath:
+file:./
+classpath:config/
+file:./config/:</p>
+<p>可以使用setSearchLocations（String）和setSearchNames（String）指定备用搜索位置和名称。</p>
+<p>还将根据活动配置文件加载其他文件。例如，如果“web”配置文件处于活动状态，则会考虑“application-web.properties”和“application-web.yml”。</p>
+<p>&lsquo;spring.config.name&rsquo;属性可用于指定要加载的备用名称，&lsquo;spring.config.location&rsquo;属性可用于指定备用搜索位置或特定文件。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onApplicationEvent</span><span class="o">(</span><span class="n">ApplicationEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">event</span> <span class="k">instanceof</span> <span class="n">ApplicationEnvironmentPreparedEvent</span><span class="o">)</span> <span class="o">{</span>
+          <span class="c1">//触发环境配置事件
+</span><span class="c1"></span>          <span class="n">onApplicationEnvironmentPreparedEvent</span><span class="o">(</span>
+                  <span class="o">(</span><span class="n">ApplicationEnvironmentPreparedEvent</span><span class="o">)</span> <span class="n">event</span><span class="o">);</span>
+      <span class="o">}</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">event</span> <span class="k">instanceof</span> <span class="n">ApplicationPreparedEvent</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">onApplicationPreparedEvent</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
+      <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="kd">private</span> <span class="kt">void</span> <span class="nf">onApplicationEnvironmentPreparedEvent</span><span class="o">(</span>
+          <span class="n">ApplicationEnvironmentPreparedEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+      <span class="c1">//从META-INF/spring.factories查询EnvironmentPostProcessor
+</span><span class="c1"></span>      <span class="c1">//# Environment Post Processors
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.env.EnvironmentPostProcessor=\
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.cloud.CloudFoundryVcapEnvironmentPostProcessor,\
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.env.SpringApplicationJsonEnvironmentPostProcessor,\
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.env.SystemEnvironmentPropertySourceEnvironmentPostProcessor
+</span><span class="c1"></span>      <span class="n">List</span><span class="o">&lt;</span><span class="n">EnvironmentPostProcessor</span><span class="o">&gt;</span> <span class="n">postProcessors</span> <span class="o">=</span> <span class="n">loadPostProcessors</span><span class="o">();</span>
+      <span class="n">postProcessors</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+      <span class="n">AnnotationAwareOrderComparator</span><span class="o">.</span><span class="na">sort</span><span class="o">(</span><span class="n">postProcessors</span><span class="o">);</span>
+      <span class="k">for</span> <span class="o">(</span><span class="n">EnvironmentPostProcessor</span> <span class="n">postProcessor</span> <span class="o">:</span> <span class="n">postProcessors</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">postProcessor</span><span class="o">.</span><span class="na">postProcessEnvironment</span><span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">getEnvironment</span><span class="o">(),</span>
+                  <span class="n">event</span><span class="o">.</span><span class="na">getSpringApplication</span><span class="o">());</span>
+      <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="n">List</span><span class="o">&lt;</span><span class="n">EnvironmentPostProcessor</span><span class="o">&gt;</span> <span class="nf">loadPostProcessors</span><span class="o">()</span> <span class="o">{</span>
+      <span class="k">return</span> <span class="n">SpringFactoriesLoader</span><span class="o">.</span><span class="na">loadFactories</span><span class="o">(</span><span class="n">EnvironmentPostProcessor</span><span class="o">.</span><span class="na">class</span><span class="o">,</span>
+              <span class="n">getClass</span><span class="o">().</span><span class="na">getClassLoader</span><span class="o">());</span>
+  <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>
+<p>CloudFoundryVcapEnvironmentPostProcessor</p>
+<p>处理CloudFoundry.则将vcap.application.<em>, vcap.services.</em> 的配置加入到Properties中.
+接下来判断 environment中是否有commandLineArgs的Sources.如果有的话,则添加到commandLineArgs中,
+否则添加名为vcap的PropertiesPropertySource.</p>
+</li>
+<li>
+<p>SpringApplicationJsonEnvironmentPostProcessor</p>
+<p>将spring.application.json,SPRING_APPLICATION_JSON的值转化为Map保存配置中；</p>
+</li>
+<li>
+<p>SystemEnvironmentPropertySourceEnvironmentPostProcessor</p>
+<p>将systemEnvironment配置转化为SystemEnvironmentPropertySource</p>
+</li>
+<li>
+<p>ConfigFileApplicationListener实现EnvironmentPostProcessor接口，ConfigFileApplicationListener.Loader类实现</p>
+<p>获得ActiveProfiles.将未激活的Profiles加入到profiles中.如果profiles为空的话,就将spring.profiles.default配置的profile添加到profiles中.
+依次遍历profiles中的profile.依次在classpath:/,classpath:/config/,file:./,file:./config/中加载application的配置.调用ConfigFileApplicationListener$Loader#load进行加载.</p>
+</li>
+</ul>
+<h3 id="3failureanalyzers">3.FailureAnalyzers</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="n">FailureAnalyzers</span><span class="o">(</span><span class="n">ConfigurableApplicationContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">ClassLoader</span> <span class="n">classLoader</span><span class="o">)</span> <span class="o">{</span>
+       <span class="n">Assert</span><span class="o">.</span><span class="na">notNull</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="s">&#34;Context must not be null&#34;</span><span class="o">);</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">classLoader</span> <span class="o">=</span> <span class="o">(</span><span class="n">classLoader</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span> <span class="n">classLoader</span> <span class="o">:</span> <span class="n">context</span><span class="o">.</span><span class="na">getClassLoader</span><span class="o">();</span>
+       <span class="k">this</span><span class="o">.</span><span class="na">analyzers</span> <span class="o">=</span> <span class="n">loadFailureAnalyzers</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">classLoader</span><span class="o">);</span>
+       <span class="n">prepareFailureAnalyzers</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">analyzers</span><span class="o">,</span> <span class="n">context</span><span class="o">);</span>
+   <span class="o">}</span>
+
+   <span class="kd">private</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">FailureAnalyzer</span><span class="o">&gt;</span> <span class="nf">loadFailureAnalyzers</span><span class="o">(</span><span class="n">ClassLoader</span> <span class="n">classLoader</span><span class="o">)</span> <span class="o">{</span>
+      <span class="c1">//# Failure Analyzers
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.diagnostics.FailureAnalyzer=\
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.diagnostics.analyzer.BeanCurrentlyInCreationFailureAnalyzer,\处理BeanCurrentlyInCreationException异常
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.diagnostics.analyzer.BeanNotOfRequiredTypeFailureAnalyzer,\处理BeanNotOfRequiredTypeException
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.diagnostics.analyzer.BindFailureAnalyzer,\处理BindException
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.diagnostics.analyzer.BindValidationFailureAnalyzer,\处理BindValidationException
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.diagnostics.analyzer.UnboundConfigurationPropertyFailureAnalyzer,\UnboundConfigurationPropertiesException
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.diagnostics.analyzer.ConnectorStartFailureAnalyzer,\ConnectorStartFailedException
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.diagnostics.analyzer.NoSuchMethodFailureAnalyzer,\NoSuchMethodError
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.diagnostics.analyzer.NoUniqueBeanDefinitionFailureAnalyzer,\NoUniqueBeanDefinitionException
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.diagnostics.analyzer.PortInUseFailureAnalyzer,\PortInUseException
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.diagnostics.analyzer.ValidationExceptionFailureAnalyzer,\ValidationException
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.diagnostics.analyzer.InvalidConfigurationPropertyNameFailureAnalyzer,\InvalidConfigurationPropertyNameException
+</span><span class="c1"></span>      <span class="c1">//  org.springframework.boot.diagnostics.analyzer.InvalidConfigurationPropertyValueFailureAnalyzer：InvalidConfigurationPropertyValueException
+</span><span class="c1"></span>       <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">analyzerNames</span> <span class="o">=</span> <span class="n">SpringFactoriesLoader</span>
+               <span class="o">.</span><span class="na">loadFactoryNames</span><span class="o">(</span><span class="n">FailureAnalyzer</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">classLoader</span><span class="o">);</span>
+       <span class="n">List</span><span class="o">&lt;</span><span class="n">FailureAnalyzer</span><span class="o">&gt;</span> <span class="n">analyzers</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;();</span>
+       <span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="n">analyzerName</span> <span class="o">:</span> <span class="n">analyzerNames</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">try</span> <span class="o">{</span>
+               <span class="n">Constructor</span><span class="o">&lt;?&gt;</span> <span class="n">constructor</span> <span class="o">=</span> <span class="n">ClassUtils</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span><span class="n">analyzerName</span><span class="o">,</span> <span class="n">classLoader</span><span class="o">)</span>
+                       <span class="o">.</span><span class="na">getDeclaredConstructor</span><span class="o">();</span>
+               <span class="n">ReflectionUtils</span><span class="o">.</span><span class="na">makeAccessible</span><span class="o">(</span><span class="n">constructor</span><span class="o">);</span>
+               <span class="n">analyzers</span><span class="o">.</span><span class="na">add</span><span class="o">((</span><span class="n">FailureAnalyzer</span><span class="o">)</span> <span class="n">constructor</span><span class="o">.</span><span class="na">newInstance</span><span class="o">());</span>
+           <span class="o">}</span>
+           <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">logger</span><span class="o">.</span><span class="na">trace</span><span class="o">(</span><span class="s">&#34;Failed to load &#34;</span> <span class="o">+</span> <span class="n">analyzerName</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+       <span class="n">AnnotationAwareOrderComparator</span><span class="o">.</span><span class="na">sort</span><span class="o">(</span><span class="n">analyzers</span><span class="o">);</span>
+       <span class="k">return</span> <span class="n">analyzers</span><span class="o">;</span>
+   <span class="o">}</span>
+
+   <span class="kd">private</span> <span class="kt">void</span> <span class="nf">prepareFailureAnalyzers</span><span class="o">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">FailureAnalyzer</span><span class="o">&gt;</span> <span class="n">analyzers</span><span class="o">,</span>
+           <span class="n">ConfigurableApplicationContext</span> <span class="n">context</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">for</span> <span class="o">(</span><span class="n">FailureAnalyzer</span> <span class="n">analyzer</span> <span class="o">:</span> <span class="n">analyzers</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">prepareAnalyzer</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">analyzer</span><span class="o">);</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+
+   <span class="kd">private</span> <span class="kt">void</span> <span class="nf">prepareAnalyzer</span><span class="o">(</span><span class="n">ConfigurableApplicationContext</span> <span class="n">context</span><span class="o">,</span>
+           <span class="n">FailureAnalyzer</span> <span class="n">analyzer</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">analyzer</span> <span class="k">instanceof</span> <span class="n">BeanFactoryAware</span><span class="o">)</span> <span class="o">{</span>
+           <span class="o">((</span><span class="n">BeanFactoryAware</span><span class="o">)</span> <span class="n">analyzer</span><span class="o">).</span><span class="na">setBeanFactory</span><span class="o">(</span><span class="n">context</span><span class="o">.</span><span class="na">getBeanFactory</span><span class="o">());</span>
+       <span class="o">}</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">analyzer</span> <span class="k">instanceof</span> <span class="n">EnvironmentAware</span><span class="o">)</span> <span class="o">{</span>
+           <span class="o">((</span><span class="n">EnvironmentAware</span><span class="o">)</span> <span class="n">analyzer</span><span class="o">).</span><span class="na">setEnvironment</span><span class="o">(</span><span class="n">context</span><span class="o">.</span><span class="na">getEnvironment</span><span class="o">());</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><p>构造方法主要作用添加FailureAnalyzer集合，做错误分析；从META-INF/spring.factories查找FailureAnalyzer；</p>
+<h4 id="1reportexception方法">(1).reportException方法</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">reportException</span><span class="o">(</span><span class="n">Throwable</span> <span class="n">failure</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">FailureAnalysis</span> <span class="n">analysis</span> <span class="o">=</span> <span class="n">analyze</span><span class="o">(</span><span class="n">failure</span><span class="o">,</span> <span class="k">this</span><span class="o">.</span><span class="na">analyzers</span><span class="o">);</span>
+      <span class="k">return</span> <span class="n">report</span><span class="o">(</span><span class="n">analysis</span><span class="o">,</span> <span class="k">this</span><span class="o">.</span><span class="na">classLoader</span><span class="o">);</span>
+  <span class="o">}</span>
+
+  <span class="kd">private</span> <span class="n">FailureAnalysis</span> <span class="nf">analyze</span><span class="o">(</span><span class="n">Throwable</span> <span class="n">failure</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">FailureAnalyzer</span><span class="o">&gt;</span> <span class="n">analyzers</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">for</span> <span class="o">(</span><span class="n">FailureAnalyzer</span> <span class="n">analyzer</span> <span class="o">:</span> <span class="n">analyzers</span><span class="o">)</span> <span class="o">{</span>
+          <span class="k">try</span> <span class="o">{</span>
+              <span class="n">FailureAnalysis</span> <span class="n">analysis</span> <span class="o">=</span> <span class="n">analyzer</span><span class="o">.</span><span class="na">analyze</span><span class="o">(</span><span class="n">failure</span><span class="o">);</span>
+              <span class="k">if</span> <span class="o">(</span><span class="n">analysis</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                  <span class="k">return</span> <span class="n">analysis</span><span class="o">;</span>
+              <span class="o">}</span>
+          <span class="o">}</span>
+          <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+              <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;FailureAnalyzer &#34;</span> <span class="o">+</span> <span class="n">analyzer</span> <span class="o">+</span> <span class="s">&#34; failed&#34;</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+          <span class="o">}</span>
+      <span class="o">}</span>
+      <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+  <span class="o">}</span>
+
+  <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">report</span><span class="o">(</span><span class="n">FailureAnalysis</span> <span class="n">analysis</span><span class="o">,</span> <span class="n">ClassLoader</span> <span class="n">classLoader</span><span class="o">)</span> <span class="o">{</span>
+  <span class="c1">//# FailureAnalysisReporters
+</span><span class="c1"></span>  <span class="c1">//  org.springframework.boot.diagnostics.FailureAnalysisReporter=\
+</span><span class="c1"></span>  <span class="c1">//  org.springframework.boot.diagnostics.LoggingFailureAnalysisReporter
+</span><span class="c1"></span>      <span class="n">List</span><span class="o">&lt;</span><span class="n">FailureAnalysisReporter</span><span class="o">&gt;</span> <span class="n">reporters</span> <span class="o">=</span> <span class="n">SpringFactoriesLoader</span>
+              <span class="o">.</span><span class="na">loadFactories</span><span class="o">(</span><span class="n">FailureAnalysisReporter</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">classLoader</span><span class="o">);</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">analysis</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">reporters</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span> <span class="o">{</span>
+          <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+      <span class="o">}</span>
+      <span class="k">for</span> <span class="o">(</span><span class="n">FailureAnalysisReporter</span> <span class="n">reporter</span> <span class="o">:</span> <span class="n">reporters</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">reporter</span><span class="o">.</span><span class="na">report</span><span class="o">(</span><span class="n">analysis</span><span class="o">);</span>
+      <span class="o">}</span>
+      <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+  <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>分析异常处理，上报FailureAnalysisReporter，进行相应处理，这里默认LoggingFailureAnalysisReporter，上报日志输出；</p>
+<h3 id="4preparecontext">4.prepareContext</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="kd">private</span> <span class="kt">void</span> <span class="nf">prepareContext</span><span class="o">(</span><span class="n">ConfigurableApplicationContext</span> <span class="n">context</span><span class="o">,</span>
+           <span class="n">ConfigurableEnvironment</span> <span class="n">environment</span><span class="o">,</span> <span class="n">SpringApplicationRunListeners</span> <span class="n">listeners</span><span class="o">,</span>
+           <span class="n">ApplicationArguments</span> <span class="n">applicationArguments</span><span class="o">,</span> <span class="n">Banner</span> <span class="n">printedBanner</span><span class="o">)</span> <span class="o">{</span>
+       <span class="c1">// 1. 上下文设置配置环境
+</span><span class="c1"></span>       <span class="n">context</span><span class="o">.</span><span class="na">setEnvironment</span><span class="o">(</span><span class="n">environment</span><span class="o">);</span>
+       <span class="c1">//2. 调用postProcessApplicationContext方法设置上下文的beanNameGenerator和resourceLoader(如果SpringApplication有的话)
+</span><span class="c1"></span>       <span class="n">postProcessApplicationContext</span><span class="o">(</span><span class="n">context</span><span class="o">);</span>
+       <span class="c1">//3. SpringApplication构造时候设置的ApplicationContextInitializer，调用它们的initialize方法，对上下文做初始化
+</span><span class="c1"></span>       <span class="n">applyInitializers</span><span class="o">(</span><span class="n">context</span><span class="o">);</span>
+       <span class="c1">//4. 触发contextPrepareds事件
+</span><span class="c1"></span>       <span class="n">listeners</span><span class="o">.</span><span class="na">contextPrepared</span><span class="o">(</span><span class="n">context</span><span class="o">);</span>
+       <span class="c1">//5. 打印启动日志
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">logStartupInfo</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">logStartupInfo</span><span class="o">(</span><span class="n">context</span><span class="o">.</span><span class="na">getParent</span><span class="o">()</span> <span class="o">==</span> <span class="kc">null</span><span class="o">);</span>
+           <span class="n">logStartupProfileInfo</span><span class="o">(</span><span class="n">context</span><span class="o">);</span>
+       <span class="o">}</span>
+
+       <span class="c1">// Add boot specific singleton beans
+</span><span class="c1"></span>       <span class="c1">//6. bean的名字是springApplicationArguments，bean的实例是之前实例化的ApplicationArguments对象
+</span><span class="c1"></span>       <span class="n">context</span><span class="o">.</span><span class="na">getBeanFactory</span><span class="o">().</span><span class="na">registerSingleton</span><span class="o">(</span><span class="s">&#34;springApplicationArguments&#34;</span><span class="o">,</span>
+               <span class="n">applicationArguments</span><span class="o">);</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">printedBanner</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="c1">//7. bean的名字是springBootBanner，bean的实例是之前实例化的printedBanner对象
+</span><span class="c1"></span>           <span class="n">context</span><span class="o">.</span><span class="na">getBeanFactory</span><span class="o">().</span><span class="na">registerSingleton</span><span class="o">(</span><span class="s">&#34;springBootBanner&#34;</span><span class="o">,</span> <span class="n">printedBanner</span><span class="o">);</span>
+       <span class="o">}</span>
+
+       <span class="c1">// Load the sources
+</span><span class="c1"></span>       <span class="c1">// 启动类调用SpringApplication.run(Application.class, args)，run第一个参数；
+</span><span class="c1"></span>       <span class="n">Set</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">sources</span> <span class="o">=</span> <span class="n">getAllSources</span><span class="o">();</span>
+       <span class="n">Assert</span><span class="o">.</span><span class="na">notEmpty</span><span class="o">(</span><span class="n">sources</span><span class="o">,</span> <span class="s">&#34;Sources must not be empty&#34;</span><span class="o">);</span>
+       <span class="c1">// 8. SpringApplication的load方法内会创建BeanDefinitionLoader的对象，并调用它的load()方法
+</span><span class="c1"></span>       <span class="n">load</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">sources</span><span class="o">.</span><span class="na">toArray</span><span class="o">(</span><span class="k">new</span> <span class="n">Object</span><span class="o">[</span><span class="n">0</span><span class="o">]));</span>
+       <span class="c1">// 9. 触发contextLoaded事件； 调用listeners的contextLoaded方法，说明上下文已经加载，
+</span><span class="c1"></span>       <span class="c1">// 该方法先找到所有的ApplicationListener，遍历这些listener，如果该listener继承了ApplicationContextAware类，
+</span><span class="c1"></span>       <span class="c1">// 那么在这一步会调用它的setApplicationContext方法，设置context
+</span><span class="c1"></span>       <span class="n">listeners</span><span class="o">.</span><span class="na">contextLoaded</span><span class="o">(</span><span class="n">context</span><span class="o">);</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="1beandefinitionloader">(1).BeanDefinitionLoader</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   
+  <span class="n">BeanDefinitionLoader</span><span class="o">(</span><span class="n">BeanDefinitionRegistry</span> <span class="n">registry</span><span class="o">,</span> <span class="n">Object</span><span class="o">...</span> <span class="n">sources</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">Assert</span><span class="o">.</span><span class="na">notNull</span><span class="o">(</span><span class="n">registry</span><span class="o">,</span> <span class="s">&#34;Registry must not be null&#34;</span><span class="o">);</span>
+      <span class="n">Assert</span><span class="o">.</span><span class="na">notEmpty</span><span class="o">(</span><span class="n">sources</span><span class="o">,</span> <span class="s">&#34;Sources must not be empty&#34;</span><span class="o">);</span>
+      <span class="k">this</span><span class="o">.</span><span class="na">sources</span> <span class="o">=</span> <span class="n">sources</span><span class="o">;</span>
+      <span class="c1">//创建一个读取注解的Bean定义读取器，并将其设置到容器中 
+</span><span class="c1"></span>      <span class="k">this</span><span class="o">.</span><span class="na">annotatedReader</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AnnotatedBeanDefinitionReader</span><span class="o">(</span><span class="n">registry</span><span class="o">);</span>
+      <span class="c1">//解析xml配置
+</span><span class="c1"></span>      <span class="k">this</span><span class="o">.</span><span class="na">xmlReader</span> <span class="o">=</span> <span class="k">new</span> <span class="n">XmlBeanDefinitionReader</span><span class="o">(</span><span class="n">registry</span><span class="o">);</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">isGroovyPresent</span><span class="o">())</span> <span class="o">{</span>
+          <span class="k">this</span><span class="o">.</span><span class="na">groovyReader</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GroovyBeanDefinitionReader</span><span class="o">(</span><span class="n">registry</span><span class="o">);</span>
+      <span class="o">}</span>
+      <span class="c1">//创建一个扫描指定类路径中注解Bean定义的扫描器，并将其设置到容器中  
+</span><span class="c1"></span>      <span class="k">this</span><span class="o">.</span><span class="na">scanner</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClassPathBeanDefinitionScanner</span><span class="o">(</span><span class="n">registry</span><span class="o">);</span>
+      <span class="c1">//添加排除过滤器类
+</span><span class="c1"></span>      <span class="k">this</span><span class="o">.</span><span class="na">scanner</span><span class="o">.</span><span class="na">addExcludeFilter</span><span class="o">(</span><span class="k">new</span> <span class="n">ClassExcludeFilter</span><span class="o">(</span><span class="n">sources</span><span class="o">));</span>
+  
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2beandefinitionloaderload">(2).BeanDefinitionLoader.load</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">int</span> <span class="nf">load</span><span class="o">()</span> <span class="o">{</span>
+       <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+       <span class="k">for</span> <span class="o">(</span><span class="n">Object</span> <span class="n">source</span> <span class="o">:</span> <span class="k">this</span><span class="o">.</span><span class="na">sources</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">count</span> <span class="o">+=</span> <span class="n">load</span><span class="o">(</span><span class="n">source</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="k">return</span> <span class="n">count</span><span class="o">;</span>
+   <span class="o">}</span>
+
+   <span class="kd">private</span> <span class="kt">int</span> <span class="nf">load</span><span class="o">(</span><span class="n">Object</span> <span class="n">source</span><span class="o">)</span> <span class="o">{</span>
+       <span class="n">Assert</span><span class="o">.</span><span class="na">notNull</span><span class="o">(</span><span class="n">source</span><span class="o">,</span> <span class="s">&#34;Source must not be null&#34;</span><span class="o">);</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">source</span> <span class="k">instanceof</span> <span class="n">Class</span><span class="o">&lt;?&gt;)</span> <span class="o">{</span>
+           <span class="k">return</span> <span class="n">load</span><span class="o">((</span><span class="n">Class</span><span class="o">&lt;?&gt;)</span> <span class="n">source</span><span class="o">);</span><span class="c1">//AnnotatedBeanDefinitionReader
+</span><span class="c1"></span>       <span class="o">}</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">source</span> <span class="k">instanceof</span> <span class="n">Resource</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">return</span> <span class="n">load</span><span class="o">((</span><span class="n">Resource</span><span class="o">)</span> <span class="n">source</span><span class="o">);</span><span class="c1">//XmlBeanDefinitionReader
+</span><span class="c1"></span>       <span class="o">}</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">source</span> <span class="k">instanceof</span> <span class="n">Package</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">return</span> <span class="n">load</span><span class="o">((</span><span class="n">Package</span><span class="o">)</span> <span class="n">source</span><span class="o">);</span><span class="c1">//ClassPathBeanDefinitionScanner
+</span><span class="c1"></span>       <span class="o">}</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">source</span> <span class="k">instanceof</span> <span class="n">CharSequence</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">return</span> <span class="n">load</span><span class="o">((</span><span class="n">CharSequence</span><span class="o">)</span> <span class="n">source</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span><span class="s">&#34;Invalid source type &#34;</span> <span class="o">+</span> <span class="n">source</span><span class="o">.</span><span class="na">getClass</span><span class="o">());</span>
+   <span class="o">}</span>
+
+   <span class="kd">private</span> <span class="kt">int</span> <span class="nf">load</span><span class="o">(</span><span class="n">Class</span><span class="o">&lt;?&gt;</span> <span class="n">source</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">isGroovyPresent</span><span class="o">()</span>
+               <span class="o">&amp;&amp;</span> <span class="n">GroovyBeanDefinitionSource</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">isAssignableFrom</span><span class="o">(</span><span class="n">source</span><span class="o">))</span> <span class="o">{</span>
+           <span class="c1">// Any GroovyLoaders added in beans{} DSL can contribute beans here
+</span><span class="c1"></span>           <span class="n">GroovyBeanDefinitionSource</span> <span class="n">loader</span> <span class="o">=</span> <span class="n">BeanUtils</span><span class="o">.</span><span class="na">instantiateClass</span><span class="o">(</span><span class="n">source</span><span class="o">,</span>
+                   <span class="n">GroovyBeanDefinitionSource</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+           <span class="n">load</span><span class="o">(</span><span class="n">loader</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">isComponent</span><span class="o">(</span><span class="n">source</span><span class="o">))</span> <span class="o">{</span>
+           <span class="c1">//调用AnnotatedBeanDefinitionReader
+</span><span class="c1"></span>           <span class="k">this</span><span class="o">.</span><span class="na">annotatedReader</span><span class="o">.</span><span class="na">register</span><span class="o">(</span><span class="n">source</span><span class="o">);</span>
+           <span class="k">return</span> <span class="n">1</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="k">return</span> <span class="n">0</span><span class="o">;</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="四annotatedbeandefinitionreader-解说">四、AnnotatedBeanDefinitionReader 解说</h2>
+<h3 id="1构造">1.构造</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry, Environment environment) {
+      Assert.notNull(registry, &#34;BeanDefinitionRegistry must not be null&#34;);
+      Assert.notNull(environment, &#34;Environment must not be null&#34;);
+      this.registry = registry;
+      this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
+      AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
+  }  
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="1annotationconfigutilsregisterannotationconfigprocessorsthisregistry">(1).AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);</h4>
+<p>注册注解相应的processors</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">/**
+    * Register all relevant annotation post processors in the given registry.
+    * @param registry the registry to operate on
+    * @param source the configuration source element (already extracted)
+    * that this registration was triggered from. May be {@code null}.
+    * @return a Set of BeanDefinitionHolders, containing all bean definitions
+    * that have actually been registered by this call
+    */
+   public static Set&lt;BeanDefinitionHolder&gt; registerAnnotationConfigProcessors(
+           BeanDefinitionRegistry registry, @Nullable Object source) {
+
+       DefaultListableBeanFactory beanFactory = unwrapDefaultListableBeanFactory(registry);
+       if (beanFactory != null) {
+           //注解排序
+           if (!(beanFactory.getDependencyComparator() instanceof AnnotationAwareOrderComparator)) {
+               beanFactory.setDependencyComparator(AnnotationAwareOrderComparator.INSTANCE);
+           }
+           if (!(beanFactory.getAutowireCandidateResolver() instanceof ContextAnnotationAutowireCandidateResolver)) {
+               beanFactory.setAutowireCandidateResolver(new ContextAnnotationAutowireCandidateResolver());
+           }
+       }
+
+       Set&lt;BeanDefinitionHolder&gt; beanDefs = new LinkedHashSet&lt;&gt;(8);
+       //@Configuration @Bean解析，这个是注解BeanDefinitionRegistryPostProcessor的核心
+       if (!registry.containsBeanDefinition(CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+           RootBeanDefinition def = new RootBeanDefinition(ConfigurationClassPostProcessor.class);
+           def.setSource(source);
+           beanDefs.add(registerPostProcessor(registry, def, CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME));
+       }
+       // 处理@Autowired，以及javax.inject.Inject
+       if (!registry.containsBeanDefinition(AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+           RootBeanDefinition def = new RootBeanDefinition(AutowiredAnnotationBeanPostProcessor.class);
+           def.setSource(source);
+           beanDefs.add(registerPostProcessor(registry, def, AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME));
+       }
+       //处理@Required
+       if (!registry.containsBeanDefinition(REQUIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+           RootBeanDefinition def = new RootBeanDefinition(RequiredAnnotationBeanPostProcessor.class);
+           def.setSource(source);
+           beanDefs.add(registerPostProcessor(registry, def, REQUIRED_ANNOTATION_PROCESSOR_BEAN_NAME));
+       }
+       //JSR-250 支持@PostConstruct，@PreDestroy已经Resource注解
+       // Check for JSR-250 support, and if present add the CommonAnnotationBeanPostProcessor.
+       if (jsr250Present &amp;&amp; !registry.containsBeanDefinition(COMMON_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+           RootBeanDefinition def = new RootBeanDefinition(CommonAnnotationBeanPostProcessor.class);
+           def.setSource(source);
+           beanDefs.add(registerPostProcessor(registry, def, COMMON_ANNOTATION_PROCESSOR_BEAN_NAME));
+       }
+        //JPA支持
+       // Check for JPA support, and if present add the PersistenceAnnotationBeanPostProcessor.
+       if (jpaPresent &amp;&amp; !registry.containsBeanDefinition(PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+           RootBeanDefinition def = new RootBeanDefinition();
+           try {
+               def.setBeanClass(ClassUtils.forName(PERSISTENCE_ANNOTATION_PROCESSOR_CLASS_NAME,
+                       AnnotationConfigUtils.class.getClassLoader()));
+           }
+           catch (ClassNotFoundException ex) {
+               throw new IllegalStateException(
+                       &#34;Cannot load optional framework class: &#34; + PERSISTENCE_ANNOTATION_PROCESSOR_CLASS_NAME, ex);
+           }
+           def.setSource(source);
+           beanDefs.add(registerPostProcessor(registry, def, PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME));
+       }
+       //@EventListener注解支持
+       if (!registry.containsBeanDefinition(EVENT_LISTENER_PROCESSOR_BEAN_NAME)) {
+           RootBeanDefinition def = new RootBeanDefinition(EventListenerMethodProcessor.class);
+           def.setSource(source);
+           beanDefs.add(registerPostProcessor(registry, def, EVENT_LISTENER_PROCESSOR_BEAN_NAME));
+       }
+       //创建DefaultEventListenerFactory，创建ApplicationListenerMethodAdapter
+       if (!registry.containsBeanDefinition(EVENT_LISTENER_FACTORY_BEAN_NAME)) {
+           RootBeanDefinition def = new RootBeanDefinition(DefaultEventListenerFactory.class);
+           def.setSource(source);
+           beanDefs.add(registerPostProcessor(registry, def, EVENT_LISTENER_FACTORY_BEAN_NAME));
+       }
+
+       return beanDefs;
+   }
+
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="五configurationclasspostprocessor-解说">五、ConfigurationClassPostProcessor 解说</h2>
+<p>ConfigurationClassPostProcessor实现BeanDefinitionRegistryPostProcessor已经BeanFactoryPostProcessor接口，先触发postProcessBeanDefinitionRegistry，再触发postProcessBeanFactory</p>
+<h3 id="1postprocessbeandefinitionregistry">1.postProcessBeanDefinitionRegistry</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   @Override
+   public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
+       int registryId = System.identityHashCode(registry);
+       if (this.registriesPostProcessed.contains(registryId)) {
+           throw new IllegalStateException(
+                   &#34;postProcessBeanDefinitionRegistry already called on this post-processor against &#34; + registry);
+       }
+       if (this.factoriesPostProcessed.contains(registryId)) {
+           throw new IllegalStateException(
+                   &#34;postProcessBeanFactory already called on this post-processor against &#34; + registry);
+       }
+       this.registriesPostProcessed.add(registryId);
+
+       processConfigBeanDefinitions(registry);
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="1processconfigbeandefinitions-贯穿所有核心">(1).processConfigBeanDefinitions 贯穿所有核心</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  /**
+   * Build and validate a configuration model based on the registry of
+   * {@link Configuration} classes.
+   */
+  public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
+      List&lt;BeanDefinitionHolder&gt; configCandidates = new ArrayList&lt;&gt;();
+      String[] candidateNames = registry.getBeanDefinitionNames();
+      //1.第一次只有@SpringBootApplication注解main类
+      for (String beanName : candidateNames) {
+          BeanDefinition beanDef = registry.getBeanDefinition(beanName);
+          if (ConfigurationClassUtils.isFullConfigurationClass(beanDef) ||
+                  ConfigurationClassUtils.isLiteConfigurationClass(beanDef)) {
+              if (logger.isDebugEnabled()) {
+                  logger.debug(&#34;Bean definition has already been processed as a configuration class: &#34; + beanDef);
+              }
+          }
+          //注解判断，分两类：
+          // 1.Configuration  设置属性configurationClass -&gt; full
+          // 2.Component,ComponentScan,Import,ImportResource,Bean 设置属性configurationClass -&gt; lite
+          else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
+              configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
+          }
+      }
+
+      // Return immediately if no @Configuration classes were found
+      if (configCandidates.isEmpty()) {
+          return;
+      }
+
+      // Sort by previously determined @Order value, if applicable
+      configCandidates.sort((bd1, bd2) -&gt; {
+          int i1 = ConfigurationClassUtils.getOrder(bd1.getBeanDefinition());
+          int i2 = ConfigurationClassUtils.getOrder(bd2.getBeanDefinition());
+          return Integer.compare(i1, i2);
+      });
+
+      // Detect any custom bean name generation strategy supplied through the enclosing application context
+      SingletonBeanRegistry sbr = null;
+      if (registry instanceof SingletonBeanRegistry) {
+          sbr = (SingletonBeanRegistry) registry;
+          if (!this.localBeanNameGeneratorSet) {
+              BeanNameGenerator generator = (BeanNameGenerator) sbr.getSingleton(CONFIGURATION_BEAN_NAME_GENERATOR);
+              if (generator != null) {
+                  this.componentScanBeanNameGenerator = generator;
+                  this.importBeanNameGenerator = generator;
+              }
+          }
+      }
+
+      if (this.environment == null) {
+          this.environment = new StandardEnvironment();
+      }
+
+      // Parse each @Configuration class
+     //到ConfigurationClassParser.parse 核心解析注解
+      ConfigurationClassParser parser = new ConfigurationClassParser(
+              this.metadataReaderFactory, this.problemReporter, this.environment,
+              this.resourceLoader, this.componentScanBeanNameGenerator, registry);
+
+      Set&lt;BeanDefinitionHolder&gt; candidates = new LinkedHashSet&lt;&gt;(configCandidates);
+      Set&lt;ConfigurationClass&gt; alreadyParsed = new HashSet&lt;&gt;(configCandidates.size());
+      do {
+          parser.parse(candidates);
+          parser.validate();
+
+          Set&lt;ConfigurationClass&gt; configClasses = new LinkedHashSet&lt;&gt;(parser.getConfigurationClasses());
+          configClasses.removeAll(alreadyParsed);
+
+          // Read the model and create bean definitions based on its content
+          if (this.reader == null) {
+              this.reader = new ConfigurationClassBeanDefinitionReader(
+                      registry, this.sourceExtractor, this.resourceLoader, this.environment,
+                      this.importBeanNameGenerator, parser.getImportRegistry());
+          }
+          this.reader.loadBeanDefinitions(configClasses);
+          alreadyParsed.addAll(configClasses);
+
+          candidates.clear();
+          if (registry.getBeanDefinitionCount() &gt; candidateNames.length) {
+              String[] newCandidateNames = registry.getBeanDefinitionNames();
+              Set&lt;String&gt; oldCandidateNames = new HashSet&lt;&gt;(Arrays.asList(candidateNames));
+              Set&lt;String&gt; alreadyParsedClasses = new HashSet&lt;&gt;();
+              for (ConfigurationClass configurationClass : alreadyParsed) {
+                  alreadyParsedClasses.add(configurationClass.getMetadata().getClassName());
+              }
+              for (String candidateName : newCandidateNames) {
+                  if (!oldCandidateNames.contains(candidateName)) {
+                      BeanDefinition bd = registry.getBeanDefinition(candidateName);
+                      if (ConfigurationClassUtils.checkConfigurationClassCandidate(bd, this.metadataReaderFactory) &amp;&amp;
+                              !alreadyParsedClasses.contains(bd.getBeanClassName())) {
+                          candidates.add(new BeanDefinitionHolder(bd, candidateName));
+                      }
+                  }
+              }
+              candidateNames = newCandidateNames;
+          }
+      }
+      while (!candidates.isEmpty());
+
+      // Register the ImportRegistry as a bean in order to support ImportAware @Configuration classes
+      if (sbr != null &amp;&amp; !sbr.containsSingleton(IMPORT_REGISTRY_BEAN_NAME)) {
+          sbr.registerSingleton(IMPORT_REGISTRY_BEAN_NAME, parser.getImportRegistry());
+      }
+
+      if (this.metadataReaderFactory instanceof CachingMetadataReaderFactory) {
+          // Clear cache in externally provided MetadataReaderFactory; this is a no-op
+          // for a shared cache since it&#39;ll be cleared by the ApplicationContext.
+          ((CachingMetadataReaderFactory) this.metadataReaderFactory).clearCache();
+      }
+  }  
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2configurationclassparser-解说">2.ConfigurationClassParser 解说</h3>
+<h4 id="1parse">(1).parse</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public void parse(Set&lt;BeanDefinitionHolder&gt; configCandidates) {
+       this.deferredImportSelectors = new LinkedList&lt;&gt;();
+
+       for (BeanDefinitionHolder holder : configCandidates) {
+           BeanDefinition bd = holder.getBeanDefinition();
+           try {
+               if (bd instanceof AnnotatedBeanDefinition) {
+                   parse(((AnnotatedBeanDefinition) bd).getMetadata(), holder.getBeanName());
+               }
+               else if (bd instanceof AbstractBeanDefinition &amp;&amp; ((AbstractBeanDefinition) bd).hasBeanClass()) {
+                   parse(((AbstractBeanDefinition) bd).getBeanClass(), holder.getBeanName());
+               }
+               else {
+                   parse(bd.getBeanClassName(), holder.getBeanName());
+               }
+           }
+           catch (BeanDefinitionStoreException ex) {
+               throw ex;
+           }
+           catch (Throwable ex) {
+               throw new BeanDefinitionStoreException(
+                       &#34;Failed to parse configuration class [&#34; + bd.getBeanClassName() + &#34;]&#34;, ex);
+           }
+       }
+
+       processDeferredImportSelectors();
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="aprocessconfigurationclass">a.processConfigurationClass</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">protected void processConfigurationClass(ConfigurationClass configClass) throws IOException {
+      //@condition 注解处理
+       if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
+           return;
+       }
+
+       ConfigurationClass existingClass = this.configurationClasses.get(configClass);
+       if (existingClass != null) {
+           if (configClass.isImported()) {
+               if (existingClass.isImported()) {
+                   existingClass.mergeImportedBy(configClass);
+               }
+               // Otherwise ignore new imported config class; existing non-imported class overrides it.
+               return;
+           }
+           else {
+               // Explicit bean definition found, probably replacing an import.
+               // Let&#39;s remove the old one and go with the new one.
+               this.configurationClasses.remove(configClass);
+               this.knownSuperclasses.values().removeIf(configClass::equals);
+           }
+       }
+
+       // Recursively process the configuration class and its superclass hierarchy.
+       SourceClass sourceClass = asSourceClass(configClass);
+       do {
+           sourceClass = doProcessConfigurationClass(configClass, sourceClass);
+       }
+       while (sourceClass != null);
+
+       this.configurationClasses.put(configClass, configClass);
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="bdoprocessconfigurationclass">b.doProcessConfigurationClass</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span><span class="lnt">93
+</span><span class="lnt">94
+</span><span class="lnt">95
+</span><span class="lnt">96
+</span><span class="lnt">97
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   /**
+    * Apply processing and build a complete {@link ConfigurationClass} by reading the
+    * annotations, members and methods from the source class. This method can be called
+    * multiple times as relevant sources are discovered.
+    * @param configClass the configuration class being build
+    * @param sourceClass a source class
+    * @return the superclass, or {@code null} if none found or previously processed
+    */
+   @Nullable
+   protected final SourceClass doProcessConfigurationClass(ConfigurationClass configClass, SourceClass sourceClass)
+           throws IOException {
+
+       // Recursively process any member (nested) classes first
+       //处理内部类
+       processMemberClasses(configClass, sourceClass);
+
+       // Process any @PropertySource annotations
+       //处理@PropertySource
+       for (AnnotationAttributes propertySource : AnnotationConfigUtils.attributesForRepeatable(
+               sourceClass.getMetadata(), PropertySources.class,
+               org.springframework.context.annotation.PropertySource.class)) {
+           if (this.environment instanceof ConfigurableEnvironment) {
+               processPropertySource(propertySource);
+           }
+           else {
+               logger.warn(&#34;Ignoring @PropertySource annotation on [&#34; + sourceClass.getMetadata().getClassName() +
+                       &#34;]. Reason: Environment must implement ConfigurableEnvironment&#34;);
+           }
+       }
+
+       // Process any @ComponentScan annotations
+       // 处理@ComponentScan ===&gt; ComponentScanAnnotationParser.parse
+       Set&lt;AnnotationAttributes&gt; componentScans = AnnotationConfigUtils.attributesForRepeatable(
+               sourceClass.getMetadata(), ComponentScans.class, ComponentScan.class);
+       // conditionEvaluator进行@condition
+       if (!componentScans.isEmpty() &amp;&amp;
+               !this.conditionEvaluator.shouldSkip(sourceClass.getMetadata(), ConfigurationPhase.REGISTER_BEAN)) {
+           for (AnnotationAttributes componentScan : componentScans) {
+               // The config class is annotated with @ComponentScan -&gt; perform the scan immediately
+               Set&lt;BeanDefinitionHolder&gt; scannedBeanDefinitions =
+                       this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
+               // Check the set of scanned definitions for any further config classes and parse recursively if needed
+               for (BeanDefinitionHolder holder : scannedBeanDefinitions) {
+                   BeanDefinition bdCand = holder.getBeanDefinition().getOriginatingBeanDefinition();
+                   if (bdCand == null) {
+                       bdCand = holder.getBeanDefinition();
+                   }
+                   if (ConfigurationClassUtils.checkConfigurationClassCandidate(bdCand, this.metadataReaderFactory)) {
+                       parse(bdCand.getBeanClassName(), holder.getBeanName());
+                   }
+               }
+           }
+       }
+
+       // Process any @Import annotations
+       // @Import 处理 
+       //getImports(sourceClass) 收集@Import注解的处理的Class
+       processImports(configClass, sourceClass, getImports(sourceClass), true);
+
+       // Process any @ImportResource annotations
+       // @ImportResource，处理XML
+       AnnotationAttributes importResource =
+               AnnotationConfigUtils.attributesFor(sourceClass.getMetadata(), ImportResource.class);
+       if (importResource != null) {
+           String[] resources = importResource.getStringArray(&#34;locations&#34;);
+           Class&lt;? extends BeanDefinitionReader&gt; readerClass = importResource.getClass(&#34;reader&#34;);
+           for (String resource : resources) {
+               String resolvedResource = this.environment.resolveRequiredPlaceholders(resource);
+               configClass.addImportedResource(resolvedResource, readerClass);
+           }
+       }
+
+       // Process individual @Bean methods
+       // @Bean methods
+       Set&lt;MethodMetadata&gt; beanMethods = retrieveBeanMethodMetadata(sourceClass);
+       for (MethodMetadata methodMetadata : beanMethods) {
+           configClass.addBeanMethod(new BeanMethod(methodMetadata, configClass));
+       }
+
+       // Process default methods on interfaces
+       processInterfaces(configClass, sourceClass);
+
+       // Process superclass, if any
+       //处理父类
+       if (sourceClass.getMetadata().hasSuperClass()) {
+           String superclass = sourceClass.getMetadata().getSuperClassName();
+           if (superclass != null &amp;&amp; !superclass.startsWith(&#34;java&#34;) &amp;&amp;
+                   !this.knownSuperclasses.containsKey(superclass)) {
+               this.knownSuperclasses.put(superclass, configClass);
+               // Superclass found, return its annotation metadata and recurse
+               return sourceClass.getSuperClass();
+           }
+       }
+
+       // No superclass -&gt; processing is complete
+       return null;
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="ccomponentscanannotationparserparseclasspathbeandefinitionscannerdoscan">c.ComponentScanAnnotationParser.parse==&gt;ClassPathBeanDefinitionScanner.doScan</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">public Set&lt;BeanDefinitionHolder&gt; parse(AnnotationAttributes componentScan, final String declaringClass) {
+       ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(this.registry,
+               componentScan.getBoolean(&#34;useDefaultFilters&#34;), this.environment, this.resourceLoader);
+
+       Class&lt;? extends BeanNameGenerator&gt; generatorClass = componentScan.getClass(&#34;nameGenerator&#34;);
+       boolean useInheritedGenerator = (BeanNameGenerator.class == generatorClass);
+       scanner.setBeanNameGenerator(useInheritedGenerator ? this.beanNameGenerator :
+               BeanUtils.instantiateClass(generatorClass));
+
+       ScopedProxyMode scopedProxyMode = componentScan.getEnum(&#34;scopedProxy&#34;);
+       if (scopedProxyMode != ScopedProxyMode.DEFAULT) {
+           scanner.setScopedProxyMode(scopedProxyMode);
+       }
+       else {
+           Class&lt;? extends ScopeMetadataResolver&gt; resolverClass = componentScan.getClass(&#34;scopeResolver&#34;);
+           scanner.setScopeMetadataResolver(BeanUtils.instantiateClass(resolverClass));
+       }
+
+       scanner.setResourcePattern(componentScan.getString(&#34;resourcePattern&#34;));
+
+       for (AnnotationAttributes filter : componentScan.getAnnotationArray(&#34;includeFilters&#34;)) {
+           for (TypeFilter typeFilter : typeFiltersFor(filter)) {
+               scanner.addIncludeFilter(typeFilter);
+           }
+       }
+       for (AnnotationAttributes filter : componentScan.getAnnotationArray(&#34;excludeFilters&#34;)) {
+           for (TypeFilter typeFilter : typeFiltersFor(filter)) {
+               scanner.addExcludeFilter(typeFilter);
+           }
+       }
+
+       boolean lazyInit = componentScan.getBoolean(&#34;lazyInit&#34;);
+       if (lazyInit) {
+           scanner.getBeanDefinitionDefaults().setLazyInit(true);
+       }
+
+       Set&lt;String&gt; basePackages = new LinkedHashSet&lt;&gt;();
+       String[] basePackagesArray = componentScan.getStringArray(&#34;basePackages&#34;);
+       for (String pkg : basePackagesArray) {
+           String[] tokenized = StringUtils.tokenizeToStringArray(this.environment.resolvePlaceholders(pkg),
+                   ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
+           Collections.addAll(basePackages, tokenized);
+       }
+       for (Class&lt;?&gt; clazz : componentScan.getClassArray(&#34;basePackageClasses&#34;)) {
+           basePackages.add(ClassUtils.getPackageName(clazz));
+       }
+       if (basePackages.isEmpty()) {
+           basePackages.add(ClassUtils.getPackageName(declaringClass));
+       }
+
+       scanner.addExcludeFilter(new AbstractTypeHierarchyTraversingFilter(false, false) {
+           @Override
+           protected boolean matchClassName(String className) {
+               return declaringClass.equals(className);
+           }
+       });
+       return scanner.doScan(StringUtils.toStringArray(basePackages));
+   }
+
+
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="dprocessimports">d.processImports</h5>
+<pre><code>转化为对象，分两类，ImportSelector和ImportBeanDefinitionRegistrar
+</code></pre>
+<ul>
+<li>ImportSelector 为DeferredImportSelector添加到deferredImportSelectors缓存中</li>
+<li>ImportBeanDefinitionRegistrar 添加到ConfigurationClass缓存中</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private void processImports(ConfigurationClass configClass, SourceClass currentSourceClass,
+           Collection&lt;SourceClass&gt; importCandidates, boolean checkForCircularImports) {
+
+       if (importCandidates.isEmpty()) {
+           return;
+       }
+
+       if (checkForCircularImports &amp;&amp; isChainedImportOnStack(configClass)) {
+           this.problemReporter.error(new CircularImportProblem(configClass, this.importStack));
+       }
+       else {
+           this.importStack.push(configClass);
+           try {
+               for (SourceClass candidate : importCandidates) {
+                   if (candidate.isAssignable(ImportSelector.class)) {
+                       // Candidate class is an ImportSelector -&gt; delegate to it to determine imports
+                       Class&lt;?&gt; candidateClass = candidate.loadClass();
+                       ImportSelector selector = BeanUtils.instantiateClass(candidateClass, ImportSelector.class);
+                       ParserStrategyUtils.invokeAwareMethods(
+                               selector, this.environment, this.resourceLoader, this.registry);
+                       if (this.deferredImportSelectors != null &amp;&amp; selector instanceof DeferredImportSelector) {
+                           this.deferredImportSelectors.add(
+                                   new DeferredImportSelectorHolder(configClass, (DeferredImportSelector) selector));
+                       }
+                       else {
+                           String[] importClassNames = selector.selectImports(currentSourceClass.getMetadata());
+                           Collection&lt;SourceClass&gt; importSourceClasses = asSourceClasses(importClassNames);
+                           processImports(configClass, currentSourceClass, importSourceClasses, false);
+                       }
+                   }
+                   else if (candidate.isAssignable(ImportBeanDefinitionRegistrar.class)) {
+                       // Candidate class is an ImportBeanDefinitionRegistrar -&gt;
+                       // delegate to it to register additional bean definitions
+                       Class&lt;?&gt; candidateClass = candidate.loadClass();
+                       ImportBeanDefinitionRegistrar registrar =
+                               BeanUtils.instantiateClass(candidateClass, ImportBeanDefinitionRegistrar.class);
+                       ParserStrategyUtils.invokeAwareMethods(
+                               registrar, this.environment, this.resourceLoader, this.registry);
+                       configClass.addImportBeanDefinitionRegistrar(registrar, currentSourceClass.getMetadata());
+                   }
+                   else {
+                       // Candidate class not an ImportSelector or ImportBeanDefinitionRegistrar -&gt;
+                       // process it as an @Configuration class
+                       this.importStack.registerImport(
+                               currentSourceClass.getMetadata(), candidate.getMetadata().getClassName());
+                       processConfigurationClass(candidate.asConfigClass(configClass));
+                   }
+               }
+           }
+           catch (BeanDefinitionStoreException ex) {
+               throw ex;
+           }
+           catch (Throwable ex) {
+               throw new BeanDefinitionStoreException(
+                       &#34;Failed to process import candidates for configuration class [&#34; +
+                       configClass.getMetadata().getClassName() + &#34;]&#34;, ex);
+           }
+           finally {
+               this.importStack.pop();
+           }
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2processdeferredimportselectors">(2).processDeferredImportSelectors</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private void processDeferredImportSelectors() {
+       List&lt;DeferredImportSelectorHolder&gt; deferredImports = this.deferredImportSelectors;
+       this.deferredImportSelectors = null;
+       if (deferredImports == null) {
+           return;
+       }
+
+       deferredImports.sort(DEFERRED_IMPORT_COMPARATOR);
+       Map&lt;Object, DeferredImportSelectorGrouping&gt; groupings = new LinkedHashMap&lt;&gt;();
+       Map&lt;AnnotationMetadata, ConfigurationClass&gt; configurationClasses = new HashMap&lt;&gt;();
+       for (DeferredImportSelectorHolder deferredImport : deferredImports) {
+           Class&lt;? extends Group&gt; group = deferredImport.getImportSelector().getImportGroup();
+           DeferredImportSelectorGrouping grouping = groupings.computeIfAbsent(
+                   (group != null ? group : deferredImport),
+                   key -&gt; new DeferredImportSelectorGrouping(createGroup(group)));
+           grouping.add(deferredImport);
+           configurationClasses.put(deferredImport.getConfigurationClass().getMetadata(),
+                   deferredImport.getConfigurationClass());
+       }
+       for (DeferredImportSelectorGrouping grouping : groupings.values()) {
+           grouping.getImports().forEach(entry -&gt; {
+               ConfigurationClass configurationClass = configurationClasses.get(entry.getMetadata());
+               try {
+                   processImports(configurationClass, asSourceClass(configurationClass),
+                           asSourceClasses(entry.getImportClassName()), false);
+               }
+               catch (BeanDefinitionStoreException ex) {
+                   throw ex;
+               }
+               catch (Throwable ex) {
+                   throw new BeanDefinitionStoreException(
+                           &#34;Failed to process import candidates for configuration class [&#34; +
+                           configurationClass.getMetadata().getClassName() + &#34;]&#34;, ex);
+               }
+           });
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3configurationclassbeandefinitionreaderloadbeandefinitions">3.ConfigurationClassBeanDefinitionReader.loadBeanDefinitions</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   /**
+    * Read {@code configurationModel}, registering bean definitions
+    * with the registry based on its contents.
+    */
+   public void loadBeanDefinitions(Set&lt;ConfigurationClass&gt; configurationModel) {
+       TrackedConditionEvaluator trackedConditionEvaluator = new TrackedConditionEvaluator();
+       for (ConfigurationClass configClass : configurationModel) {
+           loadBeanDefinitionsForConfigurationClass(configClass, trackedConditionEvaluator);
+       }
+   }
+
+   /**
+    * Read a particular {@link ConfigurationClass}, registering bean definitions
+    * for the class itself and all of its {@link Bean} methods.
+    */
+   private void loadBeanDefinitionsForConfigurationClass(
+           ConfigurationClass configClass, TrackedConditionEvaluator trackedConditionEvaluator) {
+
+       if (trackedConditionEvaluator.shouldSkip(configClass)) {
+           String beanName = configClass.getBeanName();
+           if (StringUtils.hasLength(beanName) &amp;&amp; this.registry.containsBeanDefinition(beanName)) {
+               this.registry.removeBeanDefinition(beanName);
+           }
+           this.importRegistry.removeImportingClass(configClass.getMetadata().getClassName());
+           return;
+       }
+
+       if (configClass.isImported()) {
+           registerBeanDefinitionForImportedConfigurationClass(configClass);
+       }
+       for (BeanMethod beanMethod : configClass.getBeanMethods()) {
+           loadBeanDefinitionsForBeanMethod(beanMethod);
+       } 
+
+       loadBeanDefinitionsFromImportedResources(configClass.getImportedResources());
+       // 触发ImportBeanDefinitionRegistrar
+       loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="六importbeandefinitionregistrar接口自动配置">六、ImportBeanDefinitionRegistrar接口自动配置</h2>
+<h3 id="1springbootapplication">1.@SpringBootApplication</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="err">@</span><span class="nf">Target</span><span class="p">(</span><span class="nx">ElementType</span><span class="p">.</span><span class="nx">TYPE</span><span class="p">)</span>
+<span class="err">@</span><span class="nf">Retention</span><span class="p">(</span><span class="nx">RetentionPolicy</span><span class="p">.</span><span class="nx">RUNTIME</span><span class="p">)</span>
+<span class="err">@</span><span class="nx">Documented</span>
+<span class="err">@</span><span class="nx">Inherited</span>
+<span class="err">@</span><span class="nx">SpringBootConfiguration</span>
+<span class="err">@</span><span class="nx">EnableAutoConfiguration</span>
+<span class="err">@</span><span class="nf">ComponentScan</span><span class="p">(</span><span class="nx">excludeFilters</span> <span class="p">=</span> <span class="p">{</span>
+       <span class="err">@</span><span class="nf">Filter</span><span class="p">(</span><span class="kd">type</span> <span class="p">=</span> <span class="nx">FilterType</span><span class="p">.</span><span class="nx">CUSTOM</span><span class="p">,</span> <span class="nx">classes</span> <span class="p">=</span> <span class="nx">TypeExcludeFilter</span><span class="p">.</span><span class="nx">class</span><span class="p">),</span>
+       <span class="err">@</span><span class="nf">Filter</span><span class="p">(</span><span class="kd">type</span> <span class="p">=</span> <span class="nx">FilterType</span><span class="p">.</span><span class="nx">CUSTOM</span><span class="p">,</span> <span class="nx">classes</span> <span class="p">=</span> <span class="nx">AutoConfigurationExcludeFilter</span><span class="p">.</span><span class="nx">class</span><span class="p">)</span> <span class="p">})</span>
+<span class="nx">public</span> <span class="err">@</span><span class="kd">interface</span> <span class="nx">SpringBootApplication</span> <span class="p">{</span>
+
+   <span class="cm">/**
+</span><span class="cm">    * Exclude specific auto-configuration classes such that they will never be applied.
+</span><span class="cm">    * @return the classes to exclude
+</span><span class="cm">    */</span>
+   <span class="err">@</span><span class="nf">AliasFor</span><span class="p">(</span><span class="nx">annotation</span> <span class="p">=</span> <span class="nx">EnableAutoConfiguration</span><span class="p">.</span><span class="nx">class</span><span class="p">)</span>
+   <span class="nx">Class</span><span class="p">&lt;</span><span class="err">?</span><span class="p">&gt;[]</span> <span class="nf">exclude</span><span class="p">()</span> <span class="k">default</span> <span class="p">{};</span>
+
+   <span class="cm">/**
+</span><span class="cm">    * Exclude specific auto-configuration class names such that they will never be
+</span><span class="cm">    * applied.
+</span><span class="cm">    * @return the class names to exclude
+</span><span class="cm">    * @since 1.3.0
+</span><span class="cm">    */</span>
+   <span class="err">@</span><span class="nf">AliasFor</span><span class="p">(</span><span class="nx">annotation</span> <span class="p">=</span> <span class="nx">EnableAutoConfiguration</span><span class="p">.</span><span class="nx">class</span><span class="p">)</span>
+   <span class="nx">String</span><span class="p">[]</span> <span class="nf">excludeName</span><span class="p">()</span> <span class="k">default</span> <span class="p">{};</span>
+
+   <span class="cm">/**
+</span><span class="cm">    * Base packages to scan for annotated components. Use {@link #scanBasePackageClasses}
+</span><span class="cm">    * for a type-safe alternative to String-based package names.
+</span><span class="cm">    * @return base packages to scan
+</span><span class="cm">    * @since 1.3.0
+</span><span class="cm">    */</span>
+   <span class="err">@</span><span class="nf">AliasFor</span><span class="p">(</span><span class="nx">annotation</span> <span class="p">=</span> <span class="nx">ComponentScan</span><span class="p">.</span><span class="nx">class</span><span class="p">,</span> <span class="nx">attribute</span> <span class="p">=</span> <span class="s">&#34;basePackages&#34;</span><span class="p">)</span>
+   <span class="nx">String</span><span class="p">[]</span> <span class="nf">scanBasePackages</span><span class="p">()</span> <span class="k">default</span> <span class="p">{};</span>
+
+   <span class="cm">/**
+</span><span class="cm">    * Type-safe alternative to {@link #scanBasePackages} for specifying the packages to
+</span><span class="cm">    * scan for annotated components. The package of each class specified will be scanned.
+</span><span class="cm">    * &lt;p&gt;
+</span><span class="cm">    * Consider creating a special no-op marker class or interface in each package that
+</span><span class="cm">    * serves no purpose other than being referenced by this attribute.
+</span><span class="cm">    * @return base packages to scan
+</span><span class="cm">    * @since 1.3.0
+</span><span class="cm">    */</span>
+   <span class="err">@</span><span class="nf">AliasFor</span><span class="p">(</span><span class="nx">annotation</span> <span class="p">=</span> <span class="nx">ComponentScan</span><span class="p">.</span><span class="nx">class</span><span class="p">,</span> <span class="nx">attribute</span> <span class="p">=</span> <span class="s">&#34;basePackageClasses&#34;</span><span class="p">)</span>
+   <span class="nx">Class</span><span class="p">&lt;</span><span class="err">?</span><span class="p">&gt;[]</span> <span class="nf">scanBasePackageClasses</span><span class="p">()</span> <span class="k">default</span> <span class="p">{};</span>
+
+<span class="p">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2enableautoconfigurationautoconfigurationpackage">2.@EnableAutoConfiguration,@AutoConfigurationPackage</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+@AutoConfigurationPackage
+@Import(AutoConfigurationImportSelector.class)
+public @interface EnableAutoConfiguration {
+
+   String ENABLED_OVERRIDE_PROPERTY = &#34;spring.boot.enableautoconfiguration&#34;;
+
+   /**
+    * Exclude specific auto-configuration classes such that they will never be applied.
+    * @return the classes to exclude
+    */
+   Class&lt;?&gt;[] exclude() default {};
+
+   /**
+    * Exclude specific auto-configuration class names such that they will never be
+    * applied.
+    * @return the class names to exclude
+    * @since 1.3.0
+    */
+   String[] excludeName() default {};
+
+} 
+
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+@Import(AutoConfigurationPackages.Registrar.class)
+public @interface AutoConfigurationPackage {
+
+}
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3autoconfigurationimportselectorselectimports-获取自动配置信息进行管理">3.AutoConfigurationImportSelector.selectImports 获取自动配置信息进行管理</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  	@Override
+  	public String[] selectImports(AnnotationMetadata annotationMetadata) {
+  		if (!isEnabled(annotationMetadata)) {
+  			return NO_IMPORTS;
+  		}
+        //META-INF/spring-autoconfigure-metadata.properties 这个配置
+  		AutoConfigurationMetadata autoConfigurationMetadata = AutoConfigurationMetadataLoader
+  				.loadMetadata(this.beanClassLoader);
+  		AnnotationAttributes attributes = getAttributes(annotationMetadata);
+       //# Auto Configure
+         org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+         org.springframework.boot.autoconfigure.admin.SpringApplicationAdminJmxAutoConfiguration,\
+         org.springframework.boot.autoconfigure.aop.AopAutoConfiguration,\
+         org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration,\
+         org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration,\
+         org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration,\....太多了
+  		List&lt;String&gt; configurations = getCandidateConfigurations(annotationMetadata,
+  				attributes);
+  		configurations = removeDuplicates(configurations);
+  		Set&lt;String&gt; exclusions = getExclusions(annotationMetadata, attributes);
+  		checkExcludedClasses(configurations, exclusions);
+  		configurations.removeAll(exclusions);
+  		configurations = filter(configurations, autoConfigurationMetadata);
+  		fireAutoConfigurationImportEvents(configurations, exclusions);
+  		return StringUtils.toStringArray(configurations);
+  	}
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="七conditionevaluator处理conditional">七、ConditionEvaluator处理@Conditional</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> //配置
+this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)
+//bean
+this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.REGISTER_BEAN)
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1shouldskip">1.shouldSkip</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">
+   /**
+    * Determine if an item should be skipped based on {@code @Conditional} annotations.
+    * @param metadata the meta data
+    * @param phase the phase of the call
+    * @return if the item should be skipped
+    */
+   public boolean shouldSkip(@Nullable AnnotatedTypeMetadata metadata, @Nullable ConfigurationPhase phase) {
+       if (metadata == null || !metadata.isAnnotated(Conditional.class.getName())) {
+           return false;
+       }
+
+       if (phase == null) {
+           if (metadata instanceof AnnotationMetadata &amp;&amp;
+                   ConfigurationClassUtils.isConfigurationCandidate((AnnotationMetadata) metadata)) {
+               return shouldSkip(metadata, ConfigurationPhase.PARSE_CONFIGURATION);
+           }
+           return shouldSkip(metadata, ConfigurationPhase.REGISTER_BEAN);
+       }
+
+       List&lt;Condition&gt; conditions = new ArrayList&lt;&gt;();
+       for (String[] conditionClasses : getConditionClasses(metadata)) {
+           for (String conditionClass : conditionClasses) {
+               Condition condition = getCondition(conditionClass, this.context.getClassLoader());
+               conditions.add(condition);
+           }
+       }
+
+       AnnotationAwareOrderComparator.sort(conditions);
+
+       for (Condition condition : conditions) {
+           ConfigurationPhase requiredPhase = null;
+           if (condition instanceof ConfigurationCondition) {
+               requiredPhase = ((ConfigurationCondition) condition).getConfigurationPhase();
+           }
+          //获取类型意义，已经比较matches
+           if ((requiredPhase == null || requiredPhase == phase) &amp;&amp; !condition.matches(this.context, metadata)) {
+               return true;
+           }
+       }
+
+       return false;
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2condition-接口">2.Condition 接口</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">@FunctionalInterface
+public interface Condition {
+
+   /**
+    * Determine if the condition matches.
+    * @param context the condition context
+    * @param metadata metadata of the {@link org.springframework.core.type.AnnotationMetadata class}
+    * or {@link org.springframework.core.type.MethodMetadata method} being checked
+    * @return {@code true} if the condition matches and the component can be registered,
+    * or {@code false} to veto the annotated component&#39;s registration
+    */
+   boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata);
+
+} 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3spring注解">3.spring注解</h3>
+<ul>
+<li>@ConditionalOnBean：当容器里有指定 Bean 的条件下。</li>
+<li>@ConditionalOnMissingBean：当容器里没有指定 Bean 的情况下。</li>
+<li>@ConditionalOnSingleCandidate：当指定 Bean 在容器中只有一个，或者虽然有多个但是指定首选 Bean 。</li>
+<li>@ConditionalOnClass：当类路径下有指定类的条件下。</li>
+<li>@ConditionalOnMissingClass：当类路径下没有指定类的条件下。</li>
+<li>@ConditionalOnProperty：指定的属性是否有指定的值</li>
+<li>@ConditionalOnResource：类路径是否有指定的值</li>
+<li>@ConditionalOnExpression：基于 SpEL 表达式作为判断条件。</li>
+<li>@ConditionalOnJava：基于 Java 版本作为判断条件</li>
+<li>@ConditionalOnJndi：在 JNDI 存在的条件下差在指定的位置</li>
+<li>@ConditionalOnNotWebApplication：当前项目不是 Web 项目的条件下</li>
+<li>@ConditionalOnWebApplication：当前项目是 Web项 目的条件下。</li>
+<li>@Profile</li>
+</ul>
+<h2 id="八conditionevaluator处理conditional">八、ConditionEvaluator处理@Conditional</h2>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2018-11-01 23:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/spring-boot/">spring boot</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/dubbo/01.dubbo%E4%B8%AD%E7%9A%84SPI%E6%9C%BA%E5%88%B6/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">dubbo中的SPI机制</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/spring/05.spring-mvc%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">spring mvc源码分析</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

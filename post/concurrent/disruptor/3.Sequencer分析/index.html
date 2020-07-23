@@ -1,0 +1,2420 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Sequencer分析 - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="Sequencer分析 简介 Sequencer是Disruptor的真正核心。这个接口的2个实现（单生产者(SingleProducerSeq" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/disruptor/3.Sequencer%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/disruptor/3.Sequencer%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/disruptor/3.Sequencer%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="Sequencer分析" />
+<meta property="og:description" content="Sequencer分析 简介 Sequencer是Disruptor的真正核心。这个接口的2个实现（单生产者(SingleProducerSeq" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/disruptor/3.Sequencer%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2018-05-15T18:18:08+00:00" />
+<meta property="article:modified_time" content="2018-05-15T18:18:08+00:00" />
+<meta itemprop="name" content="Sequencer分析">
+<meta itemprop="description" content="Sequencer分析 简介 Sequencer是Disruptor的真正核心。这个接口的2个实现（单生产者(SingleProducerSeq">
+<meta itemprop="datePublished" content="2018-05-15T18:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2018-05-15T18:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="6084">
+
+
+
+<meta itemprop="keywords" content="disruptor," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Sequencer分析"/>
+<meta name="twitter:description" content="Sequencer分析 简介 Sequencer是Disruptor的真正核心。这个接口的2个实现（单生产者(SingleProducerSeq"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">Sequencer分析</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2018-05-15 18:18 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 6084 字 </span>
+      <span class="more-meta"> 预计阅读 13 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#一sequencer接口说明">一、Sequencer接口说明</a>
+      <ul>
+        <li><a href="#1cursored接口说明">1.Cursored接口说明</a></li>
+        <li><a href="#2sequenced接口说明">2.Sequenced接口说明</a></li>
+        <li><a href="#2sequencer接口说明">2.Sequencer接口说明</a></li>
+      </ul>
+    </li>
+    <li><a href="#二abstractsequencer-抽象类">二、AbstractSequencer 抽象类</a></li>
+    <li><a href="#三singleproducersequencer-单个生产者不存在并发情况">三、SingleProducerSequencer 单个生产者，不存在并发情况</a>
+      <ul>
+        <li><a href="#1singleproducersequencer-构造">1.SingleProducerSequencer 构造</a></li>
+        <li><a href="#2hasavailablecapacity-判断是否还有给定的可用容量">2.hasAvailableCapacity 判断是否还有给定的可用容量。</a></li>
+        <li><a href="#3next">3.next</a></li>
+        <li><a href="#4trynext">4.tryNext</a></li>
+        <li><a href="#5其他实现方法">5.其他实现方法</a></li>
+      </ul>
+    </li>
+    <li><a href="#四multiproducersequencer">四、MultiProducerSequencer</a>
+      <ul>
+        <li><a href="#1multiproducersequencer-多个生产者">1.MultiProducerSequencer 多个生产者</a></li>
+        <li><a href="#2hasavailablecapacity-判断是否还有给定的可用容量-1">2.hasAvailableCapacity 判断是否还有给定的可用容量。</a></li>
+        <li><a href="#3next-1">3.next</a></li>
+        <li><a href="#3trynext">3.tryNext</a></li>
+        <li><a href="#5其他实现方法-1">5.其他实现方法</a></li>
+      </ul>
+    </li>
+    <li><a href="#五sequencegroups">五、SequenceGroups</a></li>
+    <li><a href="#六eventpoller">六、EventPoller</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2018-05-15T18:18:08" title="May 15, 2018">May 15, 2018</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="sequencer分析">Sequencer分析</h1>
+<h2 id="简介">简介</h2>
+<p>Sequencer是Disruptor的真正核心。这个接口的2个实现（单生产者(SingleProducerSequencer)，多生产者(MultiProducerSequencer)）实现了所有的并发算法，用于在生产者和消费者之间快速正确地传递数据。</p>
+<h2 id="一sequencer接口说明">一、Sequencer接口说明</h2>
+<p>Sequencer接口UML图：</p>
+<p><img src="/concurrent//disruptor11.png" alt=""></p>
+<h3 id="1cursored接口说明">1.Cursored接口说明</h3>
+<p>获取当前的游标值。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm"> * Implementors of this interface must provide a single long value
+</span><span class="cm"> * that represents their current cursor value.  Used during dynamic
+</span><span class="cm"> * add/remove of Sequences from a
+</span><span class="cm"> * {@link SequenceGroups#addSequences(Object, java.util.concurrent.atomic.AtomicReferenceFieldUpdater, Cursored, Sequence...)}.
+</span><span class="cm"> * 
+</span><span class="cm"> * 这个接口的实现者必须提供一个表示它们当前游标值的单个long值。在动态add/remove序列时使用
+</span><span class="cm"> * {@link SequenceGroups#addSequences(Object, java.util.concurrent.atomic.AtomicReferenceFieldUpdater, Cursored, Sequence...)}。
+</span><span class="cm"> */</span>
+<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Cursored</span>
+<span class="o">{</span>
+    <span class="cm">/**
+</span><span class="cm">     * Get the current cursor value.
+</span><span class="cm">     * 获取当前的游标值。
+</span><span class="cm">     * @return current cursor value
+</span><span class="cm">     */</span>
+    <span class="kt">long</span> <span class="nf">getCursor</span><span class="o">();</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2sequenced接口说明">2.Sequenced接口说明</h3>
+<p>序列基本操作</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Sequenced</span>
+<span class="o">{</span>
+    <span class="cm">/**
+</span><span class="cm">     * The capacity of the data structure to hold entries.
+</span><span class="cm">     *  RingBuffer 容量大小
+</span><span class="cm">     * @return the size of the RingBuffer.
+</span><span class="cm">     */</span>
+    <span class="kt">int</span> <span class="nf">getBufferSize</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Has the buffer got capacity to allocate another sequence.  This is a concurrent
+</span><span class="cm">     * method so the response should only be taken as an indication of available capacity.
+</span><span class="cm">     * 判断是否还有给定的可用容量。
+</span><span class="cm">     * @param requiredCapacity in the buffer
+</span><span class="cm">     * @return true if the buffer has the capacity to allocate the next sequence otherwise false.
+</span><span class="cm">     */</span>
+    <span class="kt">boolean</span> <span class="nf">hasAvailableCapacity</span><span class="o">(</span><span class="kt">int</span> <span class="n">requiredCapacity</span><span class="o">);</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Get the remaining capacity for this sequencer.
+</span><span class="cm">     * 获取剩余容量。
+</span><span class="cm">     * @return The number of slots remaining.
+</span><span class="cm">     */</span>
+    <span class="kt">long</span> <span class="nf">remainingCapacity</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Claim the next event in sequence for publishing.
+</span><span class="cm">     * 申请下一个序列值，用来发布事件。
+</span><span class="cm">     *
+</span><span class="cm">     * @return the claimed sequence value
+</span><span class="cm">     */</span>
+    <span class="kt">long</span> <span class="nf">next</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Claim the next n events in sequence for publishing.  This is for batch event producing.  Using batch producing
+</span><span class="cm">     * requires a little care and some math.
+</span><span class="cm">     * &lt;pre&gt;
+</span><span class="cm">     * int n = 10;
+</span><span class="cm">     * long hi = sequencer.next(n);
+</span><span class="cm">     * long lo = hi - (n - 1);
+</span><span class="cm">     * for (long sequence = lo; sequence &amp;lt;= hi; sequence++) {
+</span><span class="cm">     *     // Do work.
+</span><span class="cm">     * }
+</span><span class="cm">     * sequencer.publish(lo, hi);
+</span><span class="cm">     * &lt;/pre&gt;
+</span><span class="cm">     * 申请下N个序列值，用来发布事件。
+</span><span class="cm">     * @param n the number of sequences to claim
+</span><span class="cm">     * @return the highest claimed sequence value
+</span><span class="cm">     */</span>
+    <span class="kt">long</span> <span class="nf">next</span><span class="o">(</span><span class="kt">int</span> <span class="n">n</span><span class="o">);</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Attempt to claim the next event in sequence for publishing.  Will return the
+</span><span class="cm">     * number of the slot if there is at least &lt;code&gt;requiredCapacity&lt;/code&gt; slots
+</span><span class="cm">     * available.
+</span><span class="cm">     * 尝试申请下一个序列值用来发布事件，这个是无阻塞的方法。
+</span><span class="cm">     * @return the claimed sequence value
+</span><span class="cm">     * @throws InsufficientCapacityException thrown if there is no space available in the ring buffer.
+</span><span class="cm">     */</span>
+    <span class="kt">long</span> <span class="nf">tryNext</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InsufficientCapacityException</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Attempt to claim the next n events in sequence for publishing.  Will return the
+</span><span class="cm">     * highest numbered slot if there is at least &lt;code&gt;requiredCapacity&lt;/code&gt; slots
+</span><span class="cm">     * available.  Have a look at {@link Sequencer#next()} for a description on how to
+</span><span class="cm">     * use this method.
+</span><span class="cm">     * 尝试申请下N个序列值用来发布事件，这个是无阻塞的方法。
+</span><span class="cm">     * 
+</span><span class="cm">     * @param n the number of sequences to claim
+</span><span class="cm">     * @return the claimed sequence value
+</span><span class="cm">     * @throws InsufficientCapacityException thrown if there is no space available in the ring buffer.
+</span><span class="cm">     */</span>
+    <span class="kt">long</span> <span class="nf">tryNext</span><span class="o">(</span><span class="kt">int</span> <span class="n">n</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InsufficientCapacityException</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Publishes a sequence. Call when the event has been filled.
+</span><span class="cm">     * 发布一个序列。当事件被填满时调用。
+</span><span class="cm">     * @param sequence the sequence to be published.
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">publish</span><span class="o">(</span><span class="kt">long</span> <span class="n">sequence</span><span class="o">);</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Batch publish sequences.  Called when all of the events have been filled.
+</span><span class="cm">     * 
+</span><span class="cm">     * 批量发布序列。当所有事件都被填满时调用。
+</span><span class="cm">     * @param lo first sequence number to publish
+</span><span class="cm">     * @param hi last sequence number to publish
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">publish</span><span class="o">(</span><span class="kt">long</span> <span class="n">lo</span><span class="o">,</span> <span class="kt">long</span> <span class="n">hi</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2sequencer接口说明">2.Sequencer接口说明</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span><span class="lnt">93
+</span><span class="lnt">94
+</span><span class="lnt">95
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+<span class="cm">/**
+</span><span class="cm">* Coordinates claiming sequences for access to a data structure while tracking dependent {@link Sequence}s
+</span><span class="cm">*/</span>
+<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Sequencer</span> <span class="kd">extends</span> <span class="n">Cursored</span><span class="o">,</span> <span class="n">Sequenced</span>
+<span class="o">{</span>
+  <span class="cm">/**
+</span><span class="cm">   * Set to -1 as sequence starting point
+</span><span class="cm">   * 序列初始值
+</span><span class="cm">   */</span>
+  <span class="kt">long</span> <span class="n">INITIAL_CURSOR_VALUE</span> <span class="o">=</span> <span class="o">-</span><span class="n">1L</span><span class="o">;</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Claim a specific sequence.  Only used if initialising the ring buffer to
+</span><span class="cm">   * a specific value.
+</span><span class="cm">   * 声明一个特定的序列。这个方法在初始化RingBuffer的时候被调用。
+</span><span class="cm">   * @param sequence The sequence to initialise too.
+</span><span class="cm">   */</span>
+  <span class="kt">void</span> <span class="nf">claim</span><span class="o">(</span><span class="kt">long</span> <span class="n">sequence</span><span class="o">);</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Confirms if a sequence is published and the event is available for use; non-blocking.
+</span><span class="cm">   * 判断一个序列是否被发布，并且发布到序列上的事件是可处理的。非阻塞方法。
+</span><span class="cm">   *
+</span><span class="cm">   * @param sequence of the buffer to check
+</span><span class="cm">   * @return true if the sequence is available for use, false if not
+</span><span class="cm">   */</span>
+  <span class="kt">boolean</span> <span class="nf">isAvailable</span><span class="o">(</span><span class="kt">long</span> <span class="n">sequence</span><span class="o">);</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Add the specified gating sequences to this instance of the Disruptor.  They will
+</span><span class="cm">   * safely and atomically added to the list of gating sequences.
+</span><span class="cm">   *  添加一些追踪序列到当前实例，添加过程是原子的。
+</span><span class="cm">   * 这些控制序列一般是其他组件的序列，当前实例可以通过这些
+</span><span class="cm">   * 序列来查看其他组件的序列使用情况。
+</span><span class="cm">   * @param gatingSequences The sequences to add.
+</span><span class="cm">   */</span>
+  <span class="kt">void</span> <span class="nf">addGatingSequences</span><span class="o">(</span><span class="n">Sequence</span><span class="o">...</span> <span class="n">gatingSequences</span><span class="o">);</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Remove the specified sequence from this sequencer.
+</span><span class="cm">   * 移除控制序列。
+</span><span class="cm">   * @param sequence to be removed.
+</span><span class="cm">   * @return &lt;tt&gt;true&lt;/tt&gt; if this sequence was found, &lt;tt&gt;false&lt;/tt&gt; otherwise.
+</span><span class="cm">   */</span>
+  <span class="kt">boolean</span> <span class="nf">removeGatingSequence</span><span class="o">(</span><span class="n">Sequence</span> <span class="n">sequence</span><span class="o">);</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Create a new SequenceBarrier to be used by an EventProcessor to track which messages
+</span><span class="cm">   * are available to be read from the ring buffer given a list of sequences to track.
+</span><span class="cm">   *  基于给定的追踪序列创建一个序列栅栏，这个栅栏是提供给EventProcesso
+</span><span class="cm">   *  在判断Ringbuffer上某个事件是否能处理时使用的。
+</span><span class="cm">   * @param sequencesToTrack All of the sequences that the newly constructed barrier will wait on.
+</span><span class="cm">   * @return A sequence barrier that will track the specified sequences.
+</span><span class="cm">   * @see SequenceBarrier
+</span><span class="cm">   */</span>
+  <span class="n">SequenceBarrier</span> <span class="nf">newBarrier</span><span class="o">(</span><span class="n">Sequence</span><span class="o">...</span> <span class="n">sequencesToTrack</span><span class="o">);</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Get the minimum sequence value from all of the gating sequences
+</span><span class="cm">   * added to this ringBuffer.
+</span><span class="cm">   * 获取控制序列里面当前最小的序列值。
+</span><span class="cm">   * @return The minimum gating sequence or the cursor sequence if
+</span><span class="cm">   * no sequences have been added.
+</span><span class="cm">   */</span>
+  <span class="kt">long</span> <span class="nf">getMinimumSequence</span><span class="o">();</span>
+
+  <span class="cm">/**
+</span><span class="cm">   * Get the highest sequence number that can be safely read from the ring buffer.  Depending
+</span><span class="cm">   * on the implementation of the Sequencer this call may need to scan a number of values
+</span><span class="cm">   * in the Sequencer.  The scan will range from nextSequence to availableSequence.  If
+</span><span class="cm">   * there are no available values &lt;code&gt;&amp;gt;= nextSequence&lt;/code&gt; the return value will be
+</span><span class="cm">   * &lt;code&gt;nextSequence - 1&lt;/code&gt;.  To work correctly a consumer should pass a value that
+</span><span class="cm">   * is 1 higher than the last sequence that was successfully processed.
+</span><span class="cm">   *
+</span><span class="cm">   * 获取RingBuffer上安全使用的最大的序列值。
+</span><span class="cm">   * 具体实现里面，这个调用可能需要序列上从nextSequence到availableSequence之间的值。
+</span><span class="cm">   * 如果没有比nextSequence大的可用序列，会返回nextSequence - 1。
+</span><span class="cm">   * 为了保证正确，事件处理者应该传递一个比最后的序列值大1个单位的序列来处理。
+</span><span class="cm">   * 
+</span><span class="cm">   * @param nextSequence      The sequence to start scanning from.
+</span><span class="cm">   * @param availableSequence The sequence to scan to.
+</span><span class="cm">   * @return The highest value that can be safely read, will be at least &lt;code&gt;nextSequence - 1&lt;/code&gt;.
+</span><span class="cm">   */</span>
+  <span class="kt">long</span> <span class="nf">getHighestPublishedSequence</span><span class="o">(</span><span class="kt">long</span> <span class="n">nextSequence</span><span class="o">,</span> <span class="kt">long</span> <span class="n">availableSequence</span><span class="o">);</span>
+
+    <span class="cm">/**
+</span><span class="cm">      *  通过给定的数据提供者和控制序列来创建一个EventPoller
+</span><span class="cm">      * @param provider
+</span><span class="cm">      * @param &lt;T&gt;
+</span><span class="cm">      * @param gatingSequences
+</span><span class="cm">      * @return 
+</span><span class="cm">      */</span>
+  <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">EventPoller</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">newPoller</span><span class="o">(</span><span class="n">DataProvider</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">provider</span><span class="o">,</span> <span class="n">Sequence</span><span class="o">...</span> <span class="n">gatingSequences</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二abstractsequencer-抽象类">二、AbstractSequencer 抽象类</h2>
+<p>AbstractSequencer实现Sequencer接口</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm"> * Base class for the various sequencer types (single/multi).  Provides
+</span><span class="cm"> * common functionality like the management of gating sequences (add/remove) and
+</span><span class="cm"> * ownership of the current cursor.
+</span><span class="cm"> * 各种sequencer类型的基类(single / multi)。提供常见的功能，如管理控制序列(添加/删除)和当前游标的所有权。
+</span><span class="cm"> */</span>
+<span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">AbstractSequencer</span> <span class="kd">implements</span> <span class="n">Sequencer</span>
+<span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">AtomicReferenceFieldUpdater</span><span class="o">&lt;</span><span class="n">AbstractSequencer</span><span class="o">,</span> <span class="n">Sequence</span><span class="o">[]&gt;</span> <span class="n">SEQUENCE_UPDATER</span> <span class="o">=</span>
+        <span class="n">AtomicReferenceFieldUpdater</span><span class="o">.</span><span class="na">newUpdater</span><span class="o">(</span><span class="n">AbstractSequencer</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">Sequence</span><span class="o">[].</span><span class="na">class</span><span class="o">,</span> <span class="s">&#34;gatingSequences&#34;</span><span class="o">);</span> <span class="c1">//原子操作更新gatingSequences属性
+</span><span class="c1"></span>
+    <span class="kd">protected</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">bufferSize</span><span class="o">;</span>              <span class="c1">// 大小
+</span><span class="c1"></span>    <span class="kd">protected</span> <span class="kd">final</span> <span class="n">WaitStrategy</span> <span class="n">waitStrategy</span><span class="o">;</span>   <span class="c1">//等待策略
+</span><span class="c1"></span>    <span class="c1">// 当作生产序列
+</span><span class="c1"></span>    <span class="kd">protected</span> <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">cursor</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Sequence</span><span class="o">(</span><span class="n">Sequencer</span><span class="o">.</span><span class="na">INITIAL_CURSOR_VALUE</span><span class="o">);</span>  <span class="c1">//当前序列
+</span><span class="c1"></span>    <span class="c1">// 当作消费序列
+</span><span class="c1"></span>    <span class="kd">protected</span> <span class="kd">volatile</span> <span class="n">Sequence</span><span class="o">[]</span> <span class="n">gatingSequences</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Sequence</span><span class="o">[</span><span class="n">0</span><span class="o">];</span>     <span class="c1">//控制序列数组
+</span><span class="c1"></span>
+    <span class="cm">/**
+</span><span class="cm">     * Create with the specified buffer size and wait strategy.
+</span><span class="cm">     * 使用指定的缓冲区大小和等待策略创建
+</span><span class="cm">     * @param bufferSize   The total number of entries, must be a positive power of 2.
+</span><span class="cm">     * @param waitStrategy The wait strategy used by this sequencer
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">AbstractSequencer</span><span class="o">(</span><span class="kt">int</span> <span class="n">bufferSize</span><span class="o">,</span> <span class="n">WaitStrategy</span> <span class="n">waitStrategy</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">bufferSize</span> <span class="o">&lt;</span> <span class="n">1</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span><span class="s">&#34;bufferSize must not be less than 1&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">Integer</span><span class="o">.</span><span class="na">bitCount</span><span class="o">(</span><span class="n">bufferSize</span><span class="o">)</span> <span class="o">!=</span> <span class="n">1</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span><span class="s">&#34;bufferSize must be a power of 2&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="k">this</span><span class="o">.</span><span class="na">bufferSize</span> <span class="o">=</span> <span class="n">bufferSize</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">waitStrategy</span> <span class="o">=</span> <span class="n">waitStrategy</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#getCursor()
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kd">final</span> <span class="kt">long</span> <span class="nf">getCursor</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">cursor</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#getBufferSize()
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kd">final</span> <span class="kt">int</span> <span class="nf">getBufferSize</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">bufferSize</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#addGatingSequences(Sequence...)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">addGatingSequences</span><span class="o">(</span><span class="n">Sequence</span><span class="o">...</span> <span class="n">gatingSequences</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">SequenceGroups</span><span class="o">.</span><span class="na">addSequences</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">SEQUENCE_UPDATER</span><span class="o">,</span> <span class="k">this</span><span class="o">,</span> <span class="n">gatingSequences</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#removeGatingSequence(Sequence)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">removeGatingSequence</span><span class="o">(</span><span class="n">Sequence</span> <span class="n">sequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">SequenceGroups</span><span class="o">.</span><span class="na">removeSequence</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">SEQUENCE_UPDATER</span><span class="o">,</span> <span class="n">sequence</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#getMinimumSequence()
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">getMinimumSequence</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">Util</span><span class="o">.</span><span class="na">getMinimumSequence</span><span class="o">(</span><span class="n">gatingSequences</span><span class="o">,</span> <span class="n">cursor</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#newBarrier(Sequence...)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">SequenceBarrier</span> <span class="nf">newBarrier</span><span class="o">(</span><span class="n">Sequence</span><span class="o">...</span> <span class="n">sequencesToTrack</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">ProcessingSequenceBarrier</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">waitStrategy</span><span class="o">,</span> <span class="n">cursor</span><span class="o">,</span> <span class="n">sequencesToTrack</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * 为此序列创建一个事件轮询器，它将使用提供的数据提供程序和要门控的序列
+</span><span class="cm">     *
+</span><span class="cm">     * @param dataProvider    此事件轮询器用户的数据源
+</span><span class="cm">     * @param gatingSequences 要门控的序列
+</span><span class="cm">     * @return A poller that will gate on this ring buffer and the supplied sequences.
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">EventPoller</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">newPoller</span><span class="o">(</span><span class="n">DataProvider</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">dataProvider</span><span class="o">,</span> <span class="n">Sequence</span><span class="o">...</span> <span class="n">gatingSequences</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">EventPoller</span><span class="o">.</span><span class="na">newInstance</span><span class="o">(</span><span class="n">dataProvider</span><span class="o">,</span> <span class="k">this</span><span class="o">,</span> <span class="k">new</span> <span class="n">Sequence</span><span class="o">(),</span> <span class="n">cursor</span><span class="o">,</span> <span class="n">gatingSequences</span><span class="o">);</span>
+    <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="三singleproducersequencer-单个生产者不存在并发情况">三、SingleProducerSequencer 单个生产者，不存在并发情况</h2>
+<h3 id="1singleproducersequencer-构造">1.SingleProducerSequencer 构造</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="c1">//缓存行填充56字节
+</span><span class="c1"></span><span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">SingleProducerSequencerPad</span> <span class="kd">extends</span> <span class="n">AbstractSequencer</span>
+<span class="o">{</span>
+    <span class="kd">protected</span> <span class="kt">long</span> <span class="n">p1</span><span class="o">,</span> <span class="n">p2</span><span class="o">,</span> <span class="n">p3</span><span class="o">,</span> <span class="n">p4</span><span class="o">,</span> <span class="n">p5</span><span class="o">,</span> <span class="n">p6</span><span class="o">,</span> <span class="n">p7</span><span class="o">;</span>
+
+    <span class="n">SingleProducerSequencerPad</span><span class="o">(</span><span class="kt">int</span> <span class="n">bufferSize</span><span class="o">,</span> <span class="n">WaitStrategy</span> <span class="n">waitStrategy</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">bufferSize</span><span class="o">,</span> <span class="n">waitStrategy</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">SingleProducerSequencerFields</span> <span class="kd">extends</span> <span class="n">SingleProducerSequencerPad</span>
+<span class="o">{</span>
+    <span class="n">SingleProducerSequencerFields</span><span class="o">(</span><span class="kt">int</span> <span class="n">bufferSize</span><span class="o">,</span> <span class="n">WaitStrategy</span> <span class="n">waitStrategy</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">bufferSize</span><span class="o">,</span> <span class="n">waitStrategy</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Set to -1 as sequence starting point
+</span><span class="cm">     */</span>
+    <span class="kt">long</span> <span class="n">nextValue</span> <span class="o">=</span> <span class="n">Sequence</span><span class="o">.</span><span class="na">INITIAL_VALUE</span><span class="o">;</span>
+    <span class="kt">long</span> <span class="n">cachedValue</span> <span class="o">=</span> <span class="n">Sequence</span><span class="o">.</span><span class="na">INITIAL_VALUE</span><span class="o">;</span>
+<span class="o">}</span>
+
+<span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">SingleProducerSequencer</span> <span class="kd">extends</span> <span class="n">SingleProducerSequencerFields</span>
+<span class="o">{</span>
+    <span class="kd">protected</span> <span class="kt">long</span> <span class="n">p1</span><span class="o">,</span> <span class="n">p2</span><span class="o">,</span> <span class="n">p3</span><span class="o">,</span> <span class="n">p4</span><span class="o">,</span> <span class="n">p5</span><span class="o">,</span> <span class="n">p6</span><span class="o">,</span> <span class="n">p7</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Construct a Sequencer with the selected wait strategy and buffer size.
+</span><span class="cm">     *
+</span><span class="cm">     * @param bufferSize   the size of the buffer that this will sequence over.
+</span><span class="cm">     * @param waitStrategy for those waiting on sequences.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">SingleProducerSequencer</span><span class="o">(</span><span class="kt">int</span> <span class="n">bufferSize</span><span class="o">,</span> <span class="n">WaitStrategy</span> <span class="n">waitStrategy</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">bufferSize</span><span class="o">,</span> <span class="n">waitStrategy</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2hasavailablecapacity-判断是否还有给定的可用容量">2.hasAvailableCapacity 判断是否还有给定的可用容量。</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#hasAvailableCapacity(int)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">hasAvailableCapacity</span><span class="o">(</span><span class="kt">int</span> <span class="n">requiredCapacity</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">hasAvailableCapacity</span><span class="o">(</span><span class="n">requiredCapacity</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">hasAvailableCapacity</span><span class="o">(</span><span class="kt">int</span> <span class="n">requiredCapacity</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">doStore</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="kt">long</span> <span class="n">nextValue</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">nextValue</span><span class="o">;</span>
+
+        <span class="kt">long</span> <span class="n">wrapPoint</span> <span class="o">=</span> <span class="o">(</span><span class="n">nextValue</span> <span class="o">+</span> <span class="n">requiredCapacity</span><span class="o">)</span> <span class="o">-</span> <span class="n">bufferSize</span><span class="o">;</span>
+        <span class="kt">long</span> <span class="n">cachedGatingSequence</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">cachedValue</span><span class="o">;</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">wrapPoint</span> <span class="o">&gt;</span> <span class="n">cachedGatingSequence</span> <span class="o">||</span> <span class="n">cachedGatingSequence</span> <span class="o">&gt;</span> <span class="n">nextValue</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">doStore</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="n">cursor</span><span class="o">.</span><span class="na">setVolatile</span><span class="o">(</span><span class="n">nextValue</span><span class="o">);</span>  <span class="c1">// StoreLoad fence
+</span><span class="c1"></span>            <span class="o">}</span>
+
+            <span class="kt">long</span> <span class="n">minSequence</span> <span class="o">=</span> <span class="n">Util</span><span class="o">.</span><span class="na">getMinimumSequence</span><span class="o">(</span><span class="n">gatingSequences</span><span class="o">,</span> <span class="n">nextValue</span><span class="o">);</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">cachedValue</span> <span class="o">=</span> <span class="n">minSequence</span><span class="o">;</span>
+
+            <span class="k">if</span> <span class="o">(</span><span class="n">wrapPoint</span> <span class="o">&gt;</span> <span class="n">minSequence</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">}</span> 
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>nextValue当作是生产索引，cachedGatingSequence当作是消费索引，bufferSize当作环性结构大小,requiredCapacity</li>
+<li>消费索引大于生产索引，不成立，没生产，消费者不能消费，没有数据；</li>
+<li>生产索引减消费索引还未消费数据，剩下空间就是生产者要生产数据空间；生产数据空间=bufferSize-(nextValue-cachedGatingSequence)</li>
+<li>请求生产数据空间大小不能大于生产数据空间，这个判断是有空间生产；</li>
+<li>requiredCapacity &lt;= bufferSize-(nextValue-cachedGatingSequence)
+<ul>
+<li>转变成 (nextValue+requiredCapacity - bufferSize) &lt;= cachedGatingSequence 成立。跟我们代码很像</li>
+<li>变成不成立 (nextValue+requiredCapacity - bufferSize) &gt; cachedGatingSequence 跟我们代码一样把</li>
+</ul>
+</li>
+<li>理解下面next方法简单多了</li>
+<li>nextValue就是序列cursor的缓存值，用意:相当于申请空间数量，还没真正去写，写完cursor才能修改(这个过程叫发布)；</li>
+</ul>
+<h3 id="3next">3.next</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#next()
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">next</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">next</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#next(int)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">next</span><span class="o">(</span><span class="kt">int</span> <span class="n">n</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">&lt;</span> <span class="n">1</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span><span class="s">&#34;n must be &gt; 0&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="kt">long</span> <span class="n">nextValue</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">nextValue</span><span class="o">;</span>
+
+        <span class="kt">long</span> <span class="n">nextSequence</span> <span class="o">=</span> <span class="n">nextValue</span> <span class="o">+</span> <span class="n">n</span><span class="o">;</span>
+        <span class="kt">long</span> <span class="n">wrapPoint</span> <span class="o">=</span> <span class="n">nextSequence</span> <span class="o">-</span> <span class="n">bufferSize</span><span class="o">;</span><span class="c1">//
+</span><span class="c1"></span>        <span class="kt">long</span> <span class="n">cachedGatingSequence</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">cachedValue</span><span class="o">;</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">wrapPoint</span> <span class="o">&gt;</span> <span class="n">cachedGatingSequence</span> <span class="o">||</span> <span class="n">cachedGatingSequence</span> <span class="o">&gt;</span> <span class="n">nextValue</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="c1">//发布用cursor.set(StoreStore),可能消费线程没更新到
+</span><span class="c1"></span>            <span class="c1">//用StoreLoad消费线程看到
+</span><span class="c1"></span>            <span class="n">cursor</span><span class="o">.</span><span class="na">setVolatile</span><span class="o">(</span><span class="n">nextValue</span><span class="o">);</span>  <span class="c1">// StoreLoad fence
+</span><span class="c1"></span>
+            <span class="kt">long</span> <span class="n">minSequence</span><span class="o">;</span>
+            <span class="k">while</span> <span class="o">(</span><span class="n">wrapPoint</span> <span class="o">&gt;</span> <span class="o">(</span><span class="n">minSequence</span> <span class="o">=</span> <span class="n">Util</span><span class="o">.</span><span class="na">getMinimumSequence</span><span class="o">(</span><span class="n">gatingSequences</span><span class="o">,</span> <span class="n">nextValue</span><span class="o">)))</span>
+            <span class="o">{</span>
+                <span class="c1">//策略释放资源操作，通知消费者消费
+</span><span class="c1"></span>                <span class="n">waitStrategy</span><span class="o">.</span><span class="na">signalAllWhenBlocking</span><span class="o">();</span>
+                <span class="c1">//释放当前CPU资源
+</span><span class="c1"></span>                <span class="n">LockSupport</span><span class="o">.</span><span class="na">parkNanos</span><span class="o">(</span><span class="n">1L</span><span class="o">);</span> <span class="c1">// TODO: Use waitStrategy to spin?
+</span><span class="c1"></span>            <span class="o">}</span>
+
+            <span class="k">this</span><span class="o">.</span><span class="na">cachedValue</span> <span class="o">=</span> <span class="n">minSequence</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="k">this</span><span class="o">.</span><span class="na">nextValue</span> <span class="o">=</span> <span class="n">nextSequence</span><span class="o">;</span>
+
+        <span class="k">return</span> <span class="n">nextSequence</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4trynext">4.tryNext</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+   <span class="cm">/**
+</span><span class="cm">    * @see Sequencer#tryNext()
+</span><span class="cm">    */</span>
+   <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="kt">long</span> <span class="nf">tryNext</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InsufficientCapacityException</span>
+   <span class="o">{</span>
+       <span class="k">return</span> <span class="n">tryNext</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+   <span class="o">}</span>
+
+   <span class="cm">/**
+</span><span class="cm">    * @see Sequencer#tryNext(int)
+</span><span class="cm">    */</span>
+   <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="kt">long</span> <span class="nf">tryNext</span><span class="o">(</span><span class="kt">int</span> <span class="n">n</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InsufficientCapacityException</span>
+   <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">&lt;</span> <span class="n">1</span><span class="o">)</span>
+       <span class="o">{</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span><span class="s">&#34;n must be &gt; 0&#34;</span><span class="o">);</span>
+       <span class="o">}</span>
+
+       <span class="k">if</span> <span class="o">(!</span><span class="n">hasAvailableCapacity</span><span class="o">(</span><span class="n">n</span><span class="o">,</span> <span class="kc">true</span><span class="o">))</span>
+       <span class="o">{</span>
+           <span class="k">throw</span> <span class="n">InsufficientCapacityException</span><span class="o">.</span><span class="na">INSTANCE</span><span class="o">;</span>
+       <span class="o">}</span>
+
+       <span class="kt">long</span> <span class="n">nextSequence</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">nextValue</span> <span class="o">+=</span> <span class="n">n</span><span class="o">;</span>
+
+       <span class="k">return</span> <span class="n">nextSequence</span><span class="o">;</span>
+   <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="5其他实现方法">5.其他实现方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#remainingCapacity()
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">remainingCapacity</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="kt">long</span> <span class="n">nextValue</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">nextValue</span><span class="o">;</span>
+
+        <span class="kt">long</span> <span class="n">consumed</span> <span class="o">=</span> <span class="n">Util</span><span class="o">.</span><span class="na">getMinimumSequence</span><span class="o">(</span><span class="n">gatingSequences</span><span class="o">,</span> <span class="n">nextValue</span><span class="o">);</span>
+        <span class="kt">long</span> <span class="n">produced</span> <span class="o">=</span> <span class="n">nextValue</span><span class="o">;</span>
+        <span class="k">return</span> <span class="n">getBufferSize</span><span class="o">()</span> <span class="o">-</span> <span class="o">(</span><span class="n">produced</span> <span class="o">-</span> <span class="n">consumed</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#claim(long)
+</span><span class="cm">     *  赋值操作
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">claim</span><span class="o">(</span><span class="kt">long</span> <span class="n">sequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">nextValue</span> <span class="o">=</span> <span class="n">sequence</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#publish(long)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">publish</span><span class="o">(</span><span class="kt">long</span> <span class="n">sequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">sequence</span><span class="o">);</span>
+        <span class="n">waitStrategy</span><span class="o">.</span><span class="na">signalAllWhenBlocking</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#publish(long, long)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">publish</span><span class="o">(</span><span class="kt">long</span> <span class="n">lo</span><span class="o">,</span> <span class="kt">long</span> <span class="n">hi</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">publish</span><span class="o">(</span><span class="n">hi</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#isAvailable(long)
+</span><span class="cm">     *  可用判断消费者消费序列
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isAvailable</span><span class="o">(</span><span class="kt">long</span> <span class="n">sequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">sequence</span> <span class="o">&lt;=</span> <span class="n">cursor</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">getHighestPublishedSequence</span><span class="o">(</span><span class="kt">long</span> <span class="n">lowerBound</span><span class="o">,</span> <span class="kt">long</span> <span class="n">availableSequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">availableSequence</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="四multiproducersequencer">四、MultiProducerSequencer</h2>
+<h3 id="1multiproducersequencer-多个生产者">1.MultiProducerSequencer 多个生产者</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+<span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">MultiProducerSequencer</span> <span class="kd">extends</span> <span class="n">AbstractSequencer</span>
+<span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Unsafe</span> <span class="n">UNSAFE</span> <span class="o">=</span> <span class="n">Util</span><span class="o">.</span><span class="na">getUnsafe</span><span class="o">();</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">BASE</span> <span class="o">=</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">arrayBaseOffset</span><span class="o">(</span><span class="kt">int</span><span class="o">[].</span><span class="na">class</span><span class="o">);</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">SCALE</span> <span class="o">=</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">arrayIndexScale</span><span class="o">(</span><span class="kt">int</span><span class="o">[].</span><span class="na">class</span><span class="o">);</span>
+
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">gatingSequenceCache</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Sequence</span><span class="o">(</span><span class="n">Sequencer</span><span class="o">.</span><span class="na">INITIAL_CURSOR_VALUE</span><span class="o">);</span>
+
+    <span class="c1">// availableBuffer tracks the state of each ringbuffer slot
+</span><span class="c1"></span>    <span class="c1">// see below for more details on the approach
+</span><span class="c1"></span>    <span class="c1">//可用缓冲区跟踪每个ringbuffer槽的状态
+</span><span class="c1"></span>    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">int</span><span class="o">[]</span> <span class="n">availableBuffer</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">indexMask</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">indexShift</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Construct a Sequencer with the selected wait strategy and buffer size.
+</span><span class="cm">     *
+</span><span class="cm">     * @param bufferSize   the size of the buffer that this will sequence over.
+</span><span class="cm">     * @param waitStrategy for those waiting on sequences.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">MultiProducerSequencer</span><span class="o">(</span><span class="kt">int</span> <span class="n">bufferSize</span><span class="o">,</span> <span class="kd">final</span> <span class="n">WaitStrategy</span> <span class="n">waitStrategy</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">bufferSize</span><span class="o">,</span> <span class="n">waitStrategy</span><span class="o">);</span>
+        <span class="n">availableBuffer</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">int</span><span class="o">[</span><span class="n">bufferSize</span><span class="o">];</span>
+        <span class="n">indexMask</span> <span class="o">=</span> <span class="n">bufferSize</span> <span class="o">-</span> <span class="n">1</span><span class="o">;</span>
+        <span class="n">indexShift</span> <span class="o">=</span> <span class="n">Util</span><span class="o">.</span><span class="na">log2</span><span class="o">(</span><span class="n">bufferSize</span><span class="o">);</span>
+        <span class="n">initialiseAvailableBuffer</span><span class="o">();</span>
+    <span class="o">}</span>
+    
+     <span class="kd">private</span> <span class="kt">void</span> <span class="nf">initialiseAvailableBuffer</span><span class="o">()</span>
+     <span class="o">{</span>
+         <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">availableBuffer</span><span class="o">.</span><span class="na">length</span> <span class="o">-</span> <span class="n">1</span><span class="o">;</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span><span class="o">--)</span>
+         <span class="o">{</span>
+             <span class="n">setAvailableBufferValue</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="o">-</span><span class="n">1</span><span class="o">);</span>
+         <span class="o">}</span>
+ 
+         <span class="n">setAvailableBufferValue</span><span class="o">(</span><span class="n">0</span><span class="o">,</span> <span class="o">-</span><span class="n">1</span><span class="o">);</span>
+     <span class="o">}</span>  
+
+     <span class="cm">/**
+</span><span class="cm">      * The below methods work on the availableBuffer flag.
+</span><span class="cm">      * &lt;p&gt;
+</span><span class="cm">      * The prime reason is to avoid a shared sequence object between publisher threads.
+</span><span class="cm">      * (Keeping single pointers tracking start and end would require coordination
+</span><span class="cm">      * between the threads).
+</span><span class="cm">      * &lt;p&gt;
+</span><span class="cm">      * --  Firstly we have the constraint that the delta between the cursor and minimum
+</span><span class="cm">      * gating sequence will never be larger than the buffer size (the code in
+</span><span class="cm">      * next/tryNext in the Sequence takes care of that).
+</span><span class="cm">      * -- Given that; take the sequence value and mask off the lower portion of the
+</span><span class="cm">      * sequence as the index into the buffer (indexMask). (aka modulo operator)
+</span><span class="cm">      * -- The upper portion of the sequence becomes the value to check for availability.
+</span><span class="cm">      * ie: it tells us how many times around the ring buffer we&#39;ve been (aka division)
+</span><span class="cm">      * -- Because we can&#39;t wrap without the gating sequences moving forward (i.e. the
+</span><span class="cm">      * minimum gating sequence is effectively our last available position in the
+</span><span class="cm">      * buffer), when we have new data and successfully claimed a slot we can simply
+</span><span class="cm">      * write over the top.
+</span><span class="cm">      */</span>
+     <span class="kd">private</span> <span class="kt">void</span> <span class="nf">setAvailable</span><span class="o">(</span><span class="kd">final</span> <span class="kt">long</span> <span class="n">sequence</span><span class="o">)</span>
+     <span class="o">{</span>
+         <span class="n">setAvailableBufferValue</span><span class="o">(</span><span class="n">calculateIndex</span><span class="o">(</span><span class="n">sequence</span><span class="o">),</span> <span class="n">calculateAvailabilityFlag</span><span class="o">(</span><span class="n">sequence</span><span class="o">));</span>
+     <span class="o">}</span>
+ 
+     <span class="kd">private</span> <span class="kt">void</span> <span class="nf">setAvailableBufferValue</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">,</span> <span class="kt">int</span> <span class="n">flag</span><span class="o">)</span>
+     <span class="o">{</span>
+         <span class="kt">long</span> <span class="n">bufferAddress</span> <span class="o">=</span> <span class="o">(</span><span class="n">index</span> <span class="o">*</span> <span class="n">SCALE</span><span class="o">)</span> <span class="o">+</span> <span class="n">BASE</span><span class="o">;</span>
+         <span class="n">UNSAFE</span><span class="o">.</span><span class="na">putOrderedInt</span><span class="o">(</span><span class="n">availableBuffer</span><span class="o">,</span> <span class="n">bufferAddress</span><span class="o">,</span> <span class="n">flag</span><span class="o">);</span>
+     <span class="o">}</span>    
+ <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2hasavailablecapacity-判断是否还有给定的可用容量-1">2.hasAvailableCapacity 判断是否还有给定的可用容量。</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#hasAvailableCapacity(int)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">hasAvailableCapacity</span><span class="o">(</span><span class="kd">final</span> <span class="kt">int</span> <span class="n">requiredCapacity</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">hasAvailableCapacity</span><span class="o">(</span><span class="n">gatingSequences</span><span class="o">,</span> <span class="n">requiredCapacity</span><span class="o">,</span> <span class="n">cursor</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">hasAvailableCapacity</span><span class="o">(</span><span class="n">Sequence</span><span class="o">[]</span> <span class="n">gatingSequences</span><span class="o">,</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">requiredCapacity</span><span class="o">,</span> <span class="kt">long</span> <span class="n">cursorValue</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="kt">long</span> <span class="n">wrapPoint</span> <span class="o">=</span> <span class="o">(</span><span class="n">cursorValue</span> <span class="o">+</span> <span class="n">requiredCapacity</span><span class="o">)</span> <span class="o">-</span> <span class="n">bufferSize</span><span class="o">;</span>
+        <span class="kt">long</span> <span class="n">cachedGatingSequence</span> <span class="o">=</span> <span class="n">gatingSequenceCache</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">wrapPoint</span> <span class="o">&gt;</span> <span class="n">cachedGatingSequence</span> <span class="o">||</span> <span class="n">cachedGatingSequence</span> <span class="o">&gt;</span> <span class="n">cursorValue</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="kt">long</span> <span class="n">minSequence</span> <span class="o">=</span> <span class="n">Util</span><span class="o">.</span><span class="na">getMinimumSequence</span><span class="o">(</span><span class="n">gatingSequences</span><span class="o">,</span> <span class="n">cursorValue</span><span class="o">);</span>
+            <span class="n">gatingSequenceCache</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">minSequence</span><span class="o">);</span>
+
+            <span class="k">if</span> <span class="o">(</span><span class="n">wrapPoint</span> <span class="o">&gt;</span> <span class="n">minSequence</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>cursor当作申请空间序列，Sequence运用CAS控制并发，发布是怎么处理呢？</li>
+<li>例如:线程A,申请空间数量2，线程B,申请空间数量2；发布时候，线程B先发布，消费按顺序读取，GG读是空了，线程A还没发布；</li>
+<li>一般处理，消费A，获取到这个序列，在去请求一下，这个序列是否发布(是否可用)，没发布，等待！所以提供isAvailable方法，告诉消费者；</li>
+<li>看看,availableBuffer数组保存这个标示，告诉消费端，这个是可以滴；数组保存数组是标示位(0,1,位)，就会存在一个问题，消费端修改这个位标示，导致线程可见性问题，还要更新消费端序列；
+<ul>
+<li>availableBuffer创建int数组，保存当前的序列数据往右移动indexShift位(seq&raquo;indexShift)，保存数字标示位，判断是否可用；</li>
+<li>为什么不保存序列本身值呢?long类型，占用资源；</li>
+<li>indexShift=Util.log2(bufferSize),bufferSize=1024=2^10,indexShift=10</li>
+</ul>
+</li>
+</ul>
+<h3 id="3next-1">3.next</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#next()
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">next</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">next</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#next(int)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">next</span><span class="o">(</span><span class="kt">int</span> <span class="n">n</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">&lt;</span> <span class="n">1</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span><span class="s">&#34;n must be &gt; 0&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="kt">long</span> <span class="n">current</span><span class="o">;</span>
+        <span class="kt">long</span> <span class="n">next</span><span class="o">;</span>
+
+        <span class="k">do</span>
+        <span class="o">{</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+            <span class="n">next</span> <span class="o">=</span> <span class="n">current</span> <span class="o">+</span> <span class="n">n</span><span class="o">;</span>
+
+            <span class="kt">long</span> <span class="n">wrapPoint</span> <span class="o">=</span> <span class="n">next</span> <span class="o">-</span> <span class="n">bufferSize</span><span class="o">;</span>
+            <span class="kt">long</span> <span class="n">cachedGatingSequence</span> <span class="o">=</span> <span class="n">gatingSequenceCache</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+
+            <span class="k">if</span> <span class="o">(</span><span class="n">wrapPoint</span> <span class="o">&gt;</span> <span class="n">cachedGatingSequence</span> <span class="o">||</span> <span class="n">cachedGatingSequence</span> <span class="o">&gt;</span> <span class="n">current</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="kt">long</span> <span class="n">gatingSequence</span> <span class="o">=</span> <span class="n">Util</span><span class="o">.</span><span class="na">getMinimumSequence</span><span class="o">(</span><span class="n">gatingSequences</span><span class="o">,</span> <span class="n">current</span><span class="o">);</span>
+
+                <span class="k">if</span> <span class="o">(</span><span class="n">wrapPoint</span> <span class="o">&gt;</span> <span class="n">gatingSequence</span><span class="o">)</span>
+                <span class="o">{</span>
+                    <span class="n">waitStrategy</span><span class="o">.</span><span class="na">signalAllWhenBlocking</span><span class="o">();</span>
+                    <span class="n">LockSupport</span><span class="o">.</span><span class="na">parkNanos</span><span class="o">(</span><span class="n">1</span><span class="o">);</span> <span class="c1">// TODO, should we spin based on the wait strategy?
+</span><span class="c1"></span>                    <span class="k">continue</span><span class="o">;</span>
+                <span class="o">}</span>
+
+                <span class="n">gatingSequenceCache</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">gatingSequence</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="n">current</span><span class="o">,</span> <span class="n">next</span><span class="o">))</span>
+            <span class="o">{</span>
+                <span class="k">break</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+
+        <span class="k">return</span> <span class="n">next</span><span class="o">;</span>
+    <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3trynext">3.tryNext</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#tryNext()
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">tryNext</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InsufficientCapacityException</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">tryNext</span><span class="o">(</span><span class="n">1</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#tryNext(int)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">tryNext</span><span class="o">(</span><span class="kt">int</span> <span class="n">n</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InsufficientCapacityException</span>
+    <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">&lt;</span> <span class="n">1</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span><span class="s">&#34;n must be &gt; 0&#34;</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="kt">long</span> <span class="n">current</span><span class="o">;</span>
+        <span class="kt">long</span> <span class="n">next</span><span class="o">;</span>
+
+        <span class="k">do</span>
+        <span class="o">{</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+            <span class="n">next</span> <span class="o">=</span> <span class="n">current</span> <span class="o">+</span> <span class="n">n</span><span class="o">;</span>
+
+            <span class="k">if</span> <span class="o">(!</span><span class="n">hasAvailableCapacity</span><span class="o">(</span><span class="n">gatingSequences</span><span class="o">,</span> <span class="n">n</span><span class="o">,</span> <span class="n">current</span><span class="o">))</span>
+            <span class="o">{</span>
+                <span class="k">throw</span> <span class="n">InsufficientCapacityException</span><span class="o">.</span><span class="na">INSTANCE</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="k">while</span> <span class="o">(!</span><span class="n">cursor</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="n">current</span><span class="o">,</span> <span class="n">next</span><span class="o">));</span>
+
+        <span class="k">return</span> <span class="n">next</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="5其他实现方法-1">5.其他实现方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#claim(long)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">claim</span><span class="o">(</span><span class="kt">long</span> <span class="n">sequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">sequence</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#remainingCapacity()
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">remainingCapacity</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="kt">long</span> <span class="n">consumed</span> <span class="o">=</span> <span class="n">Util</span><span class="o">.</span><span class="na">getMinimumSequence</span><span class="o">(</span><span class="n">gatingSequences</span><span class="o">,</span> <span class="n">cursor</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+        <span class="kt">long</span> <span class="n">produced</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+        <span class="k">return</span> <span class="n">getBufferSize</span><span class="o">()</span> <span class="o">-</span> <span class="o">(</span><span class="n">produced</span> <span class="o">-</span> <span class="n">consumed</span><span class="o">);</span>
+    <span class="o">}</span>
+   <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#publish(long)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">publish</span><span class="o">(</span><span class="kd">final</span> <span class="kt">long</span> <span class="n">sequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">setAvailable</span><span class="o">(</span><span class="n">sequence</span><span class="o">);</span>
+        <span class="n">waitStrategy</span><span class="o">.</span><span class="na">signalAllWhenBlocking</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#publish(long, long)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">publish</span><span class="o">(</span><span class="kt">long</span> <span class="n">lo</span><span class="o">,</span> <span class="kt">long</span> <span class="n">hi</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">for</span> <span class="o">(</span><span class="kt">long</span> <span class="n">l</span> <span class="o">=</span> <span class="n">lo</span><span class="o">;</span> <span class="n">l</span> <span class="o">&lt;=</span> <span class="n">hi</span><span class="o">;</span> <span class="n">l</span><span class="o">++)</span>
+        <span class="o">{</span>
+            <span class="n">setAvailable</span><span class="o">(</span><span class="n">l</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="n">waitStrategy</span><span class="o">.</span><span class="na">signalAllWhenBlocking</span><span class="o">();</span>
+    <span class="o">}</span>
+ <span class="cm">/**
+</span><span class="cm">     * @see Sequencer#isAvailable(long)
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isAvailable</span><span class="o">(</span><span class="kt">long</span> <span class="n">sequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="n">calculateIndex</span><span class="o">(</span><span class="n">sequence</span><span class="o">);</span>
+        <span class="kt">int</span> <span class="n">flag</span> <span class="o">=</span> <span class="n">calculateAvailabilityFlag</span><span class="o">(</span><span class="n">sequence</span><span class="o">);</span>
+        <span class="kt">long</span> <span class="n">bufferAddress</span> <span class="o">=</span> <span class="o">(</span><span class="n">index</span> <span class="o">*</span> <span class="n">SCALE</span><span class="o">)</span> <span class="o">+</span> <span class="n">BASE</span><span class="o">;</span>
+        <span class="k">return</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">getIntVolatile</span><span class="o">(</span><span class="n">availableBuffer</span><span class="o">,</span> <span class="n">bufferAddress</span><span class="o">)</span> <span class="o">==</span> <span class="n">flag</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">getHighestPublishedSequence</span><span class="o">(</span><span class="kt">long</span> <span class="n">lowerBound</span><span class="o">,</span> <span class="kt">long</span> <span class="n">availableSequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">for</span> <span class="o">(</span><span class="kt">long</span> <span class="n">sequence</span> <span class="o">=</span> <span class="n">lowerBound</span><span class="o">;</span> <span class="n">sequence</span> <span class="o">&lt;=</span> <span class="n">availableSequence</span><span class="o">;</span> <span class="n">sequence</span><span class="o">++)</span>
+        <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">isAvailable</span><span class="o">(</span><span class="n">sequence</span><span class="o">))</span>
+            <span class="o">{</span>
+                <span class="k">return</span> <span class="n">sequence</span> <span class="o">-</span> <span class="n">1</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="k">return</span> <span class="n">availableSequence</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kt">int</span> <span class="nf">calculateAvailabilityFlag</span><span class="o">(</span><span class="kd">final</span> <span class="kt">long</span> <span class="n">sequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="o">(</span><span class="kt">int</span><span class="o">)</span> <span class="o">(</span><span class="n">sequence</span> <span class="o">&gt;&gt;&gt;</span> <span class="n">indexShift</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kt">int</span> <span class="nf">calculateIndex</span><span class="o">(</span><span class="kd">final</span> <span class="kt">long</span> <span class="n">sequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="o">((</span><span class="kt">int</span><span class="o">)</span> <span class="n">sequence</span><span class="o">)</span> <span class="o">&amp;</span> <span class="n">indexMask</span><span class="o">;</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>发布时，更新标示putOrderedInt</li>
+<li>判断可用时，getIntVolatile</li>
+</ul>
+<h2 id="五sequencegroups">五、SequenceGroups</h2>
+<pre><code>SequenceGroups的帮助类，里面提供了addSequences和removeSequence方法，都是原子操作。
+</code></pre>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm"> * Provides static methods for managing a {@link SequenceGroup} object.
+</span><span class="cm"> */</span>
+<span class="kd">class</span> <span class="nc">SequenceGroups</span>
+<span class="o">{</span>
+    <span class="kd">static</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="kt">void</span> <span class="nf">addSequences</span><span class="o">(</span>
+        <span class="kd">final</span> <span class="n">T</span> <span class="n">holder</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">AtomicReferenceFieldUpdater</span><span class="o">&lt;</span><span class="n">T</span><span class="o">,</span> <span class="n">Sequence</span><span class="o">[]&gt;</span> <span class="n">updater</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Cursored</span> <span class="n">cursor</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Sequence</span><span class="o">...</span> <span class="n">sequencesToAdd</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="kt">long</span> <span class="n">cursorSequence</span><span class="o">;</span>
+        <span class="n">Sequence</span><span class="o">[]</span> <span class="n">updatedSequences</span><span class="o">;</span>
+        <span class="n">Sequence</span><span class="o">[]</span> <span class="n">currentSequences</span><span class="o">;</span>
+
+        <span class="k">do</span>
+        <span class="o">{</span>
+            <span class="n">currentSequences</span> <span class="o">=</span> <span class="n">updater</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">holder</span><span class="o">);</span>
+            <span class="n">updatedSequences</span> <span class="o">=</span> <span class="n">copyOf</span><span class="o">(</span><span class="n">currentSequences</span><span class="o">,</span> <span class="n">currentSequences</span><span class="o">.</span><span class="na">length</span> <span class="o">+</span> <span class="n">sequencesToAdd</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+            <span class="n">cursorSequence</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="na">getCursor</span><span class="o">();</span>
+
+            <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="n">currentSequences</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="k">for</span> <span class="o">(</span><span class="n">Sequence</span> <span class="n">sequence</span> <span class="o">:</span> <span class="n">sequencesToAdd</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="n">sequence</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">cursorSequence</span><span class="o">);</span>
+                <span class="n">updatedSequences</span><span class="o">[</span><span class="n">index</span><span class="o">++]</span> <span class="o">=</span> <span class="n">sequence</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="k">while</span> <span class="o">(!</span><span class="n">updater</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="n">holder</span><span class="o">,</span> <span class="n">currentSequences</span><span class="o">,</span> <span class="n">updatedSequences</span><span class="o">));</span>
+
+        <span class="n">cursorSequence</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="na">getCursor</span><span class="o">();</span>
+        <span class="k">for</span> <span class="o">(</span><span class="n">Sequence</span> <span class="n">sequence</span> <span class="o">:</span> <span class="n">sequencesToAdd</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="n">sequence</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">cursorSequence</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="kd">static</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="kt">boolean</span> <span class="nf">removeSequence</span><span class="o">(</span>
+        <span class="kd">final</span> <span class="n">T</span> <span class="n">holder</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">AtomicReferenceFieldUpdater</span><span class="o">&lt;</span><span class="n">T</span><span class="o">,</span> <span class="n">Sequence</span><span class="o">[]&gt;</span> <span class="n">sequenceUpdater</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">sequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">numToRemove</span><span class="o">;</span>
+        <span class="n">Sequence</span><span class="o">[]</span> <span class="n">oldSequences</span><span class="o">;</span>
+        <span class="n">Sequence</span><span class="o">[]</span> <span class="n">newSequences</span><span class="o">;</span>
+
+        <span class="k">do</span>
+        <span class="o">{</span>
+            <span class="n">oldSequences</span> <span class="o">=</span> <span class="n">sequenceUpdater</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">holder</span><span class="o">);</span>
+
+            <span class="n">numToRemove</span> <span class="o">=</span> <span class="n">countMatching</span><span class="o">(</span><span class="n">oldSequences</span><span class="o">,</span> <span class="n">sequence</span><span class="o">);</span>
+
+            <span class="k">if</span> <span class="o">(</span><span class="n">0</span> <span class="o">==</span> <span class="n">numToRemove</span><span class="o">)</span>
+            <span class="o">{</span>
+                <span class="k">break</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="kd">final</span> <span class="kt">int</span> <span class="n">oldSize</span> <span class="o">=</span> <span class="n">oldSequences</span><span class="o">.</span><span class="na">length</span><span class="o">;</span>
+            <span class="n">newSequences</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Sequence</span><span class="o">[</span><span class="n">oldSize</span> <span class="o">-</span> <span class="n">numToRemove</span><span class="o">];</span>
+
+            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">,</span> <span class="n">pos</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">oldSize</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span>
+            <span class="o">{</span>
+                <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">testSequence</span> <span class="o">=</span> <span class="n">oldSequences</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">sequence</span> <span class="o">!=</span> <span class="n">testSequence</span><span class="o">)</span>
+                <span class="o">{</span>
+                    <span class="n">newSequences</span><span class="o">[</span><span class="n">pos</span><span class="o">++]</span> <span class="o">=</span> <span class="n">testSequence</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="k">while</span> <span class="o">(!</span><span class="n">sequenceUpdater</span><span class="o">.</span><span class="na">compareAndSet</span><span class="o">(</span><span class="n">holder</span><span class="o">,</span> <span class="n">oldSequences</span><span class="o">,</span> <span class="n">newSequences</span><span class="o">));</span>
+
+        <span class="k">return</span> <span class="n">numToRemove</span> <span class="o">!=</span> <span class="n">0</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="kd">static</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="kt">int</span> <span class="nf">countMatching</span><span class="o">(</span><span class="n">T</span><span class="o">[]</span> <span class="n">values</span><span class="o">,</span> <span class="kd">final</span> <span class="n">T</span> <span class="n">toMatch</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">numToRemove</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+        <span class="k">for</span> <span class="o">(</span><span class="n">T</span> <span class="n">value</span> <span class="o">:</span> <span class="n">values</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">value</span> <span class="o">==</span> <span class="n">toMatch</span><span class="o">)</span> <span class="c1">// Specifically uses identity
+</span><span class="c1"></span>            <span class="o">{</span>
+                <span class="n">numToRemove</span><span class="o">++;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">numToRemove</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="六eventpoller">六、EventPoller</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm"> * Experimental poll-based interface for the Disruptor.
+</span><span class="cm"> */</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">EventPoller</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span>
+<span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">DataProvider</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">dataProvider</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sequencer</span> <span class="n">sequencer</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">sequence</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">gatingSequence</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Handler</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span>
+    <span class="o">{</span>
+        <span class="kt">boolean</span> <span class="nf">onEvent</span><span class="o">(</span><span class="n">T</span> <span class="n">event</span><span class="o">,</span> <span class="kt">long</span> <span class="n">sequence</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">endOfBatch</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kd">enum</span> <span class="n">PollState</span>
+    <span class="o">{</span>
+        <span class="n">PROCESSING</span><span class="o">,</span> <span class="n">GATING</span><span class="o">,</span> <span class="n">IDLE</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="nf">EventPoller</span><span class="o">(</span>
+        <span class="kd">final</span> <span class="n">DataProvider</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">dataProvider</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Sequencer</span> <span class="n">sequencer</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">sequence</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">gatingSequence</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">dataProvider</span> <span class="o">=</span> <span class="n">dataProvider</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">sequencer</span> <span class="o">=</span> <span class="n">sequencer</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">sequence</span> <span class="o">=</span> <span class="n">sequence</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">gatingSequence</span> <span class="o">=</span> <span class="n">gatingSequence</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="n">PollState</span> <span class="nf">poll</span><span class="o">(</span><span class="kd">final</span> <span class="n">Handler</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">eventHandler</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span>
+    <span class="o">{</span>
+        <span class="kd">final</span> <span class="kt">long</span> <span class="n">currentSequence</span> <span class="o">=</span> <span class="n">sequence</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+        <span class="kt">long</span> <span class="n">nextSequence</span> <span class="o">=</span> <span class="n">currentSequence</span> <span class="o">+</span> <span class="n">1</span><span class="o">;</span>
+        <span class="kd">final</span> <span class="kt">long</span> <span class="n">availableSequence</span> <span class="o">=</span> <span class="n">sequencer</span><span class="o">.</span><span class="na">getHighestPublishedSequence</span><span class="o">(</span><span class="n">nextSequence</span><span class="o">,</span> <span class="n">gatingSequence</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">nextSequence</span> <span class="o">&lt;=</span> <span class="n">availableSequence</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="kt">boolean</span> <span class="n">processNextEvent</span><span class="o">;</span>
+            <span class="kt">long</span> <span class="n">processedSequence</span> <span class="o">=</span> <span class="n">currentSequence</span><span class="o">;</span>
+
+            <span class="k">try</span>
+            <span class="o">{</span>
+                <span class="k">do</span>
+                <span class="o">{</span>
+                    <span class="kd">final</span> <span class="n">T</span> <span class="n">event</span> <span class="o">=</span> <span class="n">dataProvider</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">nextSequence</span><span class="o">);</span>
+                    <span class="n">processNextEvent</span> <span class="o">=</span> <span class="n">eventHandler</span><span class="o">.</span><span class="na">onEvent</span><span class="o">(</span><span class="n">event</span><span class="o">,</span> <span class="n">nextSequence</span><span class="o">,</span> <span class="n">nextSequence</span> <span class="o">==</span> <span class="n">availableSequence</span><span class="o">);</span>
+                    <span class="n">processedSequence</span> <span class="o">=</span> <span class="n">nextSequence</span><span class="o">;</span>
+                    <span class="n">nextSequence</span><span class="o">++;</span>
+
+                <span class="o">}</span>
+                <span class="k">while</span> <span class="o">(</span><span class="n">nextSequence</span> <span class="o">&lt;=</span> <span class="n">availableSequence</span> <span class="o">&amp;</span> <span class="n">processNextEvent</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">finally</span>
+            <span class="o">{</span>
+                <span class="n">sequence</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">processedSequence</span><span class="o">);</span>
+            <span class="o">}</span>
+
+            <span class="k">return</span> <span class="n">PollState</span><span class="o">.</span><span class="na">PROCESSING</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">sequencer</span><span class="o">.</span><span class="na">getCursor</span><span class="o">()</span> <span class="o">&gt;=</span> <span class="n">nextSequence</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">return</span> <span class="n">PollState</span><span class="o">.</span><span class="na">GATING</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">else</span>
+        <span class="o">{</span>
+            <span class="k">return</span> <span class="n">PollState</span><span class="o">.</span><span class="na">IDLE</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kd">static</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">EventPoller</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">newInstance</span><span class="o">(</span>
+        <span class="kd">final</span> <span class="n">DataProvider</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">dataProvider</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Sequencer</span> <span class="n">sequencer</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">sequence</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">cursorSequence</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Sequence</span><span class="o">...</span> <span class="n">gatingSequences</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">Sequence</span> <span class="n">gatingSequence</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">gatingSequences</span><span class="o">.</span><span class="na">length</span> <span class="o">==</span> <span class="n">0</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="n">gatingSequence</span> <span class="o">=</span> <span class="n">cursorSequence</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">gatingSequences</span><span class="o">.</span><span class="na">length</span> <span class="o">==</span> <span class="n">1</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="n">gatingSequence</span> <span class="o">=</span> <span class="n">gatingSequences</span><span class="o">[</span><span class="n">0</span><span class="o">];</span>
+        <span class="o">}</span>
+        <span class="k">else</span>
+        <span class="o">{</span>
+            <span class="n">gatingSequence</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FixedSequenceGroup</span><span class="o">(</span><span class="n">gatingSequences</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="k">return</span> <span class="k">new</span> <span class="n">EventPoller</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;(</span><span class="n">dataProvider</span><span class="o">,</span> <span class="n">sequencer</span><span class="o">,</span> <span class="n">sequence</span><span class="o">,</span> <span class="n">gatingSequence</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="n">Sequence</span> <span class="nf">getSequence</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">sequence</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2018-05-15 18:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/disruptor/">disruptor</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/disruptor/4.SequenceBarrier%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">SequenceBarrier</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/disruptor/2.Sequence%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">Sequence源码分析</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

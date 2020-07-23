@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Atomic讲解 - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="引言 Java从JDK1.5开始提供了java.util.concurrent.atomic包，方便程序员在多线程环境下，无锁的进行原子操作。" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/02.Atomic%E8%AE%B2%E8%A7%A3/" />
+<link href="/post/concurrent/02.Atomic%E8%AE%B2%E8%A7%A3/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/02.Atomic%E8%AE%B2%E8%A7%A3/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="Atomic讲解" />
+<meta property="og:description" content="引言 Java从JDK1.5开始提供了java.util.concurrent.atomic包，方便程序员在多线程环境下，无锁的进行原子操作。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/02.Atomic%E8%AE%B2%E8%A7%A3/" />
+<meta property="article:published_time" content="2017-03-14T21:00:11+00:00" />
+<meta property="article:modified_time" content="2017-03-14T21:00:11+00:00" />
+<meta itemprop="name" content="Atomic讲解">
+<meta itemprop="description" content="引言 Java从JDK1.5开始提供了java.util.concurrent.atomic包，方便程序员在多线程环境下，无锁的进行原子操作。">
+<meta itemprop="datePublished" content="2017-03-14T21:00:11&#43;00:00" />
+<meta itemprop="dateModified" content="2017-03-14T21:00:11&#43;00:00" />
+<meta itemprop="wordCount" content="4900">
+
+
+
+<meta itemprop="keywords" content="Atomic," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Atomic讲解"/>
+<meta name="twitter:description" content="引言 Java从JDK1.5开始提供了java.util.concurrent.atomic包，方便程序员在多线程环境下，无锁的进行原子操作。"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">Atomic讲解</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-03-14 21:00 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 4900 字 </span>
+      <span class="more-meta"> 预计阅读 10 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#引言">引言</a>
+      <ul>
+        <li><a href="#cascompare-and-swap比较并交换">CAS（Compare And Swap）比较并交换</a></li>
+      </ul>
+    </li>
+    <li><a href="#atomic包介绍">Atomic包介绍</a></li>
+    <li><a href="#基本类型">基本类型</a></li>
+    <li><a href="#引用类型">引用类型</a></li>
+    <li><a href="#数组类型">数组类型</a></li>
+    <li><a href="#属性原子修改器类型">属性原子修改器类型</a></li>
+    <li><a href="#解决aba类型">解决ABA类型</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-03-14T21:00:11" title="March 14, 2017">March 14, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h2 id="引言">引言</h2>
+<p>Java从JDK1.5开始提供了java.util.concurrent.atomic包，方便程序员在多线程环境下，无锁的进行原子操作。原子变量的底层使用了
+处理器提供的原子指令，但是不同的CPU架构可能提供的原子指令不一样，也有可能需要某种形式的内部锁,所以该方法不能绝对保证线程
+不被阻塞。</p>
+<h3 id="cascompare-and-swap比较并交换">CAS（Compare And Swap）比较并交换</h3>
+<p>CAS算法的过程是这样：它包含3个参数CAS(V,E,N)。V表示要更新的变量(内存值)，E表示预期值(旧的)，N表示新值。当且仅当V值等于
+E值时，才会将V的值设为N，如果V值和E值不同，则说明已经有其他线程做了更新，则当前线程什么都不做。最后，CAS返回当前V的真实值。
+CAS操作是抱着乐观的态度进行的(乐观锁)，它总是认为自己可以成功完成操作。当多个线程同时使用CAS操作一个变量时，只有一个会胜出，
+并成功更新，其余均会失败。失败的线程不会被挂起，仅是被告知失败，并且允许再次尝试，当然也允许失败的线程放弃操作。基于这样的
+原理，CAS操作即时没有锁，也可以发现其他线程对当前线程的干扰，并进行恰当的处理。
+CAS 整个操作过程是原子操作，是一条CPU指令完成的</p>
+<h2 id="atomic包介绍">Atomic包介绍</h2>
+<p>在Atomic包里一共有12个类,如下分几种类型原子类操作:</p>
+<ul>
+<li>基本类型:AtomicBoolean,AtomicInteger,AtomicLong</li>
+<li>引用类型:AtomicReference</li>
+<li>数组类型:AtomicIntegerArray,AtomicLongArray,AtomicReferenceArray</li>
+<li>属性原子修改器类型:AtomicIntegerFieldUpdater,AtomicLongFieldUpdater,AtomicReferenceFieldUpdater</li>
+<li>解决ABA类型:AtomicMarkableReference,AtomicStampedReference</li>
+</ul>
+<p>Atomic包里的类基本都是使用Unsafe实现的包装类。Unsafe.compareAndSwapXXX来实现原子操作。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    /**
+     * Atomically update Java variable to &lt;tt&gt;x&lt;/tt&gt; if it is currently
+     * holding &lt;tt&gt;expected&lt;/tt&gt;.
+     * @return &lt;tt&gt;true&lt;/tt&gt; if successful
+     */
+    public final native boolean compareAndSwapObject(Object o, long offset,
+                                                     Object expected,
+                                                     Object x);
+
+    /**
+     * Atomically update Java variable to &lt;tt&gt;x&lt;/tt&gt; if it is currently
+     * holding &lt;tt&gt;expected&lt;/tt&gt;.
+     * @return &lt;tt&gt;true&lt;/tt&gt; if successful
+     */
+    public final native boolean compareAndSwapInt(Object o, long offset,
+                                                  int expected,
+                                                  int x);
+
+    /**
+     * Atomically update Java variable to &lt;tt&gt;x&lt;/tt&gt; if it is currently
+     * holding &lt;tt&gt;expected&lt;/tt&gt;.
+     * @return &lt;tt&gt;true&lt;/tt&gt; if successful
+     */
+    public final native boolean compareAndSwapLong(Object o, long offset,
+                                                   long expected,
+                                                   long x);
+</code></pre></td></tr></table>
+</div>
+</div><p>看源码compareAndSwapXXX方法有三个参数，一个参数是一个更新值当前对象，第二参数是修改当前对象属性值偏移量，第三参数当前
+属性值(支持类型int,long和Object),第四参数更新值。</p>
+<p>第二参数修改属性偏移量获取分两种类型：</p>
+<ul>
+<li>
+<p>基本类型和引用类型获取Unsafe.objectFieldOffset(Field field)方法获取。</p>
+<p>AtomicInteger源代码如下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">             private static final Unsafe unsafe = Unsafe.getUnsafe();
+             private static final long valueOffset;
+             
+             static {
+               try {
+                 valueOffset = unsafe.objectFieldOffset
+                     (AtomicInteger.class.getDeclaredField(&#34;value&#34;));
+               } catch (Exception ex) { throw new Error(ex); }
+             }
+                      
+             public final boolean compareAndSet(int expect, int update) {
+                   return unsafe.compareAndSwapInt(this, valueOffset, expect, update);
+             }
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li>
+<p>数组类型获取相对复杂点。分三步进行</p>
+<ul>
+<li>
+<p>第一步：Unsafe.arrayBaseOffset(Class arrayClass)方法获取数组第一个元素的偏移量。</p>
+</li>
+<li>
+<p>第二步：Unsafe.arrayIndexScale(Class arrayClass)方法获取数组类型增量因子。</p>
+</li>
+<li>
+<p>第三步：获取修改数组属性下标偏移值=第一步的数组第一个元素的偏移量+第二步的增量因子(乘以)下标值</p>
+<p>AtomicIntegerArray源码实现跟上面说逻辑类似，如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">      private static final Unsafe unsafe = Unsafe.getUnsafe();
+      //第一步获取数组第一个元素的偏移量
+      private static final int base = unsafe.arrayBaseOffset(int[].class);
+      private static final int shift;
+      private final int[] array;
+         
+      static {
+         //第二步获取数组类型增量因子(int:4,long:8,Object:4)
+          int scale = unsafe.arrayIndexScale(int[].class);
+          //数据类型不是2的幂
+          if ((scale &amp; (scale - 1)) != 0)
+              throw new Error(&#34;data type scale not a power of two&#34;);
+           /**
+             *numberOfLeadingZeros(int i) 给定一个int类型数据，返回这个数据的二进制串中从最左边算起连续的“0”的
+             *总数量。因为int类型的数据长度为32所以高位不足的地方会以“0”填充。
+             *这里获取一个下标右移增量因子值
+             * shift  int:2,long:3,Object:2
+             */
+          shift = 31 - Integer.numberOfLeadingZeros(scale);
+      }
+         
+      private long checkedByteOffset(int i) {
+          if (i &lt; 0 || i &gt;= array.length)
+              throw new IndexOutOfBoundsException(&#34;index &#34; + i);
+         
+          return byteOffset(i);
+      }
+         
+      private static long byteOffset(int i) {
+          //第三步获取修改数组属性下标偏移值，这里用到右移增量因子值，我猜想可能性能比乘以(scale*i+base)好点。
+          return ((long) i &lt;&lt; shift) + base;
+      }
+             
+      public final boolean compareAndSet(int i, int expect, int update) {
+          return compareAndSetRaw(checkedByteOffset(i), expect, update);
+      }   
+      private boolean compareAndSetRaw(long offset, int expect, int update) {
+         return unsafe.compareAndSwapInt(array, offset, expect, update);
+      }      
+</code></pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+</li>
+</ul>
+<h2 id="基本类型">基本类型</h2>
+<p>原子更新基本类型三个类:</p>
+<ul>
+<li>AtomicBoolean:原子更新布尔类型</li>
+<li>AtomicInteger:原子更新整数类型</li>
+<li>AtomicLong:原子更新长整数类型</li>
+</ul>
+<p>分析AtomicInteger方法源码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> /**
+     * Gets the current value.
+     *
+     * @return the current value
+     */
+    public final int get() {
+        return value;
+    }
+
+    /**
+     * Sets to the given value.
+     *
+     * @param newValue the new value
+     */
+    public final void set(int newValue) {
+        value = newValue;
+    }
+
+    /**
+     * Eventually sets to the given value.
+     * 最终设为指定值，但其它线程不能马上看到变化，会延时一会
+     * @param newValue the new value
+     * @since 1.6
+     */
+    public final void lazySet(int newValue) {
+        unsafe.putOrderedInt(this, valueOffset, newValue);
+    }
+
+    /**
+     * Atomically sets to the given value and returns the old value.
+     * 以原子操作赋值，返回赋值前值
+     * @param newValue the new value
+     * @return the previous value
+     */
+    public final int getAndSet(int newValue) {
+        for (;;) {
+            int current = get();
+            if (compareAndSet(current, newValue))
+                return current;
+        }
+    }
+
+    /**
+     * Atomically sets the value to the given updated value
+     * if the current value {@code ==} the expected value.
+     * Unsafe类中CAS操作
+     * @param expect the expected value
+     * @param update the new value
+     * @return true if successful. False return indicates that
+     * the actual value was not equal to the expected value.
+     */
+    public final boolean compareAndSet(int expect, int update) {
+        return unsafe.compareAndSwapInt(this, valueOffset, expect, update);
+    }
+
+    /**
+     * Atomically sets the value to the given updated value
+     * if the current value {@code ==} the expected value.
+     *
+     * &lt;p&gt;May &lt;a href=&#34;package-summary.html#Spurious&#34;&gt;fail spuriously&lt;/a&gt;
+     * and does not provide ordering guarantees, so is only rarely an
+     * appropriate alternative to {@code compareAndSet}.
+     *
+     * @param expect the expected value
+     * @param update the new value
+     * @return true if successful.
+     */
+    public final boolean weakCompareAndSet(int expect, int update) {
+        return unsafe.compareAndSwapInt(this, valueOffset, expect, update);
+    }
+
+    /**
+     * Atomically increments by one the current value.
+     * 以原子操作自增，并返回自增前结果
+     * @return the previous value
+     */
+    public final int getAndIncrement() {
+        for (;;) {
+            int current = get();
+            int next = current + 1;
+            if (compareAndSet(current, next))
+                return current;
+        }
+    }
+
+    /**
+     * Atomically decrements by one the current value.
+     * 以原子操作自减，并返回自减前结果
+     * @return the previous value
+     */
+    public final int getAndDecrement() {
+        for (;;) {
+            int current = get();
+            int next = current - 1;
+            if (compareAndSet(current, next))
+                return current;
+        }
+    }
+
+    /**
+     * Atomically adds the given value to the current value.
+     * 以原子方式将输入的数值与实例中的值（value）相加，并返回相加前结果
+     * @param delta the value to add
+     * @return the previous value
+     */
+    public final int getAndAdd(int delta) {
+        for (;;) {
+            int current = get();
+            int next = current + delta;
+            if (compareAndSet(current, next))
+                return current;
+        }
+    }
+
+    /**
+     * Atomically increments by one the current value.
+     * 以原子操作自增，并返回自增结果
+     * @return the updated value
+     */
+    public final int incrementAndGet() {
+        for (;;) {
+            int current = get();
+            int next = current + 1;
+            if (compareAndSet(current, next))
+                return next;
+        }
+    }
+
+    /**
+     * Atomically decrements by one the current value.
+     * 以原子操作自减，并返回自减结果
+     * @return the updated value
+     */
+    public final int decrementAndGet() {
+        for (;;) {
+            int current = get();
+            int next = current - 1;
+            if (compareAndSet(current, next))
+                return next;
+        }
+    }
+
+    /**
+     * Atomically adds the given value to the current value.
+     * 以原子方式将输入的数值与实例中的值（value）相加，并返回相加结果
+     * @param delta the value to add
+     * @return the updated value
+     */
+    public final int addAndGet(int delta) {
+        for (;;) {
+            int current = get();
+            int next = current + delta;
+            if (compareAndSet(current, next))
+                return next;
+        }
+    }
+</code></pre></td></tr></table>
+</div>
+</div><p>注意:lazySet方法，<a href="https://stackoverflow.com/questions/1468007/atomicinteger-lazyset-vs-set">说明解释</a></p>
+<p>lazySet是使用Unsafe.putOrderedObject方法，这个方法在对低延迟代码是很有用的，它能够实现非堵塞的写入，这些写入不会被Java的JIT
+重新排序指令，这样它使用快速的存储-存储(store-store) barrier, 而不是较慢的存储-加载(store-load) barrier, 后者总是用在volatile的
+写操作上，这种性能提升是有代价的，虽然便宜，也就是写后结果并不会被其他线程看到，甚至是自己的线程，通常是几纳秒后被其他线程看到，
+这个时间比较短，所以代价可以忍受。</p>
+<p>类似Unsafe.putOrderedObject还有unsafe.putOrderedLong等方法，unsafe.putOrderedLong比使用 volatile long要快3倍左右。.</p>
+<p>从AmoticInteger和AmoticBoolean源码分析， 其次AtomicBoolean把Boolean转换成整型，做原子操作。
+而都调用Unsafe.compareAndSwapInt方法。
+AtomicLong源码分析操作Unsafe.compareAndSwapLong方法。</p>
+<h2 id="引用类型">引用类型</h2>
+<p>AtomicReference:原子操作更新引用类型</p>
+<p>AtomicReference源码分析调用Unsafe.compareAndSwapObject方法。</p>
+<h2 id="数组类型">数组类型</h2>
+<ul>
+<li>AtomicIntegerArray：原子操作更新整数数组</li>
+<li>AtomicLongArray: 原子操作更新长整数数组</li>
+<li>AtomicReferenceArray: 原子操作更新引用对象数组</li>
+</ul>
+<p>AtomicIntegerArray源码查看看，跟AtomicInteger方法基本相同，只是数组多个下标操作。按下标查找相应偏移量原子操作更新相应值。
+AtomicLongArray和AtomicReferenceArray原子数组操作，其次按类型原子更新。 AtomicLongArray按long类型原子操作，AtomicReferenceArray
+按Object类型原子操作。</p>
+<h2 id="属性原子修改器类型">属性原子修改器类型</h2>
+<ul>
+<li>AtomicIntegerFieldUpdater:原子操作修改int类型属性</li>
+<li>AtomicLongFieldUpdater:原子操作修改long类型属性</li>
+<li>AtomicReferenceFieldUpdater:原子操作修改引用类型属性</li>
+</ul>
+<p>属性原子修改器类型通过反射原子更新对象的字段,既然他们的作用是更新字段我们知道有些类型的字段是不可被更新的，所以被更新的
+字段是有一定的要求：</p>
+<ul>
+<li>必须是volatile类型（volatile是线程可见变量，保存在Jvm的主内存中，而不是线程的工作内存里面）</li>
+<li>只能是实例变量，不能是类变量，也就是说不能加static关键字；</li>
+<li>只能是可修改变量，不能使final变量，因为final的语义就是不可修改。实际上final的语义和volatile是有冲突的，这两个关键
+字不能同时存在，</li>
+<li>对于AtomicIntegerFieldUpdater和AtomicLongFieldUpdater只能修改int/long类型的字段，不能修改其包装类型（Integer/Long）。
+如果要修改包装类型就需要使用AtomicReferenceFieldUpdater。</li>
+</ul>
+<p>AtomicIntegerFieldUpdater源码分析，AtomicIntegerFieldUpdater定义了一些抽象方法，跟普通AtomicInteger一样</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    private static class AtomicIntegerFieldUpdaterImpl&lt;T&gt; extends AtomicIntegerFieldUpdater&lt;T&gt; {
+        private static final Unsafe unsafe = Unsafe.getUnsafe();
+        private final long offset;
+        private final Class&lt;T&gt; tclass;
+        private final Class cclass;
+
+        AtomicIntegerFieldUpdaterImpl(Class&lt;T&gt; tclass, String fieldName, Class&lt;?&gt; caller) {
+            Field field = null;
+            int modifiers = 0;
+            try {
+                field = tclass.getDeclaredField(fieldName);
+                modifiers = field.getModifiers();
+                sun.reflect.misc.ReflectUtil.ensureMemberAccess(
+                    caller, tclass, null, modifiers);
+                sun.reflect.misc.ReflectUtil.checkPackageAccess(tclass);
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+
+            Class fieldt = field.getType();
+            //判断类型(int long 引用类型)
+            if (fieldt != int.class)
+                throw new IllegalArgumentException(&#34;Must be integer type&#34;);
+           //判断volatitle修饰
+            if (!Modifier.isVolatile(modifiers))
+                throw new IllegalArgumentException(&#34;Must be volatile type&#34;);
+
+            this.cclass = (Modifier.isProtected(modifiers) &amp;&amp;
+                           caller != tclass) ? caller : null;
+            this.tclass = tclass;
+            //获取对象属性偏移量
+            offset = unsafe.objectFieldOffset(field);
+        }
+</code></pre></td></tr></table>
+</div>
+</div><p>AtomicLongFieldUpdater这块有不同的就是要判断一下硬件底层是否支持longCAS指令。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    public static &lt;U&gt; AtomicLongFieldUpdater&lt;U&gt; newUpdater(Class&lt;U&gt; tclass, String fieldName) {
+        Class&lt;?&gt; caller = Reflection.getCallerClass();
+        //判断是否支持long CAS指令
+        if (AtomicLong.VM_SUPPORTS_LONG_CAS)
+            return new CASUpdater&lt;U&gt;(tclass, fieldName, caller);  //CAS
+        else
+            return new LockedUpdater&lt;U&gt;(tclass, fieldName, caller); //同步锁
+    }
+</code></pre></td></tr></table>
+</div>
+</div><p>AtomicReferenceFieldUpdater这块AtomicReference很类似，没主体讲解。</p>
+<h2 id="解决aba类型">解决ABA类型</h2>
+<p>ABA问题:假设两个线程T1和T2访问同一个变量V，当T1访问变量V时，读取到V的值为A；此时线程T1被抢占了，T2开始执行，T2先将变量
+V的值从A变成了B，然后又将变量V从B变回了A；此时T1又抢占了主动权，继续执行，它发现变量V的值还是A，以为没有发生变化，但是实际
+上却变化了。这个过程中，变量V从A变为B，再由B变为A就被形象地称为ABA问题了。</p>
+<p>解决ABA问题实现两个类如下：</p>
+<ul>
+<li>AtomicMarkableReference:[reference, boolean] pairs.对象原子操作,用布尔类型标记解决ABA问题</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">     private static class Pair&lt;T&gt; {
+         final T reference;
+         final boolean mark;
+         private Pair(T reference, boolean mark) {
+             this.reference = reference;
+             this.mark = mark;
+         }
+         static &lt;T&gt; Pair&lt;T&gt; of(T reference, boolean mark) {
+             return new Pair&lt;T&gt;(reference, mark);
+         }
+     }
+ 
+     private volatile Pair&lt;V&gt; pair;
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>AtomicStampedReference:[reference, integer] pairs.对象原子操作，用整数标记解决ABA问题。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> private static class Pair&lt;T&gt; {
+        final T reference;
+        final int stamp;
+        private Pair(T reference, int stamp) {
+            this.reference = reference;
+            this.stamp = stamp;
+        }
+        static &lt;T&gt; Pair&lt;T&gt; of(T reference, int stamp) {
+            return new Pair&lt;T&gt;(reference, stamp);
+        }
+    }
+
+    private volatile Pair&lt;V&gt; pair;
+
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-03-14 21:00
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/Atomic/">Atomic</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/03.Thread%E7%9A%84interrupt%E8%AF%A6%E8%A7%A3/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Thread的interrupt</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/Synchronizer_Framework/">
+        <span class="next-text nav-default">AQS</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

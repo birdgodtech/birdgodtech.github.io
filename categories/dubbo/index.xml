@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>dubbo on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/categories/dubbo/</link>
+    <description>Recent content in dubbo on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Thu, 20 Dec 2018 20:18:08 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/categories/dubbo/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>dubbo引用服务</title>
+      <link>https://birdgodtech.github.io/post/dubbo/03.dubbo%E5%BC%95%E7%94%A8%E6%9C%8D%E5%8A%A1/</link>
+      <pubDate>Thu, 20 Dec 2018 20:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/dubbo/03.dubbo%E5%BC%95%E7%94%A8%E6%9C%8D%E5%8A%A1/</guid>
+      <description>一、dubbo引用服务 1.Spring afterPropertiesSet()执行方法发布服务 ReferenceBean.getObject()-&amp;gt;ReferenceConfig.get()-&amp;gt;init()-&amp;gt;createProxy() (1).createProxy创建暴露服务接口的代理对象，</description>
+    </item>
+    
+    <item>
+      <title>dubbo服务发布</title>
+      <link>https://birdgodtech.github.io/post/dubbo/02.dubbo%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83/</link>
+      <pubDate>Mon, 10 Dec 2018 20:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/dubbo/02.dubbo%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83/</guid>
+      <description>一、dubbo整体架构 1.先看看架构图 分层架构，一目了然，每一层处理相应的业务逻辑； 官方文档写很棒； 2.在 Dubbo 的核心领域模型中： Protocol 是服务域，它</description>
+    </item>
+    
+    <item>
+      <title>dubbo中的SPI机制</title>
+      <link>https://birdgodtech.github.io/post/dubbo/01.dubbo%E4%B8%AD%E7%9A%84SPI%E6%9C%BA%E5%88%B6/</link>
+      <pubDate>Sun, 02 Dec 2018 20:18:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/dubbo/01.dubbo%E4%B8%AD%E7%9A%84SPI%E6%9C%BA%E5%88%B6/</guid>
+      <description>一、 Java SPI（Service Provider Interface） 1.SPI思想 具有可插拔性，在软件系统的设计中，可插拔是一个重要特性。它意味着给系统添加新</description>
+    </item>
+    
+  </channel>
+</rss>

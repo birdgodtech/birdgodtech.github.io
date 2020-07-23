@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>TrafficShaping - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="一、介绍 流量整形（Traffic Shaping）是一种主动调整流量输出速率的措施。流量整形与流量监管的主要区别在于，流量整形对流量监管中需要" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/netty/14.TrafficShaping/" />
+<link href="/post/netty/14.TrafficShaping/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/netty/14.TrafficShaping/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="TrafficShaping" />
+<meta property="og:description" content="一、介绍 流量整形（Traffic Shaping）是一种主动调整流量输出速率的措施。流量整形与流量监管的主要区别在于，流量整形对流量监管中需要" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/netty/14.TrafficShaping/" />
+<meta property="article:published_time" content="2019-05-01T22:18:08+00:00" />
+<meta property="article:modified_time" content="2019-05-01T22:18:08+00:00" />
+<meta itemprop="name" content="TrafficShaping">
+<meta itemprop="description" content="一、介绍 流量整形（Traffic Shaping）是一种主动调整流量输出速率的措施。流量整形与流量监管的主要区别在于，流量整形对流量监管中需要">
+<meta itemprop="datePublished" content="2019-05-01T22:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2019-05-01T22:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="3238">
+
+
+
+<meta itemprop="keywords" content="netty," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="TrafficShaping"/>
+<meta name="twitter:description" content="一、介绍 流量整形（Traffic Shaping）是一种主动调整流量输出速率的措施。流量整形与流量监管的主要区别在于，流量整形对流量监管中需要"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">TrafficShaping</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2019-05-01 22:18 </span>
+      <div class="post-category">
+        <a href="/categories/netty/"> netty </a>
+        </div>
+      <span class="more-meta"> 约 3238 字 </span>
+      <span class="more-meta"> 预计阅读 7 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1netty实现">1.Netty实现</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1readtimetowait-给定的limittraffic和最大等待时间返回给定长度消息的等待时间">1.readTimeToWait 给定的limitTraffic和最大等待时间，返回给定长度消息的等待时间</a></li>
+    <li><a href="#2writetimetowait-使用给定的limittraffic和最大等待时间返回给定长度消息的等待时间">2.writeTimeToWait 使用给定的limitTraffic和最大等待时间，返回给定长度消息的等待时间</a></li>
+    <li><a href="#3resetaccounting">3.resetAccounting</a></li>
+    <li><a href="#4start">4.start</a>
+      <ul>
+        <li><a href="#atrafficmonitoringtask-监控任务">a.TrafficMonitoringTask 监控任务</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#1channelread-读书数据">1.channelRead 读书数据</a>
+      <ul>
+        <li><a href="#areopenreadtimertask">a.ReopenReadTimerTask</a></li>
+      </ul>
+    </li>
+    <li><a href="#2write-操作">2.write 操作</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1handleradded-每个channel创建trafficcounter">1.handlerAdded 每个Channel创建TrafficCounter</a></li>
+    <li><a href="#2submitwrite-提交写">2.submitWrite 提交写</a>
+      <ul>
+        <li><a href="#asendallvalid">a.sendAllValid</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2019-05-01T22:18:08" title="May 1, 2019">May 1, 2019</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="一介绍">一、介绍</h1>
+<p>流量整形（Traffic Shaping）是一种主动调整流量输出速率的措施。流量整形与流量监管的主要区别在于，流量整形对流量监管中需要丢弃的报文进行缓存——通常是将它们放入缓冲区或队列内，
+也称流量整形（Traffic Shaping，简称TS）。当报文的发送速度过快时，首先在缓冲区进行缓存；再通过流量计量算法的控制下“均匀”地发送这些被缓冲的报文。
+流量整形与流量监管的另一区别是，整形可能会增加延迟，而监管几乎不引入额外的延迟。</p>
+<h2 id="1netty实现">1.Netty实现</h2>
+<p><img src="/netty/netty02.png" alt=""></p>
+<p>Netty提供了GlobalTrafficShapingHandler、ChannelTrafficShapingHandler、GlobalChannelTrafficShapingHandler三个类来实现流量整形;
+他们都继承AbstractTrafficShapingHandler抽象类的实现类，最终调用TrafficCounter处理；</p>
+<h1 id="二trafficcounter">二、TrafficCounter</h1>
+<p>计算速率限制流量的读取和写入字节数。
+它以给定的checkInterval定期计算入站和出站流量的统计信息，并回调AbstractTrafficShapingHandler.doAccounting(TrafficCounter)方法。
+如果checkInterval为0，将不进行任何记录，并且仅在每次接收或写入操作时计算统计信息。</p>
+<h2 id="1readtimetowait-给定的limittraffic和最大等待时间返回给定长度消息的等待时间">1.readTimeToWait 给定的limitTraffic和最大等待时间，返回给定长度消息的等待时间</h2>
+<ul>
+<li>sum * 1000 / limitTraffic - interval + pastDelay 计算核心
+<ul>
+<li>sum * 1000 / limitTraffic 当前总读书字节花费多少时间(s)*1000</li>
+<li>interval 当前区间已过去间隔</li>
+<li>pastDelay 上个区间超出时间</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    public long readTimeToWait(final long size, final long limitTraffic, final long maxTime, final long now) {
+         //统计当前读字节数
+         //currentReadBytes.addAndGet(recv);
+        //cumulativeReadBytes.addAndGet(recv);
+        bytesRecvFlowControl(size);
+        if (size == 0 || limitTraffic == 0) {
+            return 0;
+        }
+        //统计区间开始时间
+        final long lastTimeCheck = lastTime.get();
+        //当前总字节
+        long sum = currentReadBytes.get();
+        //当前+等待时间
+        long localReadingTime = readingTime;
+        //最后区间读取总字节数
+        long lastRB = lastReadBytes;
+        //间隔(当前时间-区间开始时间)
+        final long interval = now - lastTimeCheck;
+        //最后区间超过延迟时间
+        long pastDelay = Math.max(lastReadingTime - lastTimeCheck, 0);
+        if (interval &gt; AbstractTrafficShapingHandler.MINIMAL_WAIT) {
+            // sum * 1000 / limitTraffic ==&gt; 总读书字节花费多少时间(s)
+            // 转化为毫秒* 1000
+            // 下面计算要等待时间
+            long time = sum * 1000 / limitTraffic - interval + pastDelay;
+            if (time &gt; AbstractTrafficShapingHandler.MINIMAL_WAIT) {
+                ...
+                //now + time - localReadingTime
+                // localReadingTime比now大不可能？？
+                if (time &gt; maxTime &amp;&amp; now + time - localReadingTime &gt; maxTime) {
+                    time = maxTime;
+                }
+                readingTime = Math.max(localReadingTime, now + time);
+                return time;
+            }
+            readingTime = Math.max(localReadingTime, now);
+            return 0;
+        }
+        // 进行前区间+当前区间计算
+        long lastsum = sum + lastRB;
+        long lastinterval = interval + checkInterval.get();
+        long time = lastsum * 1000 / limitTraffic - lastinterval + pastDelay;
+        if (time &gt; AbstractTrafficShapingHandler.MINIMAL_WAIT) {
+            ...
+            if (time &gt; maxTime &amp;&amp; now + time - localReadingTime &gt; maxTime) {
+                time = maxTime;
+            }
+            readingTime = Math.max(localReadingTime, now + time);
+            return time;
+        }
+        readingTime = Math.max(localReadingTime, now);
+        return 0;
+    }
+
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2writetimetowait-使用给定的limittraffic和最大等待时间返回给定长度消息的等待时间">2.writeTimeToWait 使用给定的limitTraffic和最大等待时间，返回给定长度消息的等待时间</h2>
+<ul>
+<li>计算逻辑跟readTimeToWait相似不列出代码</li>
+</ul>
+<h2 id="3resetaccounting">3.resetAccounting</h2>
+<ul>
+<li>重置信息</li>
+<li>开始下个区间计算统计</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   synchronized void resetAccounting(long newLastTime) {
+       long interval = newLastTime - lastTime.getAndSet(newLastTime);
+       if (interval == 0) {
+           // nothing to do
+           return;
+       }
+       ...
+       lastReadBytes = currentReadBytes.getAndSet(0);
+       lastWrittenBytes = currentWrittenBytes.getAndSet(0);
+       lastReadThroughput = lastReadBytes * 1000 / interval;
+       // nb byte / checkInterval in ms * 1000 (1s)
+       lastWriteThroughput = lastWrittenBytes * 1000 / interval;
+       // nb byte / checkInterval in ms * 1000 (1s)
+       realWriteThroughput = realWrittenBytes.getAndSet(0) * 1000 / interval;
+       lastWritingTime = Math.max(lastWritingTime, writingTime);
+       lastReadingTime = Math.max(lastReadingTime, readingTime);
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="4start">4.start</h2>
+<ul>
+<li>开始监视过程</li>
+<li>添加调用任务，checkInterval</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   public synchronized void start() {
+       if (monitorActive) {
+           return;
+       }
+       lastTime.set(milliSecondFromNano());
+       long localCheckInterval = checkInterval.get();
+       // if executor is null, it means it is piloted by a GlobalChannelTrafficCounter, so no executor
+       if (localCheckInterval &gt; 0 &amp;&amp; executor != null) {
+           monitorActive = true;
+           monitor = new TrafficMonitoringTask();
+           scheduledFuture =
+               executor.schedule(monitor, localCheckInterval, TimeUnit.MILLISECONDS);
+       }
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="atrafficmonitoringtask-监控任务">a.TrafficMonitoringTask 监控任务</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private final class TrafficMonitoringTask implements Runnable {
+       @Override
+       public void run() {
+           if (!monitorActive) {
+               return;
+           }
+           //重置操作
+           resetAccounting(milliSecondFromNano());
+           if (trafficShapingHandler != null) {
+              //调用trafficShapingHandler.doAccounting
+               trafficShapingHandler.doAccounting(TrafficCounter.this);
+           }
+           scheduledFuture = executor.schedule(this, checkInterval.get(), TimeUnit.MILLISECONDS);
+       }
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="三abstracttrafficshapinghandler">三、AbstractTrafficShapingHandler</h1>
+<p>使用TrafficCounter中的监视器来实现对带宽的几乎实时的监视，该监视器将回调此处理程序的doAccounting方法的每个checkInterval。</p>
+<ul>
+<li>如果出于任何特定原因想要停止监视(计数)或更改读/写限制或检查间隔，则有几种方法可以满足您的需要：
+<ul>
+<li>configure允许您更改读取或写入限制，或checkInterval</li>
+<li>getTrafficCounter允许您访问TrafficCounter，从而可以停止或启动监视，直接更改checkInterval或访问其值。</li>
+</ul>
+</li>
+<li>TrafficCounter是计算速率限制流量的读写字节数；</li>
+</ul>
+<h2 id="1channelread-读书数据">1.channelRead 读书数据</h2>
+<ul>
+<li>config.setAutoRead(false) 设置Channel不能读取数据</li>
+<li>等待调度任务，把config.setAutoRead(true),可以读取数据</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   @Override
+   public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
+       long size = calculateSize(msg);
+       long now = TrafficCounter.milliSecondFromNano();
+       if (size &gt; 0) {
+           // 计算重新打开通道之前要等待的毫秒数
+           long wait = trafficCounter.readTimeToWait(size, readLimit, maxTime, now);
+           //钩子方法
+           wait = checkWaitReadTime(ctx, wait, now);
+           if (wait &gt;= MINIMAL_WAIT) { // At least 10ms seems a minimal
+               Channel channel = ctx.channel();
+               ChannelConfig config = channel.config();
+               ...
+               if (config.isAutoRead() &amp;&amp; isHandlerActive(ctx)) {
+                   //把当前Channel设置读取为false
+                   config.setAutoRead(false);
+                   //标示读取已暂停
+                   channel.attr(READ_SUSPENDED).set(true);
+                   // Create a Runnable to reactive the read if needed. If one was create before it will just be
+                   // reused to limit object creation
+                   Attribute&lt;Runnable&gt; attr = channel.attr(REOPEN_TASK);
+                   Runnable reopenTask = attr.get();
+                   //这里做个缓存处理，下次不用在重新创建ReopenReadTimerTask
+                   if (reopenTask == null) {
+                       reopenTask = new ReopenReadTimerTask(ctx);
+                       attr.set(reopenTask);
+                   }
+                   //设置调度任务，时间设置wait
+                   ctx.executor().schedule(reopenTask, wait, TimeUnit.MILLISECONDS);
+                   ...
+               }
+           }
+       }
+       informReadOperation(ctx, now);
+       ctx.fireChannelRead(msg);
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="areopenreadtimertask">a.ReopenReadTimerTask</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    @Override
+       public void run() {
+           Channel channel = ctx.channel();
+           ChannelConfig config = channel.config();
+           if (!config.isAutoRead() &amp;&amp; isHandlerActive(ctx)) {
+               ...
+               channel.attr(READ_SUSPENDED).set(false);
+           } else {
+               ...
+               channel.attr(READ_SUSPENDED).set(false);
+               config.setAutoRead(true);
+               channel.read();
+           }
+           ...
+       } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2write-操作">2.write 操作</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   @Override
+   public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
+           throws Exception {
+       //计算大小 
+       long size = calculateSize(msg);
+       long now = TrafficCounter.milliSecondFromNano();
+       if (size &gt; 0) {
+           // 计算继续使用该通道之前要等待的毫秒数
+           long wait = trafficCounter.writeTimeToWait(size, writeLimit, maxTime, now);
+           if (wait &gt;= MINIMAL_WAIT) {
+               ...
+               submitWrite(ctx, msg, size, wait, now, promise);
+               return;
+           }
+       }
+       // 保持写顺序 
+       // 抽象方法
+       submitWrite(ctx, msg, size, 0, now, promise);
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="四channeltrafficshapinghandler">四、ChannelTrafficShapingHandler</h1>
+<p>因为流量整形的精度取决于计算流量的时间段。间隔越高，流量整形的精度越低。建议将其设置为接近5或10分钟的较高值。
+maxTimeToWait（默认设置为15s）允许指定时间整形的上限。</p>
+<h2 id="1handleradded-每个channel创建trafficcounter">1.handlerAdded 每个Channel创建TrafficCounter</h2>
+<ul>
+<li>为我们每个Channel创建TrafficCounter</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   @Override
+   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+       TrafficCounter trafficCounter = new TrafficCounter(this, ctx.executor(), &#34;ChannelTC&#34; +
+               ctx.channel().hashCode(), checkInterval);
+       setTrafficCounter(trafficCounter);
+       trafficCounter.start();
+       super.handlerAdded(ctx);
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="2submitwrite-提交写">2.submitWrite 提交写</h2>
+<ul>
+<li>队列缓存延迟发送数据</li>
+<li>根据延迟值调度任务</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   @Override
+   void submitWrite(final ChannelHandlerContext ctx, final Object msg,
+           final long size, final long delay, final long now,
+           final ChannelPromise promise) {
+       final ToSend newToSend;
+       // 写入顺序控制
+       synchronized (this) {
+           if (delay == 0 &amp;&amp; messagesQueue.isEmpty()) {
+               trafficCounter.bytesRealWriteFlowControl(size);
+               ctx.write(msg, promise);
+               return;
+           }
+          
+           newToSend = new ToSend(delay + now, msg, promise);
+           messagesQueue.addLast(newToSend);
+           queueSize += size;
+           //根据通道的延迟和大小检查可写性。必要时设置setUserDefinedWritability状态。
+           checkWriteSuspend(ctx, delay, queueSize);
+       }
+       final long futureNow = newToSend.relativeTimeAction;
+       //调度
+       ctx.executor().schedule(new Runnable() {
+           @Override
+           public void run() {
+               sendAllValid(ctx, futureNow);
+           }
+       }, delay, TimeUnit.MILLISECONDS);
+   }
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="asendallvalid">a.sendAllValid</h3>
+<ul>
+<li>写入顺序控制</li>
+<li>从队列读取数据，以及根据时间判断，判断时间大立马退出，可能后面没有延迟，这一来顺序不能保障</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">   private void sendAllValid(final ChannelHandlerContext ctx, final long now) {
+       // 写入顺序控制
+       synchronized (this) {
+           ToSend newToSend = messagesQueue.pollFirst();
+            //messagesQueue.pollFirst() 读取第一个元素 
+           for (; newToSend != null; newToSend = messagesQueue.pollFirst()) {
+               if (newToSend.relativeTimeAction &lt;= now) {
+                   long size = calculateSize(newToSend.toSend);
+                   trafficCounter.bytesRealWriteFlowControl(size);
+                   queueSize -= size;
+                   ctx.write(newToSend.toSend, newToSend.promise);
+               } else {
+                   //不满足，把元素添加到首尾
+                   //立马退出
+                   messagesQueue.addFirst(newToSend);
+                   break;
+               }
+           }
+           if (messagesQueue.isEmpty()) {
+               //明确释放“写入暂停”状态。
+               releaseWriteSuspended(ctx);
+           }
+       }
+       ctx.flush();
+   } 
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="五channeltrafficshapinghandler">五、ChannelTrafficShapingHandler</h1>
+<p>GlobalTrafficShapingHandler全局，全局就一个TrafficCounter，对写操作时保持顺序性，ConcurrentMap保持数据，Channel对应队列；相互不影响；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">  /**
+   * key对象Channel.hashCode()
+   */
+  private final ConcurrentMap&lt;Integer, PerChannel&gt; channelQueues = PlatformDependent.newConcurrentHashMap();
+
+  /**
+   * Global queues size
+   */
+  private final AtomicLong queuesSize = new AtomicLong();
+
+  /**
+   * Max size in the list before proposing to stop writing new objects from next handlers
+   * for all channel (global)
+   */
+  long maxGlobalWriteSize = DEFAULT_MAX_SIZE * 100; // default 400MB
+
+  private static final class PerChannel {
+      ArrayDeque&lt;ToSend&gt; messagesQueue;
+      long queueSize;
+      long lastWriteTimestamp;
+      long lastReadTimestamp;
+  }  
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="六globalchanneltrafficshapinghandler">六、GlobalChannelTrafficShapingHandler</h1>
+<p>相比于GlobalTrafficShapingHandler增加了一个误差概念，以平衡各个Channel间的读/写操作。也就是说，使得各个Channel间的读/写操作尽量均衡。
+比如，尽量避免不同Channel的大数据包都延迟近乎一样的是时间再操作，以及如果小数据包在一个大数据包后才发送，则减少该小数据包的延迟发送时间等。。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-05-01 22:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/netty/">netty</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/rocketmq/1.rocketmq%E8%83%8C%E6%99%AF/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">1.Rocketmq背景</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/netty/13.HashedWheelTimer/">
+        <span class="next-text nav-default">HashedWheelTimer</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

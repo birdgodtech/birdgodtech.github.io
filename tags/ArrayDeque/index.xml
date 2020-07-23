@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ArrayDeque on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/ArrayDeque/</link>
+    <description>Recent content in ArrayDeque on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Wed, 15 Feb 2017 22:30:11 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/ArrayDeque/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>ArrayDeque</title>
+      <link>https://birdgodtech.github.io/post/collection/07.ArrayDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Wed, 15 Feb 2017 22:30:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/collection/07.ArrayDeque%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>ArrayDeque源码分析 简介 ArrayDeque为双端队列，支持首部，尾部两端的操作，因此做双端操作可用于FIFO等queue, 做单端操</description>
+    </item>
+    
+  </channel>
+</rss>

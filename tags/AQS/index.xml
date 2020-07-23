@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>AQS on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/AQS/</link>
+    <description>Recent content in AQS on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Wed, 15 Mar 2017 21:00:11 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/AQS/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>AQS</title>
+      <link>https://birdgodtech.github.io/post/concurrent/04.AQS/</link>
+      <pubDate>Wed, 15 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/04.AQS/</guid>
+      <description>java.util.concurrent.locks.AbstractQueuedSynchronizer源码分析 简介： AbstractQu</description>
+    </item>
+    
+    <item>
+      <title>AQS</title>
+      <link>https://birdgodtech.github.io/post/concurrent/Synchronizer_Framework/</link>
+      <pubDate>Tue, 14 Mar 2017 18:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/Synchronizer_Framework/</guid>
+      <description>The java.util.concurrent Synchronizer Framework 中文翻译版 原文地址 翻译地址 摘要 在J2SE 1.5的java.util.concurrent包（下称j.u.c包）中，大部分的同步器（例</description>
+    </item>
+    
+  </channel>
+</rss>

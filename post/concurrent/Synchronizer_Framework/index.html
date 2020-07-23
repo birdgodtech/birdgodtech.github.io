@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>AQS - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="The java.util.concurrent Synchronizer Framework 中文翻译版 原文地址 翻译地址 摘要 在J2SE 1.5的java.util.concurrent包（下称j.u.c包）中，大部分的同步器（例" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/Synchronizer_Framework/" />
+<link href="/post/concurrent/Synchronizer_Framework/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/Synchronizer_Framework/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="AQS" />
+<meta property="og:description" content="The java.util.concurrent Synchronizer Framework 中文翻译版 原文地址 翻译地址 摘要 在J2SE 1.5的java.util.concurrent包（下称j.u.c包）中，大部分的同步器（例" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/Synchronizer_Framework/" />
+<meta property="article:published_time" content="2017-03-14T18:00:11+00:00" />
+<meta property="article:modified_time" content="2017-03-14T18:00:11+00:00" />
+<meta itemprop="name" content="AQS">
+<meta itemprop="description" content="The java.util.concurrent Synchronizer Framework 中文翻译版 原文地址 翻译地址 摘要 在J2SE 1.5的java.util.concurrent包（下称j.u.c包）中，大部分的同步器（例">
+<meta itemprop="datePublished" content="2017-03-14T18:00:11&#43;00:00" />
+<meta itemprop="dateModified" content="2017-03-14T18:00:11&#43;00:00" />
+<meta itemprop="wordCount" content="14989">
+
+
+
+<meta itemprop="keywords" content="AQS," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="AQS"/>
+<meta name="twitter:description" content="The java.util.concurrent Synchronizer Framework 中文翻译版 原文地址 翻译地址 摘要 在J2SE 1.5的java.util.concurrent包（下称j.u.c包）中，大部分的同步器（例"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">AQS</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-03-14 18:00 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 14989 字 </span>
+      <span class="more-meta"> 预计阅读 30 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#摘要">摘要</a></li>
+    <li><a href="#1-背景介绍">1. 背景介绍</a></li>
+    <li><a href="#2-需求">2. 需求</a>
+      <ul>
+        <li><a href="#21-功能">2.1 功能</a></li>
+        <li><a href="#22-性能目标">2.2 性能目标</a></li>
+      </ul>
+    </li>
+    <li><a href="#3-设计与实现">3 设计与实现</a>
+      <ul>
+        <li><a href="#31-同步状态">3.1 同步状态</a></li>
+        <li><a href="#32-阻塞">3.2 阻塞</a></li>
+        <li><a href="#33-队列">3.3 队列</a></li>
+        <li><a href="#34-条件队列">3.4 条件队列</a></li>
+      </ul>
+    </li>
+    <li><a href="#4-用法">4. 用法</a>
+      <ul>
+        <li><a href="#41-公平调度的控制">4.1 公平调度的控制</a></li>
+        <li><a href="#42-同步器">4.2 同步器</a></li>
+      </ul>
+    </li>
+    <li><a href="#5-性能">5 性能</a>
+      <ul>
+        <li><a href="#51-开销">5.1 开销</a></li>
+        <li><a href="#52-吞吐量">5.2 吞吐量</a></li>
+      </ul>
+    </li>
+    <li><a href="#6总结">6.总结</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-03-14T18:00:11" title="March 14, 2017">March 14, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="the-javautilconcurrent-synchronizer-framework-中文翻译版">The java.util.concurrent Synchronizer Framework 中文翻译版</h1>
+<p><a href="http://gee.cs.oswego.edu/dl/papers/aqs.pdf">原文地址</a></p>
+<p><a href="http://ifeve.com/aqs/">翻译地址</a></p>
+<h2 id="摘要">摘要</h2>
+<p>在J2SE 1.5的java.util.concurrent包（下称j.u.c包）中，大部分的同步器（例如锁，屏障等等）都是基于AbstractQueuedSynchronizer
+(下称AQS类)这个简单的框架来构建的。这个框架为同步状态的原子性管理、线程的阻塞和解除阻塞以及排队提供了一种通用机制。这篇论
+文主要描述了这个框架基本原理、设计、实现、用法以及性能。</p>
+<h2 id="1-背景介绍">1. 背景介绍</h2>
+<p>通过JCP的JSR166规范，Java的1.5版本引入了j.u.c包，这个包提供了一系列支持中等程度并发的类。这些组件是一系列的同步器（抽象
+数据类型(ADT)）。这些同步器主要维护着以下几个功能：内部同步状态的管理(例如：表示一个锁的状态是获取还是释放)，同步状态的更
+新和检查操作，且至少有一个方法会导致调用线程在同步状态被获取时阻塞，以及在其他线程改变这个同步状态时解除线程的阻塞。上述的
+这些的实际例子包括：互斥排它锁的不同形式、读写锁、信号量、屏障、Future、事件指示器以及传送队列等。</p>
+<p>几乎任一同步器都可以用来实现其他形式的同步器。例如，可以用可重入锁实现信号量或者用信号量实现可重入锁。但是，这样做带来的
+复杂性，开销，不灵活使其至多只能是个二流工程。且缺乏吸引力。如果任何这样的构造方式不能在本质上比其他形式更简洁，那么开发者
+就不应该随意地选择其中的某个来构建另一个同步器。取而代之，JSR166建立了一个小框架，AQS类。这个框架为构造同步器提供一种通用
+的机制，并且被j.u.c包中大部分类使用，同时很多用户也用它来定义自己的同步器。</p>
+<p>在这篇论文的下面部分会讨论这个框架的需求、设计与实现背后的主要思路、示例用法，以及性能指标的一些测量。</p>
+<h2 id="2-需求">2. 需求</h2>
+<h3 id="21-功能">2.1 功能</h3>
+<p>同步器一般包含两种方法，一种是acquire，另一种是release。acquire操作阻塞调用的线程，直到或除非同步状态允许其继续执行。而
+release操作则是通过某种方式改变同步状态，使得一或多个被acquire阻塞的线程继续执行。</p>
+<p>j.u.c包中并没有对同步器的API做一个统一的定义。因此，有一些类定义了通用的接口（如Lock），而另外一些则定义了其专有的版本。
+因此在不同的类中，acquire和release操作的名字和形式会各有不同。例如：Lock.lock，Semaphore.acquire，CountDownLatch.await和
+FutureTask.get，在这个框架里，这些方法都是acquire操作。但是，J.U.C为支持一系列常见的使用选项，在类间都有个一致约定。在有
+意义的情况下，每一个同步器都支持下面的操作：</p>
+<ul>
+<li>
+<p>阻塞和非阻塞（例如tryLock）同步。</p>
+</li>
+<li>
+<p>可选的超时设置，让调用者可以放弃等待</p>
+</li>
+<li>
+<p>通过中断实现的任务取消，通常是分为两个版本，一个acquire可取消，而另一个不可以。</p>
+</li>
+</ul>
+<p>同步器的实现根据其状态是否独占而有所不同。独占状态的同步器，在同一时间只有一个线程可以通过阻塞点，而共享状态的同步器可以
+同时有多个线程在执行。一般锁的实现类往往只维护独占状态，但是，例如计数信号量在数量许可的情况下，允许多个线程同时执行。为了
+使框架能得到广泛应用，这两种模式都要支持。</p>
+<p>j.u.c包里还定义了Condition接口，用于支持管程形式的await/signal操作，这些操作与独占模式的Lock类有关，且Condition的实现天生
+就和与其关联的Lock类紧密相关。</p>
+<h3 id="22-性能目标">2.2 性能目标</h3>
+<p>Java内置锁（使用synchronized的方法或代码块）的性能问题一直以来都在被人们关注，并且已经有一系列的文章描述其构造（例如引
+文[1],[3]）。然而，大部分的研究主要关注的是在单核处理器上大部分时候使用于单线程上下文环境中时，如何尽量降低其空间（因为
+任何的Java对象都可以当成是锁）和时间的开销。对于同步器来说这些都不是特别重要：程序员仅在需要的时候才会使用同步器，因此并
+不需要压缩空间来避免浪费，并且同步器几乎是专门用在多线程设计中（特别是在多核处理器上），在这种环境下，偶尔的竞争是在意料
+之中的。因此，常规的JVM锁优化策略主要是针对零竞争的场景，而其它场景则使用缺乏可预见性的“慢速路径（slow paths）” ，所以
+常规的JVM锁优化策略并不适用于严重依赖于J.U.C包的典型多线程服务端应用。</p>
+<p>这里主要的性能目标是可伸缩性，即在大部分情况下，即使，或特别在同步器有竞争的情况下，稳定地保证其效率。在理想的情况下，
+不管有多少线程正试图通过同步点，通过同步点的开销都应该是个常量。在某一线程被允许通过同步点但还没有通过的情况下，使其耗费
+的总时间最少，这是主要目标之一。然而，这也必须考虑平衡各种资源，包括总CPU时间的需求，内存负载以及线程调度的开销。例如：
+获取自旋锁通常比阻塞锁所需的时间更短，但是通常也会浪费CPU时钟周期，并且造成内存竞争，所以使用的并不频繁。</p>
+<p>实现同步器的这些目标包含了两种不同的使用类型。大部分应用程序是最大化其总的吞吐量，容错性，并且最好保证尽量减少饥饿的情
+况。然而，对于那些控制资源分配的程序来说，更重要是去维持多线程读取的公平性，可以接受较差的总吞吐量。没有任何框架可以代表
+用户去决定应该选择哪一个方式，因此，应该提供不同的公平策略。</p>
+<p>无论同步器的内部实现是多么的精雕细琢，它还是会在某些应用中产生性能瓶颈。因此，框架必须提供相应的监视工具让用户发现和缓
+和这些瓶颈。至少需要提供一种方式来确定有多少线程被阻塞了。</p>
+<h2 id="3-设计与实现">3 设计与实现</h2>
+<p>同步器背后的基本思想非常简单。acquire操作如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">while (synchronization state does not allow acquire) {
+enqueue current thread if not already queued;
+possibly block current thread;
+}
+dequeue current thread if it was queued;
+</code></pre></td></tr></table>
+</div>
+</div><p>release操作如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">update synchronization state;
+if (state may permit a blocked thread to acquire)
+unblock one or more queued threads;
+</code></pre></td></tr></table>
+</div>
+</div><p>为了实现上述操作，需要下面三个基本组件的相互协作：</p>
+<ul>
+<li>
+<p>同步状态的原子性管理；</p>
+</li>
+<li>
+<p>线程的阻塞与解除阻塞；</p>
+</li>
+<li>
+<p>队列的管理；</p>
+</li>
+</ul>
+<p>创建一个框架分别实现这三个组件是有可能的。但是，这会让整个框架既难用又没效率。例如：存储在队列节点的信息必须与解除阻塞
+所需要的信息一致，而暴露出的方法的签名必须依赖于同步状态的特性。</p>
+<p>同步器框架的核心决策是为这三个组件选择一个具体实现，同时在使用方式上又有大量选项可用。这里有意地限制了其适用范围，但是
+提供了足够的效率，使得实际上没有理由在合适的情况下不用这个框架而去重新建造一个。</p>
+<h3 id="31-同步状态">3.1 同步状态</h3>
+<p>AQS类使用单个int（32位）来保存同步状态，并暴露出getState、setState以及compareAndSet操作来读取和更新这个状态。这些方法都
+依赖于j.u.c.atomic包的支持，这个包提供了兼容JSR133中volatile在读和写上的语义，并且通过使用本地的compare-and-swap或
+load-linked/store-conditional指令来实现compareAndSetState，使得仅当同步状态拥有一个期望值的时候，才会被原子地设置成新值。</p>
+<p>将同步状态限制为一个32位的整形是出于实践上的考量。虽然JSR166也提供了64位long字段的原子性操作，但这些操作在很多平台上还
+是使用内部锁的方式来模拟实现的，这会使同步器的性能可能不会很理想。当然，将来可能会有一个类是专门使用64位的状态的。然而现
+在就引入这么一个类到这个包里并不是一个很好的决定（译者注：JDK1.6中已经包含java.util.concurrent.locks.AbstractQueuedLongSynchronizer
+类，即使用 long 形式维护同步状态的一个 AbstractQueuedSynchronizer 版本）。目前来说，32位的状态对大多数应用程序都是足够的。
+在j.u.c包中，只有一个同步器类可能需要多于32位来维持状态，那就是CyclicBarrier类，所以，它用了锁（该包中大多数更高层次的工
+具亦是如此）。</p>
+<p>基于AQS的具体实现类必须根据暴露出的状态相关的方法定义tryAcquire和tryRelease方法，以控制acquire和release操作。当同步状态
+满足时，tryAcquire方法必须返回true，而当新的同步状态允许后续acquire时，tryRelease方法也必须返回true。这些方法都接受一个
+int类型的参数用于传递想要的状态。例如：可重入锁中，当某个线程从条件等待中返回，然后重新获取锁时，为了重新建立循环计数的场
+景。很多同步器并不需要这样一个参数，因此忽略它即可。</p>
+<h3 id="32-阻塞">3.2 阻塞</h3>
+<p>在JSR166之前，阻塞线程和解除线程阻塞都是基于Java内置管程，没有其它非基于Java内置管程的API可以用来创建同步器。唯一可以选
+择的是Thread.suspend和Thread.resume，但是它们都有无法解决的竞态问题，所以也没法用：当一个非阻塞的线程在一个正准备阻塞的线
+程调用suspend前调用了resume，这个resume操作将不会有什么效果。</p>
+<p>j.u.c包有一个LockSuport类，这个类中包含了解决这个问题的方法。方法LockSupport.park阻塞当前线程除非直到有个LockSupport.unpark
+方法被调用（unpark方法被提前调用也是可以的）。unpark的调用是没有被计数的，因此在一个park调用前多次调用unpark方法只会解除一
+个park操作。另外，它们作用于每个线程而不是每个同步器。一个线程在一个新的同步器上调用park操作可能会立即返回，因为在此之前
+可能有“剩余的”unpark操作。但是，在缺少一个unpark操作时，下一次调用park就会阻塞。虽然可以显式地消除这个状态（译者注：就
+是多余的unpark调用），但并不值得这样做。在需要的时候多次调用park会更高效。</p>
+<p>这个简单的机制与有些用法在某种程度上是相似的，例如Solaris-9的线程库，WIN32中的“可消费事件”，以及Linux中的NPTL线程库。
+因此最常见的运行Java的平台上都有相对应的有效实现。（但目前Solaris和Linux上的Sun Hotspot JVM参考实现实际上是使用一个pthread
+的condvar来适应目前的运行时设计的）。park方法同样支持可选的相对或绝对的超时设置，以及与JVM的Thread.interrupt结合 —— 可
+通过中断来unpark一个线程。</p>
+<h3 id="33-队列">3.3 队列</h3>
+<p>整个框架的关键就是如何管理被阻塞的线程的队列，该队列是严格的FIFO队列，因此，框架不支持基于优先级的同步。</p>
+<p>同步队列的最佳选择是自身没有使用底层锁来构造的非阻塞数据结构，目前，业界对此很少有争议。而其中主要有两个选择：一个是Mellor-Crummey
+和Scott锁（MCS锁）[9]的变体，另一个是Craig，Landin和Hagersten锁（CLH锁）[5][8][10]的变体。一直以来，CLH锁仅被用于自旋锁。
+但是，在这个框架中，CLH锁显然比MCS锁更合适。因为CLH锁可以更容易地去实现“取消（cancellation）”和“超时”功能，因此我们选
+择了CLH锁作为实现的基础。但是最终的设计已经与原来的CLH锁有较大的出入，因此下文将对此做出解释。</p>
+<p>CLH队列实际上并不那么像队列，因为它的入队和出队操作都与它的用途（即用作锁）紧密相关。它是一个链表队列，通过两个字段head
+和tail来存取，这两个字段是可原子更新的，两者在初始化时都指向了一个空节点。</p>
+<p><img src="/concurrent//CLHNode.png" alt=""></p>
+<p>一个新的节点，node，通过一个原子操作入队：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">do { pred = tail;
+} while(!tail.compareAndSet(pred, node));
+</code></pre></td></tr></table>
+</div>
+</div><p>每一个节点的“释放”状态都保存在其前驱节点中。因此，自旋锁的“自旋”操作就如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">while (pred.status != RELEASED); // spin
+</code></pre></td></tr></table>
+</div>
+</div><p>自旋后的出队操作只需将head字段指向刚刚得到锁的节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">head = node;
+</code></pre></td></tr></table>
+</div>
+</div><p>CLH锁的优点在于其入队和出队操作是快速、无锁的，以及无障碍的（即使在竞争下，某个线程总会赢得一次插入机会而能继续执行）；
+且探测是否有线程正在等待也很快（只要测试一下head是否与tail相等）；同时，“释放”状态是分散的（译者注：几乎每个节点都保存
+了这个状态，当前节点保存了其后驱节点的“释放”状态，因此它们是分散的，不是集中于一块的。），避免了一些不必要的内存竞争。</p>
+<p>在原始版本的CLH锁中，节点间甚至都没有互相链接。自旋锁中，pred变量可以是一个局部变量。然而，Scott和Scherer证明了通过在
+节点中显式地维护前驱节点，CLH锁就可以处理“超时”和各种形式的“取消”：如果一个节点的前驱节点取消了，这个节点就可以滑动去
+使用前面一个节点的状态字段。</p>
+<p>为了将CLH队列用于阻塞式同步器，需要做些额外的修改以提供一种高效的方式定位某个节点的后继节点。在自旋锁中，一个节点只需要
+改变其状态，下一次自旋中其后继节点就能注意到这个改变，所以节点间的链接并不是必须的。但在阻塞式同步器中，一个节点需要显式
+地唤醒（unpark）其后继节点。</p>
+<p>AQS队列的节点包含一个next链接到它的后继节点。但是，由于没有针对双向链表节点的类似compareAndSet的原子性无锁插入指令，因
+此这个next链接的设置并非作为原子性插入操作的一部分，而仅是在节点被插入后简单地赋值：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">pred.next = node;
+</code></pre></td></tr></table>
+</div>
+</div><p>next链接仅是一种优化。如果通过某个节点的next字段发现其后继结点不存在（或看似被取消了），总是可以使用pred字段从尾部开始向
+前遍历来检查是否真的有后续节点。</p>
+<p>第二个对CLH队列主要的修改是将每个节点都有的状态字段用于控制阻塞而非自旋。在同步器框架中，仅在线程调用具体子类中的tryAcquire
+方法返回true时，队列中的线程才能从acquire操作中返回；而单个“released”位是不够的。但仍然需要做些控制以确保当一个活动的线
+程位于队列头部时，仅允许其调用tryAcquire；这时的acquire可能会失败，然后（重新）阻塞。这种情况不需要读取状态标识，因为可以
+通过检查当前节点的前驱是否为head来确定权限。与自旋锁不同，读取head以保证复制时不会有太多的内存竞争（ there is not enough
+memory contention reading head to warrant replication.）。然而，“取消”状态必须存在于状态字段中。</p>
+<p>队列节点的状态字段也用于避免没有必要的park和unpark调用。虽然这些方法跟阻塞原语一样快，但在跨越Java和JVM runtime以及操作
+系统边界时仍有可避免的开销。在调用park前，线程设置一个“唤醒（signal me）”位，然后再一次检查同步和节点状态。一个释放的线
+程会清空其自身状态。这样线程就不必频繁地尝试阻塞，特别是在锁相关的类中，这样会浪费时间等待下一个符合条件的线程去申请锁，
+从而加剧其它竞争的影响。除非后继节点设置了“唤醒”位（译者注：源码中为-1），否则这也可避免正在release的线程去判断其后继节
+点。这反过来也消除了这些情形：除非“唤醒”与“取消”同时发生，否则必须遍历多个节点来处理一个似乎为null的next字段。</p>
+<p>同步框架中使用的CLH锁的变体与其他语言中的相比，主要区别可能是同步框架中使用的CLH锁需要依赖垃圾回收管理节点的内存，这就
+避免了一些复杂性和开销。但是，即使依赖GC也仍然需要在确定链接字段不再需要时将其置为null。这往往可以与出队操作一起完成。否
+则，无用的节点仍然可触及，它们就没法被回收。</p>
+<p>其它一些更深入的微调，包括CLH队列首次遇到竞争时才需要的初始空节点的延迟初始化等，都可以在J2SE1.5的版本的源代码文档中找
+到相应的描述。</p>
+<p>抛开这些细节，基本的acquire操作的最终实现的一般形式如下（互斥，非中断，无超时）：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">if (!tryAcquire(arg)) {
+node = create and enqueue new node;
+pred = node&#39;s effective predecessor;
+while (pred is not head node || !tryAcquire(arg)) {
+if (pred&#39;s signal bit is set)
+park();
+else
+compareAndSet pred&#39;s signal bit to true;
+pred = node&#39;s effective predecessor;
+}
+head = node;
+}
+</code></pre></td></tr></table>
+</div>
+</div><p>release操作：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">if (tryRelease(arg) &amp;&amp; head node&#39;s signal bit is set) {
+compareAndSet head&#39;s signal bit to false;
+unpark head&#39;s successor, if one exists
+}
+</code></pre></td></tr></table>
+</div>
+</div><p>acquire操作的主循环次数依赖于具体实现类中tryAcquire的实现方式。另一方面，在没有“取消”操作的情况下，每一个组件的acquire
+和release都是一个O(1)的操作，忽略park中发生的所有操作系统线程调度。</p>
+<p>支持“取消”操作主要是要在acquire循环里的park返回时检查中断或超时。由超时或中断而被取消等待的线程会设置其节点状态，然后
+unpark其后继节点。在有“取消”的情况下，判断其前驱节点和后继节点以及重置状态可能需要O(n)的遍历（n是队列的长度）。由于“取消”
+操作，该线程再也不会被阻塞，节点的链接和状态字段可以被快速重建。</p>
+<h3 id="34-条件队列">3.4 条件队列</h3>
+<p>AQS框架提供了一个ConditionObject类，给维护独占同步的类以及实现Lock接口的类使用。一个锁对象可以关联任意数目的条件对象，
+可以提供典型的管程风格的await、signal和signalAll操作，包括带有超时的，以及一些检测、监控的方法。</p>
+<p>通过修正一些设计决策，ConditionObject类有效地将条件（conditions）与其它同步操作结合到了一起。该类只支持Java风格的管程
+访问规则，这些规则中，仅当当前线程持有锁且要操作的条件（condition）属于该锁时，条件操作才是合法的（一些替代操作的讨论参
+考[4]）。这样，一个ConditionObject关联到一个ReentrantLock上就表现的跟内置的管程（通过Object.wait等）一样了。两者的不同仅
+仅在于方法的名称、额外的功能以及用户可以为每个锁声明多个条件。</p>
+<p>ConditionObject使用了与同步器一样的内部队列节点。但是，是在一个单独的条件队列中维护这些节点的。signal操作是通过将节点
+从条件队列转移到锁队列中来实现的，而没有必要在需要唤醒的线程重新获取到锁之前将其唤醒。</p>
+<p>基本的await操作如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback"> create and add new node to condition queue;
+ release lock;
+ block until node is on lock queue;
+ re-acquire lock;
+</code></pre></td></tr></table>
+</div>
+</div><p>signal操作如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">transfer the first node from condition queue to lock queue;
+</code></pre></td></tr></table>
+</div>
+</div><p>因为只有在持有锁的时候才能执行这些操作，因此他们可以使用顺序链表队列操作来维护条件队列（在节点中用一个nextWaiter字段）。
+转移操作仅仅把第一个节点从条件队列中的链接解除，然后通过CLH插入操作将其插入到锁队列上。</p>
+<p>实现这些操作主要复杂在，因超时或Thread.interrupt导致取消了条件等待时，该如何处理。“取消”和“唤醒”几乎同时发生就会有
+竞态问题，最终的结果遵照内置管程相关的规范。JSR133修订以后，就要求如果中断发生在signal操作之前，await方法必须在重新获取到
+锁后，抛出InterruptedException。但是，如果中断发生在signal后，await必须返回且不抛异常，同时设置线程的中断状态。</p>
+<p>为了维护适当的顺序，队列节点状态变量中的一个位记录了该节点是否已经（或正在）被转移。“唤醒”和“取消”相关的代码都会尝
+试用compareAndSet修改这个状态。如果某次signal操作修改失败，就会转移队列中的下一个节点（如果存在的话）。如果某次“取消”
+操作修改失败，就必须中止此次转移，然后等待重新获得锁。后面的情况采用了一个潜在的无限的自旋等待。在节点成功的被插到锁队列
+之前，被“取消”的等待不能重新获得锁，所以必须自旋等待CLH队列插入（即compareAndSet操作）被“唤醒”线程成功执行。这里极少
+需要自旋，且自旋里使用Thread.yield来提示应该调度某一其它线程，理想情况下就是执行signal的那个线程。虽然有可能在这里为“取消”
+实现一个帮助策略以帮助插入节点，但这种情况实在太少，找不到合适的理由来增加这些开销。在其它所有的情况下，这个基本的机制都
+不需要自旋或yield，因此在单处理器上保持着合理的性能。</p>
+<h2 id="4-用法">4. 用法</h2>
+<p>AQS类将上述的功能结合到一起，并且作为一种基于“模版方法模式”[6]的基类提供给同步器。子类只需定义状态的检查与更新相关的
+方法，这些方法控制着acquire和 release操作。然而，将AQS的子类作为同步器ADT并不适合，因为这个类必须提供方法在内部控制acquire
+和release的规则，这些都不应该被用户所看到。所有java.util.concurrent包中的同步器类都声明了一个私有的继承了AbstractQueuedSynchronizer
+的内部类，并且把所有同步方法都委托给这个内部类。这样各个同步器类的公开方法就可以使用适合自己的名称。</p>
+<p>下面是一个最简单的Mutex类的实现，它使用同步状态0表示解锁，1表示锁定。这个类并不需要同步方法中的参数，因此这里在调用的时
+候使用0作为实参，方法实现里将其忽略。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">class</span> <span class="nc">Mutex</span> <span class="o">{</span>
+<span class="kd">class</span> <span class="nc">Sync</span>
+ <span class="kd">extends</span> <span class="n">AbstractQueuedSynchronizer</span> <span class="o">{</span>
+ <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">tryAcquire</span><span class="o">(</span><span class="kt">int</span> <span class="n">ignore</span><span class="o">)</span> <span class="o">{</span>
+ <span class="k">return</span> <span class="n">compareAndSetState</span><span class="o">(</span><span class="n">0</span><span class="o">,</span> <span class="n">1</span><span class="o">);</span>
+ <span class="o">}</span>
+ <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">tryRelease</span><span class="o">(</span><span class="kt">int</span> <span class="n">ignore</span><span class="o">)</span> <span class="o">{</span>
+ <span class="n">setState</span><span class="o">(</span><span class="n">0</span><span class="o">);</span> <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+ <span class="o">}</span>
+<span class="o">}</span>
+<span class="kd">private</span> <span class="kd">final</span> <span class="n">Sync</span> <span class="n">sync</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Sync</span><span class="o">();</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">lock</span><span class="o">()</span> <span class="o">{</span> <span class="n">sync</span><span class="o">.</span><span class="na">acquire</span><span class="o">(</span><span class="n">0</span><span class="o">);</span> <span class="o">}</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">unlock</span><span class="o">()</span> <span class="o">{</span> <span class="n">sync</span><span class="o">.</span><span class="na">release</span><span class="o">(</span><span class="n">0</span><span class="o">);</span> <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这个例子的一个更完整的版本，以及其它用法指南，可以在J2SE的文档中找到。还可以有一些变体。如，tryAcquire可以使用一种“test-and-test-and-set”
+策略，即在改变状态值前先对状态进行校验。</p>
+<p>令人诧异的是，像互斥锁这样性能敏感的东西也打算通过委托和虚方法结合的方式来定义。然而，这正是现代动态编译器一直在重点研
+究的面向对象设计结构。编译器擅长将这方面的开销优化掉，起码会优化频繁调用同步器的那些代码。</p>
+<p>AbstractQueuedSynchronizer类也提供了一些方法用来协助策略控制。例如，基础的acquire方法有可超时和可中断的版本。虽然到目前
+为止，我们的讨论都集中在像锁这样的独占模式的同步器上，但AbstractQueuedSynchronizer类也包含另一组方法（如acquireShared），
+它们的不同点在于tryAcquireShared和tryReleaseShared方法能够告知框架（通过它们的返回值）尚能接受更多的请求，最终框架会通过
+级联的signal(cascading signals)唤醒多个线程。</p>
+<p>虽然将同步器序列化（持久化存储或传输）一般来说没有太大意义，但这些类经常会被用于构造其它类，例如线程安全的集合，而这些
+集合通常是可序列化的。AbstractQueuedSynchronizer和ConditionObject类都提供了方法用于序列化同步状态，但不会序列化潜在的被阻
+塞的线程，也不会序列化其它内部暂时性的簿记（bookkeeping）变量。即使如此，在反序列化时，大部分同步器类也只仅将同步状态重置
+为初始值，这与内置锁的隐式策略一致 —— 总是反序列化到一个解锁状态。这相当于一个空操作，但仍必须显式地支持以便final字段能
+够反序列化。</p>
+<h3 id="41-公平调度的控制">4.1 公平调度的控制</h3>
+<p>尽管同步器是基于FIFO队列的，但它们并不一定就得是公平的。可以注意到，在基础的acquire算法（3.3节）中，tryAcquire是在入队
+前被执行的。因此一个新的acquire线程能够“窃取”本该属于队列头部第一个线程通过同步器的机会。</p>
+<p>可闯入的FIFO策略通常会提供比其它技术更高的总吞吐率。当一个有竞争的锁已经空闲，而下一个准备获取锁的线程又正在解除阻塞的
+过程中，这时就没有线程可以获取到这个锁，如果使用闯入策略，则可减少这之间的时间间隔。与此同时，这种策略还可避免过分的，无
+效率的竞争，这种竞争是由于只允许一个（第一个）排队的线程被唤醒然后尝试acquire操作导致的。在只要求短时间持有同步器的场景中，
+创建同步器的开发者可以通过定义tryAcquire在控制权返回之前重复调用自己若干次，来进一步凸显闯入的效果。
+<img src="/concurrent//fifo-300x90.png" alt=""></p>
+<p>可闯入的FIFO同步器只有概率性的公平属性。锁队列头部一个解除了阻塞的线程拥有一次无偏向的机会（译者注：即不会偏向队头的线
+程也不会偏向闯入的线程）来赢得与闯入的线程之间的竞争，如果竞争失败，要么重新阻塞要么进行重试。然而，如果闯入的线程到达的
+速度比队头的线程解除阻塞快，那么在队列中的第一个线程将很难赢得竞争，以至于几乎总要重新阻塞，并且它的后继节点也会一直保持
+阻塞。对于短暂持有的同步器来说，在队列中第一个线程被解除阻塞期间，多处理器上很可能发生过多次闯入（译者注：即闯入的线程的
+acquire操作）和release了。正如下文所提到的，最终结果就是保持一或多个线程的高进展速度的同时，仍至少在一定概率上避免了饥饿
+的发生。</p>
+<p>当有更高的公平性需求时，实现起来也很简单。如果需要严格的公平性，程序员可以把tryAcquire方法定义为，若当前线程不是队列的
+头节点（可通过getFirstQueuedThread方法检查，这是框架提供的为数不多的几个检测方法之一），则立即失败（返回false）。</p>
+<p>一个更快，但非严格公平的变体可以这样做，若队列为空（判断的瞬间），仍然允许tryAcquire执行成功。在这种情况下，多个线程同
+时遇到一个空队列时可能会去竞争以使自己第一个获得锁，这样，通常至少有一个线程是无需入队列的。java.util.concurrent包中所有
+支持公平模式的同步器都采用了这种策略。</p>
+<p>尽管公平性设置在实践中很有用，但是它们并没有保障，因为Java Language Specification没有提供这样的调度保证。例如：即使是严
+格公平的同步器，如果一组线程永远不需要阻塞来达到互相等待，那么JVM可能会决定纯粹以顺序方式运行它们。在实际中，单处理器上，
+在抢占式上下文切换之前，这样的线程有可能是各自运行了一段时间。如果这样一个线程正持有某个互斥锁，它将很快会被切换回来，仅
+是为了释放其持有的锁，然后会继续阻塞，因为它知道有另外一个线程需要这把锁，这更增加了同步器可用但没有线程能来获取之间的间
+隔。同步器公平性设置在多处理器上的影响可能会更大，因为在这种环境下会产生更多的交错，因此一个线程就会有更多的机会发现锁被
+另一个线程请求。</p>
+<p>在高竞争下，当保护的是短暂持有锁的代码体时，尽管性能可能会较差，但公平锁仍然能有效地工作。例如，当公平性锁保护的是相对
+长的代码体和/或有着相对长的锁间(inter-lock)间隔，在这种情况下，闯入只能带来很小的性能优势，但却可能会大大增加无限等待的风
+险。同步器框架将这些工程决策留给用户来确定。</p>
+<h3 id="42-同步器">4.2 同步器</h3>
+<p>下面是java.util.concurrent包中同步器定义方式的概述：</p>
+<p>ReentrantLock类使用AQS同步状态来保存锁（重复）持有的次数。当锁被一个线程获取时，ReentrantLock也会记录下当前获得锁的线程
+标识，以便检查是否是重复获取，以及当错误的线程（译者注：如果线程不是锁的持有者，在此线程中执行该锁的unlock操作就是非法的）
+试图进行解锁操作时检测是否存在非法状态异常。ReentrantLock也使用了AQS提供的ConditionObject，还向外暴露了其它监控和监测相关
+的方法。ReentrantLock通过在内部声明两个不同的AbstractQueuedSynchronizer实现类（提供公平模式的那个禁用了闯入策略）来实现可
+选的公平模式，在创建ReentrantLock实例的时候根据设置（译者注：即ReentrantLock构造方法中的fair参数）使用相应的AbstractQueuedSynchronizer
+实现类。</p>
+<p>ReentrantReadWriteLock类使用AQS同步状态中的16位来保存写锁持有的次数，剩下的16位用来保存读锁的持有次数。WriteLock的构建
+方式同ReentrantLock。ReadLock则通过使用acquireShared方法来支持同时允许多个读线程。</p>
+<p>Semaphore类（计数信号量）使用AQS同步状态来保存信号量的当前计数。它里面定义的acquireShared方法会减少计数，或当计数为非正
+值时阻塞线程；tryRelease方法会增加计数，可能在计数为正值时还要解除线程的阻塞。</p>
+<p>CountDownLatch类使用AQS同步状态来表示计数。当该计数为0时，所有的acquire操作（译者注：acquire操作是从aqs的角度说的，对应
+到CountDownLatch中就是await方法）才能通过。</p>
+<p>FutureTask类使用AQS同步状态来表示某个异步计算任务的运行状态（初始化、运行中、被取消和完成）。设置（译者注：FutureTask的
+set方法）或取消（译者注：FutureTask的cancel方法）一个FutureTask时会调用AQS的release操作，等待计算结果的线程的阻塞解除是通
+过AQS的acquire操作实现的。</p>
+<p>SynchronousQueues类（一种CSP（Communicating Sequential Processes）形式的传递）使用了内部的等待节点，这些节点可以用于协调
+生产者和消费者。同时，它使用AQS同步状态来控制当某个消费者消费当前一项时，允许一个生产者继续生产，反之亦然。</p>
+<p>java.util.concurrent包的使用者当然也可以为自定义的应用定义自己的同步器。例如，那些曾考虑到过的，但没有采纳进这个包的同
+步器包括提供WIN32事件各种风格的语义类，二元信号量，集中管理的锁以及基于树的屏障。</p>
+<h2 id="5-性能">5 性能</h2>
+<p>虽然AQS框架除了支持互斥锁外，还支持其它形式的同步方式，但锁的性能是最容易测量和比较的。即使如此，也还存在许多不同的测量
+方式。这里的实验主要是设计来展示锁的开销和吞吐量。</p>
+<p>在每个测试中，所有线程都重复的更新一个伪随机数，该随机数由nextRandom(int seed)方法计算：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">int t = (seed % 127773) * 16807 - (seed / 127773) * 2836;
+return (t &gt; 0) ? t : t + 0x7fffffff;
+</code></pre></td></tr></table>
+</div>
+</div><p>在每次迭代中，线程以概率S在一个互斥锁下更新共享的生成器，否则（译者注：概率为1-S）更新其自己局部的生成器，此时是不需要
+锁的。如此，锁占用区域的耗时是短暂的，这就使线程持有锁期间被抢占时的外界干扰降到了最小。这个函数的随机性主要是为了两个目
+的：确定是否需要使用锁（这个生成器足以应付这里的需求），以及使循环中的代码不可能被轻易地优化掉。</p>
+<p>这里比较了四种锁：内置锁，用的是synchronized块；互斥锁，用的是像第四节例子中的那样简单的Mutex类；可重入锁，用的是ReentrantLock；
+以及公平锁，用的是ReentrantLock的公平模式。所有测试都运行在J2SE1.5 JDK build46（大致与beta2相同）的server模式下。在收集测
+试数据前，测试程序先运行20次非竞争的测试，以排除JVM“预热”（译者注：更多关于“预热”的内容，参见：Java 理论与实践: 动态
+编译与性能测量）过程的影响。除了公平模式下的测试只跑了一百万次迭代，其它每个线程中的测试都运行了一千万次迭代。</p>
+<p>该测试运行在四个X86机器和四个UltraSparc机器上。所有X86机器都运行的是RedHat基于NPTL 2.4内核和库的Linux系统。所有的UltraSparc
+机器都运行的是Solaris-9。测试时所有系统的负载都很轻。根据该测试的特征，并不要求系统完全空闲（译者注：即测试时操作系统上有
+其它较轻的负载也不会影响本次测试的结果。）。“4P”这个名字反映出双核超线程的Xeon更像是4路机器，而不是2路机器。这里没有将
+测试数据规范化。如下所示，同步的相对开销与处理器的数量、类型、速度之间不具备简单的关系。</p>
+<p>表1 测试的平台</p>
+<table>
+<thead>
+<tr>
+<th>名字</th>
+<th>处理器数量</th>
+<th>类型</th>
+<th>速度(Mhz)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1P</td>
+<td>1</td>
+<td>Pentium3</td>
+<td>900</td>
+</tr>
+<tr>
+<td>2P</td>
+<td>2</td>
+<td>Pentium3</td>
+<td>1400</td>
+</tr>
+<tr>
+<td>2A</td>
+<td>2</td>
+<td>Athlon</td>
+<td>2000</td>
+</tr>
+<tr>
+<td>4P</td>
+<td>2HT</td>
+<td>Pentium4/Xeon</td>
+<td>2400</td>
+</tr>
+<tr>
+<td>1U</td>
+<td>1</td>
+<td>UltraSparc2</td>
+<td>650</td>
+</tr>
+<tr>
+<td>4U</td>
+<td>4</td>
+<td>UltraSparc2</td>
+<td>450</td>
+</tr>
+<tr>
+<td>8U</td>
+<td>8</td>
+<td>UltraSparc3</td>
+<td>750</td>
+</tr>
+<tr>
+<td>24U</td>
+<td>24</td>
+<td>UltraSparc3</td>
+<td>750</td>
+</tr>
+</tbody>
+</table>
+<h3 id="51-开销">5.1 开销</h3>
+<p>无竞争情况下的开销是通过仅运行一个线程，将概率S为1时的每次迭代时间减去概率S为0（访问共享内存的概率为0）时的每次迭代时间
+得到的（译者注：这里的“概率S”即前文提到的“概率S”，概率为0时是没有锁操作的，概率为1时是每次都有锁操作，因此将概率为1时
+的耗时减去概率为0时的耗时就是整个锁操作的开销。）。表2以纳秒为单位显示了非竞争场景下每次锁操作的开销。Mutex类最接近于框架
+的基本耗时，可重入锁的额外开销是记录当前所有者线程和错误检查的耗时，对于公平锁来说还包含开始时检查队列是否为空的耗时。</p>
+<p>表格2也展示与内置锁的“快速路径（fast path）”对比，tryAcquire的耗时。这里的差异主要反映出了各锁和机器中使用的不同的原
+子指令以及内存屏障的耗时。在多处理器上，这些指令常常是完全优于所有其它指令的。内置锁和同步器类之间的主要差别，显然是由于
+Hotspot锁在锁定和解锁时都使用了一次compareAndSet，而同步器的acquire操作使用了一次compareAndSet，但release操作用的是一次
+volatile写（即，多处理器上的一次内存屏障以及所有处理器上的重排序限制）。每个锁的绝对的和相对耗时因机器的不同而不同。</p>
+<p>表2 无竞争时的单锁开销（单位：纳秒）</p>
+<table>
+<thead>
+<tr>
+<th>机器</th>
+<th>内置</th>
+<th>互斥</th>
+<th>可重入</th>
+<th>公平可重入</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1P</td>
+<td>18</td>
+<td>9</td>
+<td>31</td>
+<td>37</td>
+</tr>
+<tr>
+<td>2P</td>
+<td>58</td>
+<td>71</td>
+<td>77</td>
+<td>81</td>
+</tr>
+<tr>
+<td>2A</td>
+<td>13</td>
+<td>21</td>
+<td>31</td>
+<td>30</td>
+</tr>
+<tr>
+<td>4P</td>
+<td>116</td>
+<td>95</td>
+<td>109</td>
+<td>117</td>
+</tr>
+<tr>
+<td>1U</td>
+<td>90</td>
+<td>40</td>
+<td>58</td>
+<td>67</td>
+</tr>
+<tr>
+<td>4U</td>
+<td>122</td>
+<td>82</td>
+<td>100</td>
+<td>115</td>
+</tr>
+<tr>
+<td>8U</td>
+<td>160</td>
+<td>83</td>
+<td>103</td>
+<td>123</td>
+</tr>
+<tr>
+<td>24U</td>
+<td>161</td>
+<td>84</td>
+<td>108</td>
+<td>119</td>
+</tr>
+</tbody>
+</table>
+<p>从另一个极端看，表3展示了概率S为1，运行256个并发线程时产生了大规模的锁竞争下每个锁的开销。在完全饱和的情况下，可闯入的
+FIFO锁比内置锁的开销少了一个数量级（也就是更大的吞吐量），比公平锁更是少了两个数量级。这表现出即使有着极大的竞争，在维持
+线程进展方面可闯入FIFO策略的效率。</p>
+<p>表3也说明了即使在内部开销比较低的情况下，公平锁的性能也完全是由上下文切换的时间所决定的。列出的时间大致上都与各平台上线
+程阻塞和解除线程阻塞的时间相称。</p>
+<p>此外，后面增加的一个实验（仅使用机器4P）表明，对于这里用到的短暂持有的锁，公平参数的设置在总差异中的影响很小。这里将线
+程终止时间间的差异记录成一个粗粒度的离散量数。在4P的机器上，公平锁的时间度量的标准差平均为0.7%，可重入锁平均为6.0%。作为
+对比，为模拟一个长时间持有锁的场景，测试中使每个线程在持有锁的情况下计算了16K次随机数。这时，总运行时间几乎是相同的（公平
+锁：9.79s，可重入锁：9.72s）。公平模式下的差异依然很小，标准差平均为0.1%，而可重入锁上升到了平均29.5%。</p>
+<p>表格3 饱和时的单锁开销（单位：纳秒）</p>
+<table>
+<thead>
+<tr>
+<th>机器</th>
+<th>内置</th>
+<th>互斥</th>
+<th>可重入</th>
+<th>公平可重入</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1P</td>
+<td>521</td>
+<td>46</td>
+<td>67</td>
+<td>8327</td>
+</tr>
+<tr>
+<td>2P</td>
+<td>930</td>
+<td>108</td>
+<td>132</td>
+<td>14967</td>
+</tr>
+<tr>
+<td>2A</td>
+<td>748</td>
+<td>79</td>
+<td>84</td>
+<td>33910</td>
+</tr>
+<tr>
+<td>4P</td>
+<td>1146</td>
+<td>188</td>
+<td>247</td>
+<td>15328</td>
+</tr>
+<tr>
+<td>1U</td>
+<td>879</td>
+<td>153</td>
+<td>177</td>
+<td>41394</td>
+</tr>
+<tr>
+<td>4U</td>
+<td>2590</td>
+<td>347</td>
+<td>368</td>
+<td>30004</td>
+</tr>
+<tr>
+<td>8U</td>
+<td>1274</td>
+<td>157</td>
+<td>174</td>
+<td>31084</td>
+</tr>
+<tr>
+<td>24U</td>
+<td>1983</td>
+<td>160</td>
+<td>182</td>
+<td>32291</td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-吞吐量">5.2 吞吐量</h3>
+<p>大部分同步器都是用于无竞争和极大竞争之间的。这可以用实验在两个方面进行检查，通过修改固定个线程的竞争概率，和/或通过往拥有
+固定竞争概率的线程集合里增加更多的线程。为了说明这些影响，测试运行在不同的竞争概率和不同的线程数目下，都用的是可重入锁。
+附图使用了一个slowdown度量标准。
+<img src="/concurrent//formula-300x66.jpg" alt=""></p>
+<p>这里，t是总运行时间，b是一个线程在没有竞争或同步下的基线时间，n是线程数，p是处理器数，S是共享访问的比例（译者注：即前面
+的竞争概率S）。计算结果是实际执行时间与理想执行时间（通常是无法得到的）的比率，理想执行时间是通过使用Amdahl’s法则计算出
+来的。理想时间模拟了一次没有同步开销，没有因锁争用而导致线程阻塞的执行过程。即使这样，在很低的竞争下，相比理想时间，有一
+些测试结果却表现出了很小的速度增长，大概是由于基线和测试之间的优化、流水线等方面有着轻微的差别。</p>
+<p>图中用以2为底的对数为比例进行了缩放。例如，值为1表示实际时间是理想时间的两倍，4表示慢16倍。使用对数就不需要依赖一个随意
+的基线时间（这里指的是计算随机数的时间），因此，基于不同底数计算的结果表现出的趋势应该是类似的。这些测试使用的竞争概率从
+1/128（标识为“0.008”）到1，以2的幂为步长，线程的数量从1到1024，以2的幂的一半为步长。</p>
+<p>在单处理器（1P和1U）上，性能随着竞争的上升而下降，但不会随着线程数的增加而下降。多处理器在遭遇竞争时，性能下降的更快。
+根据多处理器相关的图表显示，开始出现的峰值处虽然只有几个线程的竞争，但相对性能通常却最差。这反映出了一个性能的过渡区域，
+在这里闯入的线程和被唤醒的线程都准备获取锁，这会让它们频繁的迫使对方阻塞。在大部分时候，过渡区域后面会紧接着一个平滑区域，
+因为此时几乎没有空闲的锁，所以会与单处理器上顺序执行的模式差不多；在多处理器机器上会较早进入平滑区域。例如，请注意，在满
+竞争（标识为“1.000”）下这些值表示，在处理器越少的机器上，会有更糟糕的相对速度下降。</p>
+<p>根据这些结果，可以针对阻塞（park/unpark）做进一步调优以减少上下文切换和相关的开销，这会给本框架带来小但显著的提升。此外，
+在多处理器上为短时间持有的但高竞争的锁采用某种形式的适应性自旋，可以避免这里看到的一些波动，这对同步器类大有裨益。虽然在
+跨不同上下文时适应性自旋很难很好的工作，但可以使用本框架为遇到这类使用配置的特定应用构建一个自定义形式的锁。
+<img src="/concurrent//1-1024x409.jpg" alt="">
+<img src="/concurrent//2P.jpg" alt="">
+<img src="/concurrent//8U.jpg" alt=""></p>
+<h2 id="6总结">6.总结</h2>
+<p>本文撰写之时，java.util.concurrent包中的同步器框架还太新所以还不能在实践中使用。因此在J2SE 1.5最终版本发布之前都很难看
+到其大范围的使用，并且，它的设计，API实现以及性能肯定还有无法预料的后果。但是，此时，这个框架明显能胜任其基本的目标，即为
+创建新的同步器提供一个高效的基础。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-03-14 18:00
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/AQS/">AQS</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/02.Atomic%E8%AE%B2%E8%A7%A3/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Atomic讲解</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/01.Unsafe/">
+        <span class="next-text nav-default">Unsafe</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>SequenceBarrier - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="SequenceBarrier分析 简介 序列屏障由序列发生器产生，包含对序列发生器的主要发布序列和任何相关消费者的序列的引用。它包含确定消费者" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/disruptor/4.SequenceBarrier%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/disruptor/4.SequenceBarrier%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/disruptor/4.SequenceBarrier%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="SequenceBarrier" />
+<meta property="og:description" content="SequenceBarrier分析 简介 序列屏障由序列发生器产生，包含对序列发生器的主要发布序列和任何相关消费者的序列的引用。它包含确定消费者" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/disruptor/4.SequenceBarrier%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2018-05-15T18:18:08+00:00" />
+<meta property="article:modified_time" content="2018-05-15T18:18:08+00:00" />
+<meta itemprop="name" content="SequenceBarrier">
+<meta itemprop="description" content="SequenceBarrier分析 简介 序列屏障由序列发生器产生，包含对序列发生器的主要发布序列和任何相关消费者的序列的引用。它包含确定消费者">
+<meta itemprop="datePublished" content="2018-05-15T18:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2018-05-15T18:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="1020">
+
+
+
+<meta itemprop="keywords" content="disruptor," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="SequenceBarrier"/>
+<meta name="twitter:description" content="SequenceBarrier分析 简介 序列屏障由序列发生器产生，包含对序列发生器的主要发布序列和任何相关消费者的序列的引用。它包含确定消费者"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">SequenceBarrier</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2018-05-15 18:18 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 1020 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#一sequencebarrier-接口说明">一、SequenceBarrier 接口说明</a></li>
+    <li><a href="#二processingsequencebarrier实现sequencebarrier接口">二、ProcessingSequenceBarrier实现SequenceBarrier接口</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2018-05-15T18:18:08" title="May 15, 2018">May 15, 2018</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="sequencebarrier分析">SequenceBarrier分析</h1>
+<h2 id="简介">简介</h2>
+<p>序列屏障由序列发生器产生，包含对序列发生器的主要发布序列和任何相关消费者的序列的引用。它包含确定消费者是否有任何事件可供处理的逻辑。</p>
+<h2 id="一sequencebarrier-接口说明">一、SequenceBarrier 接口说明</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm"> * Coordination barrier for tracking the cursor for publishers and sequence of
+</span><span class="cm"> * dependent {@link EventProcessor}s for processing a data structure
+</span><span class="cm"> */</span>
+<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">SequenceBarrier</span>
+<span class="o">{</span>
+    <span class="cm">/**
+</span><span class="cm">     * Wait for the given sequence to be available for consumption.
+</span><span class="cm">     * 等待给定的序列可供消费。
+</span><span class="cm">     * @param sequence to wait for
+</span><span class="cm">     * @return the sequence up to which is available
+</span><span class="cm">     * @throws AlertException       if a status change has occurred for the Disruptor
+</span><span class="cm">     * @throws InterruptedException if the thread needs awaking on a condition variable.
+</span><span class="cm">     * @throws TimeoutException     if a timeout occurs while waiting for the supplied sequence.
+</span><span class="cm">     */</span>
+    <span class="kt">long</span> <span class="nf">waitFor</span><span class="o">(</span><span class="kt">long</span> <span class="n">sequence</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">AlertException</span><span class="o">,</span> <span class="n">InterruptedException</span><span class="o">,</span> <span class="n">TimeoutException</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Get the current cursor value that can be read.
+</span><span class="cm">     * 获取可以读取的当前游标值。
+</span><span class="cm">     * @return value of the cursor for entries that have been published.
+</span><span class="cm">     */</span>
+    <span class="kt">long</span> <span class="nf">getCursor</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * The current alert status for the barrier.
+</span><span class="cm">     * 
+</span><span class="cm">     * 当前屏障是否发过通知。
+</span><span class="cm">     * @return true if in alert otherwise false.
+</span><span class="cm">     */</span>
+    <span class="kt">boolean</span> <span class="nf">isAlerted</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Alert the {@link EventProcessor}s of a status change and stay in this status until cleared.
+</span><span class="cm">     * 通知事件处理者状态变化，然后停留在这个状态上，直到状态被清除。
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">alert</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Clear the current alert status.
+</span><span class="cm">     * 清楚通知状态。
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">clearAlert</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Check if an alert has been raised and throw an {@link AlertException} if it has.
+</span><span class="cm">     * 检测是否发生了通知，如果已经发生了抛出AlertException异常。
+</span><span class="cm">     *
+</span><span class="cm">     * @throws AlertException if alert has been raised.
+</span><span class="cm">     */</span>
+    <span class="kt">void</span> <span class="nf">checkAlert</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">AlertException</span><span class="o">;</span>
+<span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二processingsequencebarrier实现sequencebarrier接口">二、ProcessingSequenceBarrier实现SequenceBarrier接口</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm"> * {@link SequenceBarrier} handed out for gating {@link EventProcessor}s on a cursor sequence and optional dependent {@link EventProcessor}(s),
+</span><span class="cm"> * using the given WaitStrategy.
+</span><span class="cm"> */</span>
+<span class="kd">final</span> <span class="kd">class</span> <span class="nc">ProcessingSequenceBarrier</span> <span class="kd">implements</span> <span class="n">SequenceBarrier</span>
+<span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">WaitStrategy</span> <span class="n">waitStrategy</span><span class="o">;</span>  
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">dependentSequence</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">volatile</span> <span class="kt">boolean</span> <span class="n">alerted</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">cursorSequence</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sequencer</span> <span class="n">sequencer</span><span class="o">;</span>
+
+    <span class="n">ProcessingSequenceBarrier</span><span class="o">(</span>
+        <span class="kd">final</span> <span class="n">Sequencer</span> <span class="n">sequencer</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">WaitStrategy</span> <span class="n">waitStrategy</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Sequence</span> <span class="n">cursorSequence</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="n">Sequence</span><span class="o">[]</span> <span class="n">dependentSequences</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">sequencer</span> <span class="o">=</span> <span class="n">sequencer</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">waitStrategy</span> <span class="o">=</span> <span class="n">waitStrategy</span><span class="o">;</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">cursorSequence</span> <span class="o">=</span> <span class="n">cursorSequence</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">0</span> <span class="o">==</span> <span class="n">dependentSequences</span><span class="o">.</span><span class="na">length</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="n">dependentSequence</span> <span class="o">=</span> <span class="n">cursorSequence</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">else</span>
+        <span class="o">{</span>
+            <span class="n">dependentSequence</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FixedSequenceGroup</span><span class="o">(</span><span class="n">dependentSequences</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">waitFor</span><span class="o">(</span><span class="kd">final</span> <span class="kt">long</span> <span class="n">sequence</span><span class="o">)</span>
+        <span class="kd">throws</span> <span class="n">AlertException</span><span class="o">,</span> <span class="n">InterruptedException</span><span class="o">,</span> <span class="n">TimeoutException</span>
+    <span class="o">{</span>
+        <span class="n">checkAlert</span><span class="o">();</span>
+
+        <span class="kt">long</span> <span class="n">availableSequence</span> <span class="o">=</span> <span class="n">waitStrategy</span><span class="o">.</span><span class="na">waitFor</span><span class="o">(</span><span class="n">sequence</span><span class="o">,</span> <span class="n">cursorSequence</span><span class="o">,</span> <span class="n">dependentSequence</span><span class="o">,</span> <span class="k">this</span><span class="o">);</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">availableSequence</span> <span class="o">&lt;</span> <span class="n">sequence</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">return</span> <span class="n">availableSequence</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="k">return</span> <span class="n">sequencer</span><span class="o">.</span><span class="na">getHighestPublishedSequence</span><span class="o">(</span><span class="n">sequence</span><span class="o">,</span> <span class="n">availableSequence</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">getCursor</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">dependentSequence</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isAlerted</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">alerted</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">alert</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="n">alerted</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="n">waitStrategy</span><span class="o">.</span><span class="na">signalAllWhenBlocking</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">clearAlert</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="n">alerted</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">checkAlert</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">AlertException</span>
+    <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">alerted</span><span class="o">)</span>
+        <span class="o">{</span>
+            <span class="k">throw</span> <span class="n">AlertException</span><span class="o">.</span><span class="na">INSTANCE</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>FixedSequenceGroup, 在单个序列背后隐藏一组序列.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm"> * Hides a group of Sequences behind a single Sequence
+</span><span class="cm"> */</span>
+<span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">FixedSequenceGroup</span> <span class="kd">extends</span> <span class="n">Sequence</span>
+<span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">Sequence</span><span class="o">[]</span> <span class="n">sequences</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Constructor
+</span><span class="cm">     *
+</span><span class="cm">     * @param sequences the list of sequences to be tracked under this sequence group
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">FixedSequenceGroup</span><span class="o">(</span><span class="n">Sequence</span><span class="o">[]</span> <span class="n">sequences</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">sequences</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">copyOf</span><span class="o">(</span><span class="n">sequences</span><span class="o">,</span> <span class="n">sequences</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Get the minimum sequence value for the group.
+</span><span class="cm">     *
+</span><span class="cm">     * @return the minimum sequence value for the group.
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">get</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">Util</span><span class="o">.</span><span class="na">getMinimumSequence</span><span class="o">(</span><span class="n">sequences</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">String</span> <span class="nf">toString</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">return</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">toString</span><span class="o">(</span><span class="n">sequences</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Not supported.
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">set</span><span class="o">(</span><span class="kt">long</span> <span class="n">value</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">UnsupportedOperationException</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Not supported.
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">compareAndSet</span><span class="o">(</span><span class="kt">long</span> <span class="n">expectedValue</span><span class="o">,</span> <span class="kt">long</span> <span class="n">newValue</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">UnsupportedOperationException</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Not supported.
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">incrementAndGet</span><span class="o">()</span>
+    <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">UnsupportedOperationException</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Not supported.
+</span><span class="cm">     */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">addAndGet</span><span class="o">(</span><span class="kt">long</span> <span class="n">increment</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">UnsupportedOperationException</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2018-05-15 18:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/disruptor/">disruptor</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/disruptor/5.WaitStrategy%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">WaitStrategy</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/disruptor/3.Sequencer%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">Sequencer分析</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Unsafe - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="#说明 java不能直接访问操作系统底层，而是通过本地方法来访问。Unsafe类提供了硬件级别的原子操作，主要提供了以下功能： 一、通过Unsa" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/01.Unsafe/" />
+<link href="/post/concurrent/01.Unsafe/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/01.Unsafe/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="Unsafe" />
+<meta property="og:description" content="#说明 java不能直接访问操作系统底层，而是通过本地方法来访问。Unsafe类提供了硬件级别的原子操作，主要提供了以下功能： 一、通过Unsa" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/01.Unsafe/" />
+<meta property="article:published_time" content="2017-03-13T21:00:11+00:00" />
+<meta property="article:modified_time" content="2017-03-13T21:00:11+00:00" />
+<meta itemprop="name" content="Unsafe">
+<meta itemprop="description" content="#说明 java不能直接访问操作系统底层，而是通过本地方法来访问。Unsafe类提供了硬件级别的原子操作，主要提供了以下功能： 一、通过Unsa">
+<meta itemprop="datePublished" content="2017-03-13T21:00:11&#43;00:00" />
+<meta itemprop="dateModified" content="2017-03-13T21:00:11&#43;00:00" />
+<meta itemprop="wordCount" content="6635">
+
+
+
+<meta itemprop="keywords" content="Unsafe," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Unsafe"/>
+<meta name="twitter:description" content="#说明 java不能直接访问操作系统底层，而是通过本地方法来访问。Unsafe类提供了硬件级别的原子操作，主要提供了以下功能： 一、通过Unsa"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">Unsafe</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-03-13 21:00 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 6635 字 </span>
+      <span class="more-meta"> 预计阅读 14 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#一通过unsafe类可以分配内存可以释放内存">一、通过Unsafe类可以分配内存，可以释放内存；</a></li>
+    <li><a href="#二可以定位对象某字段的内存位置也可以修改对象的字段值即使它是私有的">二、可以定位对象某字段的内存位置，也可以修改对象的字段值，即使它是私有的；</a></li>
+    <li><a href="#三挂起与恢复">三、挂起与恢复</a></li>
+    <li><a href="#四cas操作">四、CAS操作</a></li>
+    <li><a href="#五源码注释翻译">五、源码注释翻译</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-03-13T21:00:11" title="March 13, 2017">March 13, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <p>#说明
+java不能直接访问操作系统底层，而是通过本地方法来访问。Unsafe类提供了硬件级别的原子操作，主要提供了以下功能：</p>
+<h2 id="一通过unsafe类可以分配内存可以释放内存">一、通过Unsafe类可以分配内存，可以释放内存；</h2>
+<p>类中提供的3个本地方法allocateMemory、reallocateMemory、freeMemory分别用于分配内存，扩充内存和释放内存，与C语言中的3个方法
+对应。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">public native long allocateMemory(long l);
+public native long reallocateMemory(long l, long l1);
+public native void freeMemory(long l);
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二可以定位对象某字段的内存位置也可以修改对象的字段值即使它是私有的">二、可以定位对象某字段的内存位置，也可以修改对象的字段值，即使它是私有的；</h2>
+<p>字段的定位：</p>
+<ul>
+<li>
+<p>JAVA中对象的字段的定位可能通过objectFieldOffset方法实现，该方法返回给定field的内存地址偏移量，这个值对于给定的filed
+是唯一的且是固定不变的。</p>
+</li>
+<li>
+<p>getIntVolatile方法获取对象中offset偏移地址对应的整型field的值,支持volatile load语义。</p>
+</li>
+<li>
+<p>getLong方法获取对象中offset偏移地址对应的long型field的值</p>
+</li>
+</ul>
+<p>数组元素定位：</p>
+<ul>
+<li>Unsafe类中有很多以BASE_OFFSET结尾的常量，比如ARRAY_INT_BASE_OFFSET，ARRAY_BYTE_BASE_OFFSET等，这些常量值是通过arrayBaseOffset
+方法得到的。arrayBaseOffset方法是一个本地方法，可以获取数组第一个元素的偏移地址。Unsafe类中还有很多以INDEX_SCALE结尾的
+常量，比如 ARRAY_INT_INDEX_SCALE ， ARRAY_BYTE_INDEX_SCALE等，这些常量值是通过arrayIndexScale方法得到的。arrayIndexScale
+方法也是一个本地方法，可以获取数组的转换因子，也就是数组中元素的增量地址。将arrayBaseOffset与arrayIndexScale配合使用，
+可以定位数组中每个元素在内存中的位置。</li>
+</ul>
+<h2 id="三挂起与恢复">三、挂起与恢复</h2>
+<p>将一个线程进行挂起是通过park方法实现的，调用 park后，线程将一直阻塞直到超时或者中断等条件出现。unpark可以终止一个挂起
+的线程，使其恢复正常。整个并发框架中对线程的挂起操作被封装在 LockSupport类中，LockSupport类中有各种版本pack方法，但最
+终都调用了Unsafe.park()方法。</p>
+<h2 id="四cas操作">四、CAS操作</h2>
+<p>是通过compareAndSwapXXX方法实现的</p>
+<h2 id="五源码注释翻译">五、源码注释翻译</h2>
+<p><a href="http://hg.openjdk.java.net/jdk7/jdk7/jdk/file/9b8c96f96a0f/src/share/classes/sun/misc/Unsafe.java">源码路径</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span><span class="lnt">157
+</span><span class="lnt">158
+</span><span class="lnt">159
+</span><span class="lnt">160
+</span><span class="lnt">161
+</span><span class="lnt">162
+</span><span class="lnt">163
+</span><span class="lnt">164
+</span><span class="lnt">165
+</span><span class="lnt">166
+</span><span class="lnt">167
+</span><span class="lnt">168
+</span><span class="lnt">169
+</span><span class="lnt">170
+</span><span class="lnt">171
+</span><span class="lnt">172
+</span><span class="lnt">173
+</span><span class="lnt">174
+</span><span class="lnt">175
+</span><span class="lnt">176
+</span><span class="lnt">177
+</span><span class="lnt">178
+</span><span class="lnt">179
+</span><span class="lnt">180
+</span><span class="lnt">181
+</span><span class="lnt">182
+</span><span class="lnt">183
+</span><span class="lnt">184
+</span><span class="lnt">185
+</span><span class="lnt">186
+</span><span class="lnt">187
+</span><span class="lnt">188
+</span><span class="lnt">189
+</span><span class="lnt">190
+</span><span class="lnt">191
+</span><span class="lnt">192
+</span><span class="lnt">193
+</span><span class="lnt">194
+</span><span class="lnt">195
+</span><span class="lnt">196
+</span><span class="lnt">197
+</span><span class="lnt">198
+</span><span class="lnt">199
+</span><span class="lnt">200
+</span><span class="lnt">201
+</span><span class="lnt">202
+</span><span class="lnt">203
+</span><span class="lnt">204
+</span><span class="lnt">205
+</span><span class="lnt">206
+</span><span class="lnt">207
+</span><span class="lnt">208
+</span><span class="lnt">209
+</span><span class="lnt">210
+</span><span class="lnt">211
+</span><span class="lnt">212
+</span><span class="lnt">213
+</span><span class="lnt">214
+</span><span class="lnt">215
+</span><span class="lnt">216
+</span><span class="lnt">217
+</span><span class="lnt">218
+</span><span class="lnt">219
+</span><span class="lnt">220
+</span><span class="lnt">221
+</span><span class="lnt">222
+</span><span class="lnt">223
+</span><span class="lnt">224
+</span><span class="lnt">225
+</span><span class="lnt">226
+</span><span class="lnt">227
+</span><span class="lnt">228
+</span><span class="lnt">229
+</span><span class="lnt">230
+</span><span class="lnt">231
+</span><span class="lnt">232
+</span><span class="lnt">233
+</span><span class="lnt">234
+</span><span class="lnt">235
+</span><span class="lnt">236
+</span><span class="lnt">237
+</span><span class="lnt">238
+</span><span class="lnt">239
+</span><span class="lnt">240
+</span><span class="lnt">241
+</span><span class="lnt">242
+</span><span class="lnt">243
+</span><span class="lnt">244
+</span><span class="lnt">245
+</span><span class="lnt">246
+</span><span class="lnt">247
+</span><span class="lnt">248
+</span><span class="lnt">249
+</span><span class="lnt">250
+</span><span class="lnt">251
+</span><span class="lnt">252
+</span><span class="lnt">253
+</span><span class="lnt">254
+</span><span class="lnt">255
+</span><span class="lnt">256
+</span><span class="lnt">257
+</span><span class="lnt">258
+</span><span class="lnt">259
+</span><span class="lnt">260
+</span><span class="lnt">261
+</span><span class="lnt">262
+</span><span class="lnt">263
+</span><span class="lnt">264
+</span><span class="lnt">265
+</span><span class="lnt">266
+</span><span class="lnt">267
+</span><span class="lnt">268
+</span><span class="lnt">269
+</span><span class="lnt">270
+</span><span class="lnt">271
+</span><span class="lnt">272
+</span><span class="lnt">273
+</span><span class="lnt">274
+</span><span class="lnt">275
+</span><span class="lnt">276
+</span><span class="lnt">277
+</span><span class="lnt">278
+</span><span class="lnt">279
+</span><span class="lnt">280
+</span><span class="lnt">281
+</span><span class="lnt">282
+</span><span class="lnt">283
+</span><span class="lnt">284
+</span><span class="lnt">285
+</span><span class="lnt">286
+</span><span class="lnt">287
+</span><span class="lnt">288
+</span><span class="lnt">289
+</span><span class="lnt">290
+</span><span class="lnt">291
+</span><span class="lnt">292
+</span><span class="lnt">293
+</span><span class="lnt">294
+</span><span class="lnt">295
+</span><span class="lnt">296
+</span><span class="lnt">297
+</span><span class="lnt">298
+</span><span class="lnt">299
+</span><span class="lnt">300
+</span><span class="lnt">301
+</span><span class="lnt">302
+</span><span class="lnt">303
+</span><span class="lnt">304
+</span><span class="lnt">305
+</span><span class="lnt">306
+</span><span class="lnt">307
+</span><span class="lnt">308
+</span><span class="lnt">309
+</span><span class="lnt">310
+</span><span class="lnt">311
+</span><span class="lnt">312
+</span><span class="lnt">313
+</span><span class="lnt">314
+</span><span class="lnt">315
+</span><span class="lnt">316
+</span><span class="lnt">317
+</span><span class="lnt">318
+</span><span class="lnt">319
+</span><span class="lnt">320
+</span><span class="lnt">321
+</span><span class="lnt">322
+</span><span class="lnt">323
+</span><span class="lnt">324
+</span><span class="lnt">325
+</span><span class="lnt">326
+</span><span class="lnt">327
+</span><span class="lnt">328
+</span><span class="lnt">329
+</span><span class="lnt">330
+</span><span class="lnt">331
+</span><span class="lnt">332
+</span><span class="lnt">333
+</span><span class="lnt">334
+</span><span class="lnt">335
+</span><span class="lnt">336
+</span><span class="lnt">337
+</span><span class="lnt">338
+</span><span class="lnt">339
+</span><span class="lnt">340
+</span><span class="lnt">341
+</span><span class="lnt">342
+</span><span class="lnt">343
+</span><span class="lnt">344
+</span><span class="lnt">345
+</span><span class="lnt">346
+</span><span class="lnt">347
+</span><span class="lnt">348
+</span><span class="lnt">349
+</span><span class="lnt">350
+</span><span class="lnt">351
+</span><span class="lnt">352
+</span><span class="lnt">353
+</span><span class="lnt">354
+</span><span class="lnt">355
+</span><span class="lnt">356
+</span><span class="lnt">357
+</span><span class="lnt">358
+</span><span class="lnt">359
+</span><span class="lnt">360
+</span><span class="lnt">361
+</span><span class="lnt">362
+</span><span class="lnt">363
+</span><span class="lnt">364
+</span><span class="lnt">365
+</span><span class="lnt">366
+</span><span class="lnt">367
+</span><span class="lnt">368
+</span><span class="lnt">369
+</span><span class="lnt">370
+</span><span class="lnt">371
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kn">package</span> <span class="nn">sun.misc</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.lang.reflect.Field</span><span class="o">;</span>
+<span class="cm">/***
+</span><span class="cm"> * This class should provide access to low-level operations and its
+</span><span class="cm"> * use should be limited to trusted code.  Fields can be accessed using
+</span><span class="cm"> * memory addresses, with undefined behaviour occurring if invalid memory
+</span><span class="cm"> * addresses are given.
+</span><span class="cm"> * 这个类提供了一个更底层的操作并且应该在受信任的代码中使用。可以通过内存地址
+</span><span class="cm"> * 存取fields,如果给出的内存地址是无效的那么会有一个不确定的运行表现。
+</span><span class="cm"> * 
+</span><span class="cm"> * @author Tom Tromey (tromey@redhat.com)
+</span><span class="cm"> * @author Andrew John Hughes (gnu_andrew@member.fsf.org)
+</span><span class="cm"> */</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">Unsafe</span>
+<span class="o">{</span>
+  <span class="c1">// Singleton class.
+</span><span class="c1"></span>  <span class="kd">private</span> <span class="kd">static</span> <span class="n">Unsafe</span> <span class="n">unsafe</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Unsafe</span><span class="o">();</span>
+  <span class="cm">/***
+</span><span class="cm">   * Private default constructor to prevent creation of an arbitrary
+</span><span class="cm">   * number of instances.
+</span><span class="cm">   * 使用私有默认构造器防止创建多个实例
+</span><span class="cm">   */</span>
+  <span class="kd">private</span> <span class="nf">Unsafe</span><span class="o">()</span>
+  <span class="o">{</span>
+  <span class="o">}</span>
+  <span class="cm">/***
+</span><span class="cm">   * Retrieve the singleton instance of &lt;code&gt;Unsafe&lt;/code&gt;.  The calling
+</span><span class="cm">   * method should guard this instance from untrusted code, as it provides
+</span><span class="cm">   * access to low-level operations such as direct memory access.
+</span><span class="cm">   * 获取&lt;code&gt;Unsafe&lt;/code&gt;的单例,这个方法调用应该防止在不可信的代码中实例，
+</span><span class="cm">   * 因为unsafe类提供了一个低级别的操作，例如直接内存存取。
+</span><span class="cm">   * 
+</span><span class="cm">   * @throws SecurityException if a security manager exists and prevents
+</span><span class="cm">   *                           access to the system properties.
+</span><span class="cm">   *                           如果安全管理器不存在或者禁止访问系统属性
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="n">Unsafe</span> <span class="nf">getUnsafe</span><span class="o">()</span>
+  <span class="o">{</span>
+    <span class="n">SecurityManager</span> <span class="n">sm</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">getSecurityManager</span><span class="o">();</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">sm</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+      <span class="n">sm</span><span class="o">.</span><span class="na">checkPropertiesAccess</span><span class="o">();</span>
+    <span class="k">return</span> <span class="n">unsafe</span><span class="o">;</span>
+  <span class="o">}</span>
+  
+  <span class="cm">/***
+</span><span class="cm">   * Returns the memory address offset of the given static field.
+</span><span class="cm">   * The offset is merely used as a means to access a particular field
+</span><span class="cm">   * in the other methods of this class.  The value is unique to the given
+</span><span class="cm">   * field and the same value should be returned on each subsequent call.
+</span><span class="cm">   * 返回指定静态field的内存地址偏移量,在这个类的其他方法中这个值只是被用作一个访问
+</span><span class="cm">   * 特定field的一个方式。这个值对于 给定的field是唯一的，并且后续对该方法的调用都应该
+</span><span class="cm">   * 返回相同的值。
+</span><span class="cm">   *
+</span><span class="cm">   * @param field the field whose offset should be returned.
+</span><span class="cm">   *              需要返回偏移量的field
+</span><span class="cm">   * @return the offset of the given field.
+</span><span class="cm">   *         指定field的偏移量
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">long</span> <span class="nf">objectFieldOffset</span><span class="o">(</span><span class="n">Field</span> <span class="n">field</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Compares the value of the integer field at the specified offset
+</span><span class="cm">   * in the supplied object with the given expected value, and updates
+</span><span class="cm">   * it if they match.  The operation of this method should be atomic,
+</span><span class="cm">   * thus providing an uninterruptible way of updating an integer field.
+</span><span class="cm">   * 在obj的offset位置比较integer field和期望的值，如果相同则更新。这个方法
+</span><span class="cm">   * 的操作应该是原子的，因此提供了一种不可中断的方式更新integer field。
+</span><span class="cm">   * 
+</span><span class="cm">   * @param obj the object containing the field to modify.
+</span><span class="cm">   *            包含要修改field的对象
+</span><span class="cm">   * @param offset the offset of the integer field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *               &lt;code&gt;obj&lt;/code&gt;中整型field的偏移量
+</span><span class="cm">   * @param expect the expected value of the field.
+</span><span class="cm">   *               希望field中存在的值
+</span><span class="cm">   * @param update the new value of the field if it equals &lt;code&gt;expect&lt;/code&gt;.
+</span><span class="cm">   *           如果期望值expect与field的当前值相同，设置filed的值为这个新值
+</span><span class="cm">   * @return true if the field was changed.
+</span><span class="cm">   *                             如果field的值被更改
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">boolean</span> <span class="nf">compareAndSwapInt</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">,</span>
+                                          <span class="kt">int</span> <span class="n">expect</span><span class="o">,</span> <span class="kt">int</span> <span class="n">update</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Compares the value of the long field at the specified offset
+</span><span class="cm">   * in the supplied object with the given expected value, and updates
+</span><span class="cm">   * it if they match.  The operation of this method should be atomic,
+</span><span class="cm">   * thus providing an uninterruptible way of updating a long field.
+</span><span class="cm">   * 在obj的offset位置比较long field和期望的值，如果相同则更新。这个方法
+</span><span class="cm">   * 的操作应该是原子的，因此提供了一种不可中断的方式更新long field。
+</span><span class="cm">   * 
+</span><span class="cm">   * @param obj the object containing the field to modify.
+</span><span class="cm">   *              包含要修改field的对象 
+</span><span class="cm">   * @param offset the offset of the long field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *               &lt;code&gt;obj&lt;/code&gt;中long型field的偏移量
+</span><span class="cm">   * @param expect the expected value of the field.
+</span><span class="cm">   *               希望field中存在的值
+</span><span class="cm">   * @param update the new value of the field if it equals &lt;code&gt;expect&lt;/code&gt;.
+</span><span class="cm">   *               如果期望值expect与field的当前值相同，设置filed的值为这个新值
+</span><span class="cm">   * @return true if the field was changed.
+</span><span class="cm">   *              如果field的值被更改
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">boolean</span> <span class="nf">compareAndSwapLong</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">,</span>
+                                           <span class="kt">long</span> <span class="n">expect</span><span class="o">,</span> <span class="kt">long</span> <span class="n">update</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Compares the value of the object field at the specified offset
+</span><span class="cm">   * in the supplied object with the given expected value, and updates
+</span><span class="cm">   * it if they match.  The operation of this method should be atomic,
+</span><span class="cm">   * thus providing an uninterruptible way of updating an object field.
+</span><span class="cm">   * 在obj的offset位置比较object field和期望的值，如果相同则更新。这个方法
+</span><span class="cm">   * 的操作应该是原子的，因此提供了一种不可中断的方式更新object field。
+</span><span class="cm">   * 
+</span><span class="cm">   * @param obj the object containing the field to modify.
+</span><span class="cm">   *    包含要修改field的对象 
+</span><span class="cm">   * @param offset the offset of the object field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *         &lt;code&gt;obj&lt;/code&gt;中object型field的偏移量
+</span><span class="cm">   * @param expect the expected value of the field.
+</span><span class="cm">   *               希望field中存在的值
+</span><span class="cm">   * @param update the new value of the field if it equals &lt;code&gt;expect&lt;/code&gt;.
+</span><span class="cm">   *               如果期望值expect与field的当前值相同，设置filed的值为这个新值
+</span><span class="cm">   * @return true if the field was changed.
+</span><span class="cm">   *              如果field的值被更改
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">boolean</span> <span class="nf">compareAndSwapObject</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">,</span>
+                                             <span class="n">Object</span> <span class="n">expect</span><span class="o">,</span> <span class="n">Object</span> <span class="n">update</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Sets the value of the integer field at the specified offset in the
+</span><span class="cm">   * supplied object to the given value.  This is an ordered or lazy
+</span><span class="cm">   * version of &lt;code&gt;putIntVolatile(Object,long,int)&lt;/code&gt;, which
+</span><span class="cm">   * doesn&#39;t guarantee the immediate visibility of the change to other
+</span><span class="cm">   * threads.  It is only really useful where the integer field is
+</span><span class="cm">   * &lt;code&gt;volatile&lt;/code&gt;, and is thus expected to change unexpectedly.
+</span><span class="cm">   * 设置obj对象中offset偏移地址对应的整型field的值为指定值。这是一个有序或者
+</span><span class="cm">   * 有延迟的&lt;code&gt;putIntVolatile&lt;/cdoe&gt;方法，并且不保证值的改变被其他线程立
+</span><span class="cm">   * 即看到。只有在field被&lt;code&gt;volatile&lt;/code&gt;修饰并且期望被意外修改的时候
+</span><span class="cm">   * 使用才有用。
+</span><span class="cm">   * 
+</span><span class="cm">   * @param obj the object containing the field to modify.
+</span><span class="cm">   *    包含需要修改field的对象
+</span><span class="cm">   * @param offset the offset of the integer field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *       &lt;code&gt;obj&lt;/code&gt;中整型field的偏移量
+</span><span class="cm">   * @param value the new value of the field.
+</span><span class="cm">   *      field将被设置的新值
+</span><span class="cm">   * @see #putIntVolatile(Object,long,int)
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">void</span> <span class="nf">putOrderedInt</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">,</span> <span class="kt">int</span> <span class="n">value</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Sets the value of the long field at the specified offset in the
+</span><span class="cm">   * supplied object to the given value.  This is an ordered or lazy
+</span><span class="cm">   * version of &lt;code&gt;putLongVolatile(Object,long,long)&lt;/code&gt;, which
+</span><span class="cm">   * doesn&#39;t guarantee the immediate visibility of the change to other
+</span><span class="cm">   * threads.  It is only really useful where the long field is
+</span><span class="cm">   * &lt;code&gt;volatile&lt;/code&gt;, and is thus expected to change unexpectedly.
+</span><span class="cm">   * 设置obj对象中offset偏移地址对应的long型field的值为指定值。这是一个有序或者
+</span><span class="cm">   * 有延迟的&lt;code&gt;putLongVolatile&lt;/cdoe&gt;方法，并且不保证值的改变被其他线程立
+</span><span class="cm">   * 即看到。只有在field被&lt;code&gt;volatile&lt;/code&gt;修饰并且期望被意外修改的时候
+</span><span class="cm">   * 使用才有用。
+</span><span class="cm">   * 
+</span><span class="cm">   * @param obj the object containing the field to modify.
+</span><span class="cm">   *    包含需要修改field的对象
+</span><span class="cm">   * @param offset the offset of the long field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *       &lt;code&gt;obj&lt;/code&gt;中long型field的偏移量
+</span><span class="cm">   * @param value the new value of the field.
+</span><span class="cm">   *      field将被设置的新值
+</span><span class="cm">   * @see #putLongVolatile(Object,long,long)
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">void</span> <span class="nf">putOrderedLong</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">,</span> <span class="kt">long</span> <span class="n">value</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Sets the value of the object field at the specified offset in the
+</span><span class="cm">   * supplied object to the given value.  This is an ordered or lazy
+</span><span class="cm">   * version of &lt;code&gt;putObjectVolatile(Object,long,Object)&lt;/code&gt;, which
+</span><span class="cm">   * doesn&#39;t guarantee the immediate visibility of the change to other
+</span><span class="cm">   * threads.  It is only really useful where the object field is
+</span><span class="cm">   * &lt;code&gt;volatile&lt;/code&gt;, and is thus expected to change unexpectedly.
+</span><span class="cm">   * 设置obj对象中offset偏移地址对应的object型field的值为指定值。这是一个有序或者
+</span><span class="cm">   * 有延迟的&lt;code&gt;putObjectVolatile&lt;/cdoe&gt;方法，并且不保证值的改变被其他线程立
+</span><span class="cm">   * 即看到。只有在field被&lt;code&gt;volatile&lt;/code&gt;修饰并且期望被意外修改的时候
+</span><span class="cm">   * 使用才有用。
+</span><span class="cm">   *
+</span><span class="cm">   * @param obj the object containing the field to modify.
+</span><span class="cm">   *    包含需要修改field的对象
+</span><span class="cm">   * @param offset the offset of the object field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *       &lt;code&gt;obj&lt;/code&gt;中long型field的偏移量
+</span><span class="cm">   * @param value the new value of the field.
+</span><span class="cm">   *      field将被设置的新值
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">void</span> <span class="nf">putOrderedObject</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">,</span> <span class="n">Object</span> <span class="n">value</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Sets the value of the integer field at the specified offset in the
+</span><span class="cm">   * supplied object to the given value, with volatile store semantics.
+</span><span class="cm">   * 设置obj对象中offset偏移地址对应的整型field的值为指定值。支持volatile store语义
+</span><span class="cm">   * 
+</span><span class="cm">   * @param obj the object containing the field to modify.
+</span><span class="cm">   *    包含需要修改field的对象
+</span><span class="cm">   * @param offset the offset of the integer field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *       &lt;code&gt;obj&lt;/code&gt;中整型field的偏移量
+</span><span class="cm">   * @param value the new value of the field.
+</span><span class="cm">   *       field将被设置的新值
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">void</span> <span class="nf">putIntVolatile</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">,</span> <span class="kt">int</span> <span class="n">value</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Retrieves the value of the integer field at the specified offset in the
+</span><span class="cm">   * supplied object with volatile load semantics.
+</span><span class="cm">   * 获取obj对象中offset偏移地址对应的整型field的值,支持volatile load语义。
+</span><span class="cm">   * 
+</span><span class="cm">   * @param obj the object containing the field to read.
+</span><span class="cm">   *    包含需要去读取的field的对象
+</span><span class="cm">   * @param offset the offset of the integer field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *       &lt;code&gt;obj&lt;/code&gt;中整型field的偏移量
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">int</span> <span class="nf">getIntVolatile</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Sets the value of the long field at the specified offset in the
+</span><span class="cm">   * supplied object to the given value, with volatile store semantics.
+</span><span class="cm">   * 设置obj对象中offset偏移地址对应的long型field的值为指定值。支持volatile store语义
+</span><span class="cm">   *
+</span><span class="cm">   * @param obj the object containing the field to modify.
+</span><span class="cm">   *            包含需要修改field的对象
+</span><span class="cm">   * @param offset the offset of the long field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *               &lt;code&gt;obj&lt;/code&gt;中long型field的偏移量
+</span><span class="cm">   * @param value the new value of the field.
+</span><span class="cm">   *              field将被设置的新值
+</span><span class="cm">   * @see #putLong(Object,long,long)
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">void</span> <span class="nf">putLongVolatile</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">,</span> <span class="kt">long</span> <span class="n">value</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Sets the value of the long field at the specified offset in the
+</span><span class="cm">   * supplied object to the given value.
+</span><span class="cm">   * 设置obj对象中offset偏移地址对应的long型field的值为指定值。
+</span><span class="cm">   * 
+</span><span class="cm">   * @param obj the object containing the field to modify.
+</span><span class="cm">   *     包含需要修改field的对象
+</span><span class="cm">   * @param offset the offset of the long field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *     &lt;code&gt;obj&lt;/code&gt;中long型field的偏移量
+</span><span class="cm">   * @param value the new value of the field.
+</span><span class="cm">   *     field将被设置的新值
+</span><span class="cm">   * @see #putLongVolatile(Object,long,long)
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">void</span> <span class="nf">putLong</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">,</span> <span class="kt">long</span> <span class="n">value</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Retrieves the value of the long field at the specified offset in the
+</span><span class="cm">   * supplied object with volatile load semantics.
+</span><span class="cm">   * 获取obj对象中offset偏移地址对应的long型field的值,支持volatile load语义。
+</span><span class="cm">   * 
+</span><span class="cm">   * @param obj the object containing the field to read.
+</span><span class="cm">   *    包含需要去读取的field的对象
+</span><span class="cm">   * @param offset the offset of the long field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *       &lt;code&gt;obj&lt;/code&gt;中long型field的偏移量
+</span><span class="cm">   * @see #getLong(Object,long)
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">long</span> <span class="nf">getLongVolatile</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Retrieves the value of the long field at the specified offset in the
+</span><span class="cm">   * supplied object.
+</span><span class="cm">   * 获取obj对象中offset偏移地址对应的long型field的值
+</span><span class="cm">   * 
+</span><span class="cm">   * @param obj the object containing the field to read.
+</span><span class="cm">   *    包含需要去读取的field的对象
+</span><span class="cm">   * @param offset the offset of the long field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *       &lt;code&gt;obj&lt;/code&gt;中long型field的偏移量
+</span><span class="cm">   * @see #getLongVolatile(Object,long)
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">long</span> <span class="nf">getLong</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Sets the value of the object field at the specified offset in the
+</span><span class="cm">   * supplied object to the given value, with volatile store semantics.
+</span><span class="cm">   * 设置obj对象中offset偏移地址对应的object型field的值为指定值。支持volatile store语义
+</span><span class="cm">   * 
+</span><span class="cm">   * @param obj the object containing the field to modify.
+</span><span class="cm">   *    包含需要修改field的对象
+</span><span class="cm">   * @param offset the offset of the object field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *     &lt;code&gt;obj&lt;/code&gt;中object型field的偏移量
+</span><span class="cm">   * @param value the new value of the field.
+</span><span class="cm">   *       field将被设置的新值
+</span><span class="cm">   * @see #putObject(Object,long,Object)
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">void</span> <span class="nf">putObjectVolatile</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">,</span> <span class="n">Object</span> <span class="n">value</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Sets the value of the object field at the specified offset in the
+</span><span class="cm">   * supplied object to the given value.
+</span><span class="cm">   * 设置obj对象中offset偏移地址对应的object型field的值为指定值。
+</span><span class="cm">   * 
+</span><span class="cm">   * @param obj the object containing the field to modify.
+</span><span class="cm">   *    包含需要修改field的对象
+</span><span class="cm">   * @param offset the offset of the object field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *     &lt;code&gt;obj&lt;/code&gt;中object型field的偏移量
+</span><span class="cm">   * @param value the new value of the field.
+</span><span class="cm">   *       field将被设置的新值
+</span><span class="cm">   * @see #putObjectVolatile(Object,long,Object)
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">void</span> <span class="nf">putObject</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">,</span> <span class="n">Object</span> <span class="n">value</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Retrieves the value of the object field at the specified offset in the
+</span><span class="cm">   * supplied object with volatile load semantics.
+</span><span class="cm">   * 获取obj对象中offset偏移地址对应的object型field的值,支持volatile load语义。
+</span><span class="cm">   * 
+</span><span class="cm">   * @param obj the object containing the field to read.
+</span><span class="cm">   *    包含需要去读取的field的对象
+</span><span class="cm">   * @param offset the offset of the object field within &lt;code&gt;obj&lt;/code&gt;.
+</span><span class="cm">   *       &lt;code&gt;obj&lt;/code&gt;中object型field的偏移量
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="n">Object</span> <span class="nf">getObjectVolatile</span><span class="o">(</span><span class="n">Object</span> <span class="n">obj</span><span class="o">,</span> <span class="kt">long</span> <span class="n">offset</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Returns the offset of the first element for a given array class.
+</span><span class="cm">   * To access elements of the array class, this value may be used along with
+</span><span class="cm">   * with that returned by 
+</span><span class="cm">   * &lt;a href=&#34;#arrayIndexScale&#34;&gt;&lt;code&gt;arrayIndexScale&lt;/code&gt;&lt;/a&gt;,
+</span><span class="cm">   * if non-zero.
+</span><span class="cm">   * 获取给定数组中第一个元素的偏移地址。
+</span><span class="cm">   * 为了存取数组中的元素，这个偏移地址与&lt;a href=&#34;#arrayIndexScale&#34;&gt;&lt;code&gt;arrayIndexScale
+</span><span class="cm">   * &lt;/code&gt;&lt;/a&gt;方法的非0返回值一起被使用。
+</span><span class="cm">   * @param arrayClass the class for which the first element&#39;s address should
+</span><span class="cm">   *                   be obtained.
+</span><span class="cm">   *                   第一个元素地址被获取的class
+</span><span class="cm">   * @return the offset of the first element of the array class.
+</span><span class="cm">   *    数组第一个元素 的偏移地址
+</span><span class="cm">   * @see arrayIndexScale(Class)
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">int</span> <span class="nf">arrayBaseOffset</span><span class="o">(</span><span class="n">Class</span> <span class="n">arrayClass</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Returns the scale factor used for addressing elements of the supplied
+</span><span class="cm">   * array class.  Where a suitable scale factor can not be returned (e.g.
+</span><span class="cm">   * for primitive types), zero should be returned.  The returned value
+</span><span class="cm">   * can be used with 
+</span><span class="cm">   * &lt;a href=&#34;#arrayBaseOffset&#34;&gt;&lt;code&gt;arrayBaseOffset&lt;/code&gt;&lt;/a&gt;
+</span><span class="cm">   * to access elements of the class.
+</span><span class="cm">   * 获取用户给定数组寻址的换算因子.一个合适的换算因子不能返回的时候(例如：基本类型),
+</span><span class="cm">   * 返回0.这个返回值能够与&lt;a href=&#34;#arrayBaseOffset&#34;&gt;&lt;code&gt;arrayBaseOffset&lt;/code&gt;
+</span><span class="cm">   * &lt;/a&gt;一起使用去存取这个数组class中的元素
+</span><span class="cm">   * 
+</span><span class="cm">   * @param arrayClass the class whose scale factor should be returned.
+</span><span class="cm">   * @return the scale factor, or zero if not supported for this array class.
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">int</span> <span class="nf">arrayIndexScale</span><span class="o">(</span><span class="n">Class</span> <span class="n">arrayClass</span><span class="o">);</span>
+  
+  <span class="cm">/***
+</span><span class="cm">   * Releases the block on a thread created by 
+</span><span class="cm">   * &lt;a href=&#34;#park&#34;&gt;&lt;code&gt;park&lt;/code&gt;&lt;/a&gt;.  This method can also be used
+</span><span class="cm">   * to terminate a blockage caused by a prior call to &lt;code&gt;park&lt;/code&gt;.
+</span><span class="cm">   * This operation is unsafe, as the thread must be guaranteed to be
+</span><span class="cm">   * live.  This is true of Java, but not native code.
+</span><span class="cm">   * 释放被&lt;a href=&#34;#park&#34;&gt;&lt;code&gt;park&lt;/code&gt;&lt;/a&gt;创建的在一个线程上的阻塞.这个
+</span><span class="cm">   * 方法也可以被使用来终止一个先前调用&lt;code&gt;park&lt;/code&gt;导致的阻塞.
+</span><span class="cm">   * 这个操作操作时不安全的,因此线程必须保证是活的.这是java代码不是native代码。
+</span><span class="cm">   * @param thread the thread to unblock.
+</span><span class="cm">   *           要解除阻塞的线程
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">void</span> <span class="nf">unpark</span><span class="o">(</span><span class="n">Thread</span> <span class="n">thread</span><span class="o">);</span>
+  <span class="cm">/***
+</span><span class="cm">   * Blocks the thread until a matching 
+</span><span class="cm">   * &lt;a href=&#34;#unpark&#34;&gt;&lt;code&gt;unpark&lt;/code&gt;&lt;/a&gt; occurs, the thread is
+</span><span class="cm">   * interrupted or the optional timeout expires.  If an &lt;code&gt;unpark&lt;/code&gt;
+</span><span class="cm">   * call has already occurred, this also counts.  A timeout value of zero
+</span><span class="cm">   * is defined as no timeout.  When &lt;code&gt;isAbsolute&lt;/code&gt; is
+</span><span class="cm">   * &lt;code&gt;true&lt;/code&gt;, the timeout is in milliseconds relative to the
+</span><span class="cm">   * epoch.  Otherwise, the value is the number of nanoseconds which must
+</span><span class="cm">   * occur before timeout.  This call may also return spuriously (i.e.
+</span><span class="cm">   * for no apparent reason).
+</span><span class="cm">   * 阻塞一个线程直到&lt;a href=&#34;#unpark&#34;&gt;&lt;code&gt;unpark&lt;/code&gt;&lt;/a&gt;出现、线程
+</span><span class="cm">   * 被中断或者timeout时间到期。如果一个&lt;code&gt;unpark&lt;/code&gt;调用已经出现了，
+</span><span class="cm">   * 这里只计数。timeout为0表示永不过期.当&lt;code&gt;isAbsolute&lt;/code&gt;为true时，
+</span><span class="cm">   * timeout是相对于新纪元之后的毫秒。否则这个值就是超时前的纳秒数。这个方法执行时
+</span><span class="cm">   * 也可能不合理地返回(没有具体原因)
+</span><span class="cm">   * 
+</span><span class="cm">   * @param isAbsolute true if the timeout is specified in milliseconds from
+</span><span class="cm">   *                   the epoch.
+</span><span class="cm">   *                   如果为true timeout的值是一个相对于新纪元之后的毫秒数
+</span><span class="cm">   * @param time either the number of nanoseconds to wait, or a time in
+</span><span class="cm">   *             milliseconds from the epoch to wait for.
+</span><span class="cm">   *             可以是一个要等待的纳秒数，或者是一个相对于新纪元之后的毫秒数直到
+</span><span class="cm">   *             到达这个时间点
+</span><span class="cm">   */</span>
+  <span class="kd">public</span> <span class="kd">native</span> <span class="kt">void</span> <span class="nf">park</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">isAbsolute</span><span class="o">,</span> <span class="kt">long</span> <span class="n">time</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-03-13 21:00
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/Unsafe/">Unsafe</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/Synchronizer_Framework/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">AQS</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/collection/16.TreeSet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">TreeSet</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>spring的事物源码解析 - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="spring的事物源码解析 一、注解解析 1 &amp;lt;tx:annotation-driven&amp;gt;&amp;lt;/tx:annotation-driven&amp;gt; TxNamespaceHandler解析XML,AnnotationDrivenBeanDefin" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/spring/03.spring%E7%9A%84%E4%BA%8B%E7%89%A9%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" />
+<link href="/post/spring/03.spring%E7%9A%84%E4%BA%8B%E7%89%A9%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/spring/03.spring%E7%9A%84%E4%BA%8B%E7%89%A9%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="spring的事物源码解析" />
+<meta property="og:description" content="spring的事物源码解析 一、注解解析 1 &lt;tx:annotation-driven&gt;&lt;/tx:annotation-driven&gt; TxNamespaceHandler解析XML,AnnotationDrivenBeanDefin" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/spring/03.spring%E7%9A%84%E4%BA%8B%E7%89%A9%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" />
+<meta property="article:published_time" content="2018-10-15T22:18:08+00:00" />
+<meta property="article:modified_time" content="2018-10-15T22:18:08+00:00" />
+<meta itemprop="name" content="spring的事物源码解析">
+<meta itemprop="description" content="spring的事物源码解析 一、注解解析 1 &lt;tx:annotation-driven&gt;&lt;/tx:annotation-driven&gt; TxNamespaceHandler解析XML,AnnotationDrivenBeanDefin">
+<meta itemprop="datePublished" content="2018-10-15T22:18:08&#43;00:00" />
+<meta itemprop="dateModified" content="2018-10-15T22:18:08&#43;00:00" />
+<meta itemprop="wordCount" content="6338">
+
+
+
+<meta itemprop="keywords" content="spring Transaction," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="spring的事物源码解析"/>
+<meta name="twitter:description" content="spring的事物源码解析 一、注解解析 1 &lt;tx:annotation-driven&gt;&lt;/tx:annotation-driven&gt; TxNamespaceHandler解析XML,AnnotationDrivenBeanDefin"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">spring的事物源码解析</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2018-10-15 22:18 </span>
+      <div class="post-category">
+        <a href="/categories/spring/"> spring </a>
+        </div>
+      <span class="more-meta"> 约 6338 字 </span>
+      <span class="more-meta"> 预计阅读 13 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#一注解解析">一、注解解析</a>
+      <ul>
+        <li><a href="#1aopautoproxyconfigurerconfigureautoproxycreator">1.AopAutoProxyConfigurer.configureAutoProxyCreator</a></li>
+        <li><a href="#2transactioninterceptor-invoke">2.TransactionInterceptor invoke</a></li>
+      </ul>
+    </li>
+    <li><a href="#二xml解析">二、XML解析</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="hint">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2018-10-15T22:18:08" title="October 15, 2018">October 15, 2018</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="spring的事物源码解析">spring的事物源码解析</h1>
+<h2 id="一注解解析">一、注解解析</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="o">&lt;</span><span class="n">tx</span><span class="o">:</span><span class="n">annotation</span><span class="o">-</span><span class="n">driven</span><span class="o">&gt;&lt;/</span><span class="n">tx</span><span class="o">:</span><span class="n">annotation</span><span class="o">-</span><span class="n">driven</span><span class="o">&gt;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>TxNamespaceHandler解析XML,AnnotationDrivenBeanDefinitionParser处理相应逻辑；</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="n">BeanDefinition</span> <span class="nf">parse</span><span class="o">(</span><span class="n">Element</span> <span class="n">element</span><span class="o">,</span> <span class="n">ParserContext</span> <span class="n">parserContext</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">registerTransactionalEventListenerFactory</span><span class="o">(</span><span class="n">parserContext</span><span class="o">);</span>
+      <span class="n">String</span> <span class="n">mode</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="na">getAttribute</span><span class="o">(</span><span class="s">&#34;mode&#34;</span><span class="o">);</span>
+      <span class="k">if</span> <span class="o">(</span><span class="s">&#34;aspectj&#34;</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">mode</span><span class="o">))</span> <span class="o">{</span>
+          <span class="c1">// mode=&#34;aspectj&#34;
+</span><span class="c1"></span>          <span class="n">registerTransactionAspect</span><span class="o">(</span><span class="n">element</span><span class="o">,</span> <span class="n">parserContext</span><span class="o">);</span>
+      <span class="o">}</span>
+      <span class="k">else</span> <span class="o">{</span>
+          <span class="c1">// mode=&#34;proxy&#34;
+</span><span class="c1"></span>          <span class="n">AopAutoProxyConfigurer</span><span class="o">.</span><span class="na">configureAutoProxyCreator</span><span class="o">(</span><span class="n">element</span><span class="o">,</span> <span class="n">parserContext</span><span class="o">);</span>
+      <span class="o">}</span>
+      <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+  <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="1aopautoproxyconfigurerconfigureautoproxycreator">1.AopAutoProxyConfigurer.configureAutoProxyCreator</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">configureAutoProxyCreator</span><span class="o">(</span><span class="n">Element</span> <span class="n">element</span><span class="o">,</span> <span class="n">ParserContext</span> <span class="n">parserContext</span><span class="o">)</span> <span class="o">{</span>
+          <span class="c1">//1.注册InfrastructureAdvisorAutoProxyCreator,支持AOP
+</span><span class="c1"></span>          <span class="n">AopNamespaceUtils</span><span class="o">.</span><span class="na">registerAutoProxyCreatorIfNecessary</span><span class="o">(</span><span class="n">parserContext</span><span class="o">,</span> <span class="n">element</span><span class="o">);</span>
+
+          <span class="n">String</span> <span class="n">txAdvisorBeanName</span> <span class="o">=</span> <span class="n">TransactionManagementConfigUtils</span><span class="o">.</span><span class="na">TRANSACTION_ADVISOR_BEAN_NAME</span><span class="o">;</span>
+          <span class="k">if</span> <span class="o">(!</span><span class="n">parserContext</span><span class="o">.</span><span class="na">getRegistry</span><span class="o">().</span><span class="na">containsBeanDefinition</span><span class="o">(</span><span class="n">txAdvisorBeanName</span><span class="o">))</span> <span class="o">{</span>
+              <span class="n">Object</span> <span class="n">eleSource</span> <span class="o">=</span> <span class="n">parserContext</span><span class="o">.</span><span class="na">extractSource</span><span class="o">(</span><span class="n">element</span><span class="o">);</span>
+
+              <span class="c1">// Create the TransactionAttributeSource definition.
+</span><span class="c1"></span>              <span class="c1">//2.AnnotationTransactionAttributeSource
+</span><span class="c1"></span>              <span class="n">RootBeanDefinition</span> <span class="n">sourceDef</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RootBeanDefinition</span><span class="o">(</span>
+                      <span class="s">&#34;org.springframework.transaction.annotation.AnnotationTransactionAttributeSource&#34;</span><span class="o">);</span>
+              <span class="n">sourceDef</span><span class="o">.</span><span class="na">setSource</span><span class="o">(</span><span class="n">eleSource</span><span class="o">);</span>
+              <span class="n">sourceDef</span><span class="o">.</span><span class="na">setRole</span><span class="o">(</span><span class="n">BeanDefinition</span><span class="o">.</span><span class="na">ROLE_INFRASTRUCTURE</span><span class="o">);</span>
+              <span class="n">String</span> <span class="n">sourceName</span> <span class="o">=</span> <span class="n">parserContext</span><span class="o">.</span><span class="na">getReaderContext</span><span class="o">().</span><span class="na">registerWithGeneratedName</span><span class="o">(</span><span class="n">sourceDef</span><span class="o">);</span>
+
+              <span class="c1">// Create the TransactionInterceptor definition.
+</span><span class="c1"></span>              <span class="c1">//3.TransactionInterceptor
+</span><span class="c1"></span>              <span class="n">RootBeanDefinition</span> <span class="n">interceptorDef</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RootBeanDefinition</span><span class="o">(</span><span class="n">TransactionInterceptor</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+              <span class="n">interceptorDef</span><span class="o">.</span><span class="na">setSource</span><span class="o">(</span><span class="n">eleSource</span><span class="o">);</span>
+              <span class="n">interceptorDef</span><span class="o">.</span><span class="na">setRole</span><span class="o">(</span><span class="n">BeanDefinition</span><span class="o">.</span><span class="na">ROLE_INFRASTRUCTURE</span><span class="o">);</span>
+              <span class="n">registerTransactionManager</span><span class="o">(</span><span class="n">element</span><span class="o">,</span> <span class="n">interceptorDef</span><span class="o">);</span>
+              <span class="n">interceptorDef</span><span class="o">.</span><span class="na">getPropertyValues</span><span class="o">().</span><span class="na">add</span><span class="o">(</span><span class="s">&#34;transactionAttributeSource&#34;</span><span class="o">,</span> <span class="k">new</span> <span class="n">RuntimeBeanReference</span><span class="o">(</span><span class="n">sourceName</span><span class="o">));</span>
+              <span class="n">String</span> <span class="n">interceptorName</span> <span class="o">=</span> <span class="n">parserContext</span><span class="o">.</span><span class="na">getReaderContext</span><span class="o">().</span><span class="na">registerWithGeneratedName</span><span class="o">(</span><span class="n">interceptorDef</span><span class="o">);</span>
+
+              <span class="c1">// Create the TransactionAttributeSourceAdvisor definition.
+</span><span class="c1"></span>              <span class="c1">//4.TransactionAttributeSourceAdvisor
+</span><span class="c1"></span>              <span class="n">RootBeanDefinition</span> <span class="n">advisorDef</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RootBeanDefinition</span><span class="o">(</span><span class="n">BeanFactoryTransactionAttributeSourceAdvisor</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+              <span class="n">advisorDef</span><span class="o">.</span><span class="na">setSource</span><span class="o">(</span><span class="n">eleSource</span><span class="o">);</span>
+              <span class="n">advisorDef</span><span class="o">.</span><span class="na">setRole</span><span class="o">(</span><span class="n">BeanDefinition</span><span class="o">.</span><span class="na">ROLE_INFRASTRUCTURE</span><span class="o">);</span>
+              <span class="n">advisorDef</span><span class="o">.</span><span class="na">getPropertyValues</span><span class="o">().</span><span class="na">add</span><span class="o">(</span><span class="s">&#34;transactionAttributeSource&#34;</span><span class="o">,</span> <span class="k">new</span> <span class="n">RuntimeBeanReference</span><span class="o">(</span><span class="n">sourceName</span><span class="o">));</span>
+              <span class="n">advisorDef</span><span class="o">.</span><span class="na">getPropertyValues</span><span class="o">().</span><span class="na">add</span><span class="o">(</span><span class="s">&#34;adviceBeanName&#34;</span><span class="o">,</span> <span class="n">interceptorName</span><span class="o">);</span>
+              <span class="k">if</span> <span class="o">(</span><span class="n">element</span><span class="o">.</span><span class="na">hasAttribute</span><span class="o">(</span><span class="s">&#34;order&#34;</span><span class="o">))</span> <span class="o">{</span>
+                  <span class="n">advisorDef</span><span class="o">.</span><span class="na">getPropertyValues</span><span class="o">().</span><span class="na">add</span><span class="o">(</span><span class="s">&#34;order&#34;</span><span class="o">,</span> <span class="n">element</span><span class="o">.</span><span class="na">getAttribute</span><span class="o">(</span><span class="s">&#34;order&#34;</span><span class="o">));</span>
+              <span class="o">}</span>
+              <span class="n">parserContext</span><span class="o">.</span><span class="na">getRegistry</span><span class="o">().</span><span class="na">registerBeanDefinition</span><span class="o">(</span><span class="n">txAdvisorBeanName</span><span class="o">,</span> <span class="n">advisorDef</span><span class="o">);</span>
+
+              <span class="n">CompositeComponentDefinition</span> <span class="n">compositeDef</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CompositeComponentDefinition</span><span class="o">(</span><span class="n">element</span><span class="o">.</span><span class="na">getTagName</span><span class="o">(),</span> <span class="n">eleSource</span><span class="o">);</span>
+              <span class="n">compositeDef</span><span class="o">.</span><span class="na">addNestedComponent</span><span class="o">(</span><span class="k">new</span> <span class="n">BeanComponentDefinition</span><span class="o">(</span><span class="n">sourceDef</span><span class="o">,</span> <span class="n">sourceName</span><span class="o">));</span>
+              <span class="n">compositeDef</span><span class="o">.</span><span class="na">addNestedComponent</span><span class="o">(</span><span class="k">new</span> <span class="n">BeanComponentDefinition</span><span class="o">(</span><span class="n">interceptorDef</span><span class="o">,</span> <span class="n">interceptorName</span><span class="o">));</span>
+              <span class="n">compositeDef</span><span class="o">.</span><span class="na">addNestedComponent</span><span class="o">(</span><span class="k">new</span> <span class="n">BeanComponentDefinition</span><span class="o">(</span><span class="n">advisorDef</span><span class="o">,</span> <span class="n">txAdvisorBeanName</span><span class="o">));</span>
+              <span class="n">parserContext</span><span class="o">.</span><span class="na">registerComponent</span><span class="o">(</span><span class="n">compositeDef</span><span class="o">);</span>
+          <span class="o">}</span>
+      <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>事物支持核心类BeanFactoryTransactionAttributeSourceAdvisor，TransactionAttributeSourcePointcut，TransactionInterceptor，AnnotationTransactionAttributeSource；核心处理TransactionInterceptor；</p>
+<ul>
+<li>AnnotationTransactionAttributeSource 处理@Transactional注解的属性，map缓存保存RuleBasedTransactionAttribute</li>
+<li>TransactionAttributeSourcePointcut pointcut</li>
+<li>TransactionInterceptor      Advice</li>
+<li>BeanFactoryTransactionAttributeSourceAdvisor      Advisor</li>
+</ul>
+<h3 id="2transactioninterceptor-invoke">2.TransactionInterceptor invoke</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">protected</span> <span class="n">Object</span> <span class="nf">invokeWithinTransaction</span><span class="o">(</span><span class="n">Method</span> <span class="n">method</span><span class="o">,</span> <span class="n">Class</span><span class="o">&lt;?&gt;</span> <span class="n">targetClass</span><span class="o">,</span> <span class="kd">final</span> <span class="n">InvocationCallback</span> <span class="n">invocation</span><span class="o">)</span>
+           <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
+ 
+       <span class="c1">// If the transaction attribute is null, the method is non-transactional.
+</span><span class="c1"></span>       <span class="c1">//1.获取注解方法上配置RuleBasedTransactionAttribute
+</span><span class="c1"></span>       <span class="kd">final</span> <span class="n">TransactionAttribute</span> <span class="n">txAttr</span> <span class="o">=</span> <span class="n">getTransactionAttributeSource</span><span class="o">().</span><span class="na">getTransactionAttribute</span><span class="o">(</span><span class="n">method</span><span class="o">,</span> <span class="n">targetClass</span><span class="o">);</span>
+       <span class="c1">//2.获取PlatformTransactionManager
+</span><span class="c1"></span>       <span class="kd">final</span> <span class="n">PlatformTransactionManager</span> <span class="n">tm</span> <span class="o">=</span> <span class="n">determineTransactionManager</span><span class="o">(</span><span class="n">txAttr</span><span class="o">);</span>
+       <span class="c1">//3.获取事物唯一
+</span><span class="c1"></span>       <span class="c1">//    先txAttr获取Descriptor
+</span><span class="c1"></span>       <span class="c1">//    没有在targetClass简名+&#34;.&#34;+method名称
+</span><span class="c1"></span>       <span class="kd">final</span> <span class="n">String</span> <span class="n">joinpointIdentification</span> <span class="o">=</span> <span class="n">methodIdentification</span><span class="o">(</span><span class="n">method</span><span class="o">,</span> <span class="n">targetClass</span><span class="o">,</span> <span class="n">txAttr</span><span class="o">);</span>
+ 
+       <span class="k">if</span> <span class="o">(</span><span class="n">txAttr</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="o">!(</span><span class="n">tm</span> <span class="k">instanceof</span> <span class="n">CallbackPreferringPlatformTransactionManager</span><span class="o">))</span> <span class="o">{</span>
+           <span class="c1">// Standard transaction demarcation with getTransaction and commit/rollback calls.
+</span><span class="c1"></span>           <span class="c1">//4.事物开启
+</span><span class="c1"></span>           <span class="n">TransactionInfo</span> <span class="n">txInfo</span> <span class="o">=</span> <span class="n">createTransactionIfNecessary</span><span class="o">(</span><span class="n">tm</span><span class="o">,</span> <span class="n">txAttr</span><span class="o">,</span> <span class="n">joinpointIdentification</span><span class="o">);</span>
+           <span class="n">Object</span> <span class="n">retVal</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+           <span class="k">try</span> <span class="o">{</span>
+               <span class="c1">// This is an around advice: Invoke the next interceptor in the chain.
+</span><span class="c1"></span>               <span class="c1">// This will normally result in a target object being invoked.
+</span><span class="c1"></span>               <span class="c1">//5.执行方法
+</span><span class="c1"></span>               <span class="n">retVal</span> <span class="o">=</span> <span class="n">invocation</span><span class="o">.</span><span class="na">proceedWithInvocation</span><span class="o">();</span>
+           <span class="o">}</span>
+           <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+               <span class="c1">// target invocation exception
+</span><span class="c1"></span>               <span class="c1">//6.事物异常
+</span><span class="c1"></span>               <span class="n">completeTransactionAfterThrowing</span><span class="o">(</span><span class="n">txInfo</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+               <span class="k">throw</span> <span class="n">ex</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="k">finally</span> <span class="o">{</span>
+               <span class="c1">//7.清理事物信息
+</span><span class="c1"></span>               <span class="n">cleanupTransactionInfo</span><span class="o">(</span><span class="n">txInfo</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="c1">//8.提交事物
+</span><span class="c1"></span>           <span class="n">commitTransactionAfterReturning</span><span class="o">(</span><span class="n">txInfo</span><span class="o">);</span>
+           <span class="k">return</span> <span class="n">retVal</span><span class="o">;</span>
+       <span class="o">}</span>
+ 
+       <span class="k">else</span> <span class="o">{</span>
+           <span class="c1">// It&#39;s a CallbackPreferringPlatformTransactionManager: pass a TransactionCallback in.
+</span><span class="c1"></span>           <span class="c1">//它是一个CallbackPreferringPlatformTransactionManager：传递一个TransactionCallback。
+</span><span class="c1"></span>           <span class="k">try</span> <span class="o">{</span>
+               <span class="n">Object</span> <span class="n">result</span> <span class="o">=</span> <span class="o">((</span><span class="n">CallbackPreferringPlatformTransactionManager</span><span class="o">)</span> <span class="n">tm</span><span class="o">).</span><span class="na">execute</span><span class="o">(</span><span class="n">txAttr</span><span class="o">,</span>
+                       <span class="k">new</span> <span class="n">TransactionCallback</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;()</span> <span class="o">{</span>
+                           <span class="nd">@Override</span>
+                           <span class="kd">public</span> <span class="n">Object</span> <span class="nf">doInTransaction</span><span class="o">(</span><span class="n">TransactionStatus</span> <span class="n">status</span><span class="o">)</span> <span class="o">{</span>
+                               <span class="n">TransactionInfo</span> <span class="n">txInfo</span> <span class="o">=</span> <span class="n">prepareTransactionInfo</span><span class="o">(</span><span class="n">tm</span><span class="o">,</span> <span class="n">txAttr</span><span class="o">,</span> <span class="n">joinpointIdentification</span><span class="o">,</span> <span class="n">status</span><span class="o">);</span>
+                               <span class="k">try</span> <span class="o">{</span>
+                                   <span class="k">return</span> <span class="n">invocation</span><span class="o">.</span><span class="na">proceedWithInvocation</span><span class="o">();</span>
+                               <span class="o">}</span>
+                               <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+                                   <span class="k">if</span> <span class="o">(</span><span class="n">txAttr</span><span class="o">.</span><span class="na">rollbackOn</span><span class="o">(</span><span class="n">ex</span><span class="o">))</span> <span class="o">{</span>
+                                       <span class="c1">// A RuntimeException: will lead to a rollback.
+</span><span class="c1"></span>                                       <span class="k">if</span> <span class="o">(</span><span class="n">ex</span> <span class="k">instanceof</span> <span class="n">RuntimeException</span><span class="o">)</span> <span class="o">{</span>
+                                           <span class="k">throw</span> <span class="o">(</span><span class="n">RuntimeException</span><span class="o">)</span> <span class="n">ex</span><span class="o">;</span>
+                                       <span class="o">}</span>
+                                       <span class="k">else</span> <span class="o">{</span>
+                                           <span class="k">throw</span> <span class="k">new</span> <span class="n">ThrowableHolderException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+                                       <span class="o">}</span>
+                                   <span class="o">}</span>
+                                   <span class="k">else</span> <span class="o">{</span>
+                                       <span class="c1">// A normal return value: will lead to a commit.
+</span><span class="c1"></span>                                       <span class="k">return</span> <span class="k">new</span> <span class="n">ThrowableHolder</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+                                   <span class="o">}</span>
+                               <span class="o">}</span>
+                               <span class="k">finally</span> <span class="o">{</span>
+                                   <span class="n">cleanupTransactionInfo</span><span class="o">(</span><span class="n">txInfo</span><span class="o">);</span>
+                               <span class="o">}</span>
+                           <span class="o">}</span>
+                       <span class="o">});</span>
+ 
+               <span class="c1">// Check result: It might indicate a Throwable to rethrow.
+</span><span class="c1"></span>               <span class="k">if</span> <span class="o">(</span><span class="n">result</span> <span class="k">instanceof</span> <span class="n">ThrowableHolder</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="k">throw</span> <span class="o">((</span><span class="n">ThrowableHolder</span><span class="o">)</span> <span class="n">result</span><span class="o">).</span><span class="na">getThrowable</span><span class="o">();</span>
+               <span class="o">}</span>
+               <span class="k">else</span> <span class="o">{</span>
+                   <span class="k">return</span> <span class="n">result</span><span class="o">;</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+           <span class="k">catch</span> <span class="o">(</span><span class="n">ThrowableHolderException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+               <span class="k">throw</span> <span class="n">ex</span><span class="o">.</span><span class="na">getCause</span><span class="o">();</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="1transactionattribute">(1).TransactionAttribute</h4>
+<p><img src="/spring//spring16.png" alt=""></p>
+<p>TransactionDefinition spring事务传播特性和事务的隔离级别定义常量；</p>
+<p>事务传播特性：</p>
+<ul>
+<li>PROPAGATION_REQUIERD：如果当前没有事务，就新建一个事务，如果已存在一个事务中，加入到这个事务中，这是最常见的选择。</li>
+<li>PROPAGATION_SUPPORTS：支持当前事务，如果没有当前事务，就以非事务方法执行。</li>
+<li>PROPAGATION_MANDATORY：使用当前事务，如果没有当前事务，就抛出异常。</li>
+<li>PROPAGATION_REQUIRED_NEW：新建事务，如果当前存在事务，把当前事务挂起。</li>
+<li>PROPAGATION_NOT_SUPPORTED：以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。</li>
+<li>PROPAGATION_NEVER：以非事务方式执行操作，如果当前事务存在则抛出异常。</li>
+<li>PROPAGATION_NESTED：如果当前存在事务，则在嵌套事务内执行。如果当前没有事务，则执行与propagation_required类似的操作</li>
+</ul>
+<p>事务的隔离级别：</p>
+<ul>
+<li>read uncommited：是最低的事务隔离级别，它允许另外一个事务可以看到这个事务未提交的数据。</li>
+<li>read commited：保证一个事物提交后才能被另外一个事务读取。另外一个事务不能读取该事物未提交的数据。</li>
+<li>repeatable read：这种事务隔离级别可以防止脏读，不可重复读。但是可能会出现幻象读。它除了保证一个事务不能被另外一个事务读取未提交的数据之外还避免了以下情况产生（不可重复读）。</li>
+<li>serializable：这是花费最高代价但最可靠的事务隔离级别。事务被处理为顺序执行。除了防止脏读，不可重复读之外，还避免了幻象读。</li>
+</ul>
+<p>脏读、不可重复读、幻象读概念说明：</p>
+<ul>
+<li>脏读：指当一个事务正字访问数据，并且对数据进行了修改，而这种数据还没有提交到数据库中，这时，另外一个事务也访问这个数据，然后使用了这个数据。因为这个数据还没有提交那么另外一个事务读取到的这个数据我们称之为脏数据。依据脏数据所做的操作肯能是不正确的。</li>
+<li>不可重复读：指在一个事务内，多次读同一数据。在这个事务还没有执行结束，另外一个事务也访问该同一数据，那么在第一个事务中的两次读取数据之间，由于第二个事务的修改第一个事务两次读到的数据可能是不一样的，这样就发生了在一个事物内两次连续读到的数据是不一样的，这种情况被称为是不可重复读。</li>
+<li>幻象读：一个事务先后读取一个范围的记录，但两次读取的纪录数不同，我们称之为幻象读（两次执行同一条 select 语句会出现不同的结果，第二次读会增加一数据行，并没有说这两次执行是在同一个事务中）</li>
+</ul>
+<h4 id="2platformtransactionmanager">(2).PlatformTransactionManager</h4>
+<p><img src="/spring//spring16.png" alt=""></p>
+<p>从方法名称就可以看出意思；</p>
+<p><img src="/spring//spring17.png" alt=""></p>
+<p>①TransactionStatus代表一个事务的具体运行状态，事务管理器通过该接口获取事务的运行期状态信息，也可以通过该接口间接地回滚事务，它相比于在抛出异常时回滚事务的方式更具有可控性。该接口继承于SavepointManager接口，SavepointManager接口基于JDBC3.0保存点的分段事务控制能力提供了嵌套事务的机制。</p>
+<p>其中，SavepointManager接口拥有以下的方法：</p>
+<ul>
+<li>Object  createSavepoint()：创建一个保存点对象，以便在后面可以利用rollbackToSavepoint(Object  savepoint)方法使事务回滚到特定的保存点上，也可以通过releaseSavepoint()释放一个已经不用的保存点。</li>
+<li>void  rollbackToSavepoint(Object  savepoint)：将事务回滚到特定保存点上，被回滚的保存点将自动释放。</li>
+<li>void  releaseSavepoint(Object  savepoint)：释放一个保存点，如果事务提交，所有保存点会被自动释放，无须手工清除。
+这3个方法在底层资源不支持保存点时，都将抛出NestedTransactionNotSupportedException异常。</li>
+</ul>
+<p>②TransactionStatus扩展了SavepointManager并提供了以下方法：</p>
+<ul>
+<li>boolean  hasSavepoint()：判断当前的事务是否在内部创建了一个保存点，保存点是为了支持Spring的嵌套事务而创建的。</li>
+<li>boolean  isNewTransaction()：判断当前事务是否是一个新的事务，如果返回false，表示当前事务是一个已经存在的事务，或者当前操作未运行在事务环境中。</li>
+<li>boolean  isCompleted()：判断当前事务是否已经结束（已经提交或回滚）。</li>
+<li>boolean  isRollbackOnly()：判断当前事务是否已经被标识为rollback-only。</li>
+<li>void  setRollbackOnly()：将当前的事务设置为rollback-only，通过该标识通知事务管理器只能将事务回滚，事务管理器将显式调用回滚命令或以抛出异常的方式回滚事务。</li>
+</ul>
+<h4 id="3-datasourcetransactionmanager分析">(3). DataSourceTransactionManager分析</h4>
+<h5 id="agettransaction-开始事物">(a).getTransaction 开始事物</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="kd">final</span> <span class="n">TransactionStatus</span> <span class="nf">getTransaction</span><span class="o">(</span><span class="n">TransactionDefinition</span> <span class="n">definition</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+       <span class="c1">//1.获取Connection,ThreadLocal获取；
+</span><span class="c1"></span>       <span class="n">Object</span> <span class="n">transaction</span> <span class="o">=</span> <span class="n">doGetTransaction</span><span class="o">();</span>
+
+       <span class="c1">// Cache debug flag to avoid repeated checks.
+</span><span class="c1"></span>       <span class="kt">boolean</span> <span class="n">debugEnabled</span> <span class="o">=</span> <span class="n">logger</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">();</span>
+
+       <span class="k">if</span> <span class="o">(</span><span class="n">definition</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="c1">// Use defaults if no transaction definition given.
+</span><span class="c1"></span>           <span class="n">definition</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DefaultTransactionDefinition</span><span class="o">();</span>
+       <span class="o">}</span>
+       <span class="c1">//判断Connection是否为空
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="n">isExistingTransaction</span><span class="o">(</span><span class="n">transaction</span><span class="o">))</span> <span class="o">{</span>
+           <span class="c1">// Existing transaction found -&gt; check propagation behavior to find out how to behave.
+</span><span class="c1"></span>           <span class="c1">// 2.处理ThreadLocal获取Connection不为空情况；事务传播情况
+</span><span class="c1"></span>           <span class="k">return</span> <span class="n">handleExistingTransaction</span><span class="o">(</span><span class="n">definition</span><span class="o">,</span> <span class="n">transaction</span><span class="o">,</span> <span class="n">debugEnabled</span><span class="o">);</span>
+       <span class="o">}</span>
+
+       <span class="c1">// Check definition settings for new transaction.
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="n">definition</span><span class="o">.</span><span class="na">getTimeout</span><span class="o">()</span> <span class="o">&lt;</span> <span class="n">TransactionDefinition</span><span class="o">.</span><span class="na">TIMEOUT_DEFAULT</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">InvalidTimeoutException</span><span class="o">(</span><span class="s">&#34;Invalid transaction timeout&#34;</span><span class="o">,</span> <span class="n">definition</span><span class="o">.</span><span class="na">getTimeout</span><span class="o">());</span>
+       <span class="o">}</span>
+
+       <span class="c1">// No existing transaction found -&gt; check propagation behavior to find out how to proceed.
+</span><span class="c1"></span>       <span class="c1">// TransactionDefinition.PROPAGATION_MANDATORY 使用当前事务，如果没有当前事务，就抛出异常。
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="n">definition</span><span class="o">.</span><span class="na">getPropagationBehavior</span><span class="o">()</span> <span class="o">==</span> <span class="n">TransactionDefinition</span><span class="o">.</span><span class="na">PROPAGATION_MANDATORY</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalTransactionStateException</span><span class="o">(</span>
+                   <span class="s">&#34;No existing transaction found for transaction marked with propagation &#39;mandatory&#39;&#34;</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">definition</span><span class="o">.</span><span class="na">getPropagationBehavior</span><span class="o">()</span> <span class="o">==</span> <span class="n">TransactionDefinition</span><span class="o">.</span><span class="na">PROPAGATION_REQUIRED</span> <span class="o">||</span>
+               <span class="n">definition</span><span class="o">.</span><span class="na">getPropagationBehavior</span><span class="o">()</span> <span class="o">==</span> <span class="n">TransactionDefinition</span><span class="o">.</span><span class="na">PROPAGATION_REQUIRES_NEW</span> <span class="o">||</span>
+           <span class="n">definition</span><span class="o">.</span><span class="na">getPropagationBehavior</span><span class="o">()</span> <span class="o">==</span> <span class="n">TransactionDefinition</span><span class="o">.</span><span class="na">PROPAGATION_NESTED</span><span class="o">)</span> <span class="o">{</span><span class="c1">//如果当前存在事务，则在嵌套事务内执行。如果当前没有事务，则执行与propagation_required类似的操作
+</span><span class="c1"></span>           <span class="c1">//3.事物挂起操作；
+</span><span class="c1"></span>           <span class="n">SuspendedResourcesHolder</span> <span class="n">suspendedResources</span> <span class="o">=</span> <span class="n">suspend</span><span class="o">(</span><span class="kc">null</span><span class="o">);</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">debugEnabled</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Creating new transaction with name [&#34;</span> <span class="o">+</span> <span class="n">definition</span><span class="o">.</span><span class="na">getName</span><span class="o">()</span> <span class="o">+</span> <span class="s">&#34;]: &#34;</span> <span class="o">+</span> <span class="n">definition</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="k">try</span> <span class="o">{</span>
+               <span class="kt">boolean</span> <span class="n">newSynchronization</span> <span class="o">=</span> <span class="o">(</span><span class="n">getTransactionSynchronization</span><span class="o">()</span> <span class="o">!=</span> <span class="n">SYNCHRONIZATION_NEVER</span><span class="o">);</span>
+               <span class="c1">//4.创建DefaultTransactionStatus
+</span><span class="c1"></span>               <span class="n">DefaultTransactionStatus</span> <span class="n">status</span> <span class="o">=</span> <span class="n">newTransactionStatus</span><span class="o">(</span>
+                       <span class="n">definition</span><span class="o">,</span> <span class="n">transaction</span><span class="o">,</span> <span class="kc">true</span><span class="o">,</span> <span class="n">newSynchronization</span><span class="o">,</span> <span class="n">debugEnabled</span><span class="o">,</span> <span class="n">suspendedResources</span><span class="o">);</span>
+               <span class="c1">//5.开启事物
+</span><span class="c1"></span>               <span class="c1">// (1).从数据源获取Connection
+</span><span class="c1"></span>               <span class="c1">// (2).Connection设置隔离级别
+</span><span class="c1"></span>               <span class="c1">// (3).设置AutoCommit为false
+</span><span class="c1"></span>               <span class="c1">//（4).Connection保存到ThreadLocal
+</span><span class="c1"></span>               <span class="n">doBegin</span><span class="o">(</span><span class="n">transaction</span><span class="o">,</span> <span class="n">definition</span><span class="o">);</span>
+               <span class="c1">//6.设置事物值（隔离级别，事物名称，可读状态）保存到ThreadLocal
+</span><span class="c1"></span>               <span class="n">prepareSynchronization</span><span class="o">(</span><span class="n">status</span><span class="o">,</span> <span class="n">definition</span><span class="o">);</span>
+               <span class="k">return</span> <span class="n">status</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="k">catch</span> <span class="o">(</span><span class="n">RuntimeException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+               <span class="c1">//重置上个事物
+</span><span class="c1"></span>               <span class="n">resume</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="n">suspendedResources</span><span class="o">);</span>
+               <span class="k">throw</span> <span class="n">ex</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="k">catch</span> <span class="o">(</span><span class="n">Error</span> <span class="n">err</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">resume</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="n">suspendedResources</span><span class="o">);</span>
+               <span class="k">throw</span> <span class="n">err</span><span class="o">;</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+       <span class="k">else</span> <span class="o">{</span>
+           <span class="c1">// Create &#34;empty&#34; transaction: no actual transaction, but potentially synchronization.
+</span><span class="c1"></span>           <span class="c1">//创建“空”事务：没有实际事务，但可能是同步。
+</span><span class="c1"></span>           <span class="kt">boolean</span> <span class="n">newSynchronization</span> <span class="o">=</span> <span class="o">(</span><span class="n">getTransactionSynchronization</span><span class="o">()</span> <span class="o">==</span> <span class="n">SYNCHRONIZATION_ALWAYS</span><span class="o">);</span>
+           <span class="k">return</span> <span class="n">prepareTransactionStatus</span><span class="o">(</span><span class="n">definition</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">true</span><span class="o">,</span> <span class="n">newSynchronization</span><span class="o">,</span> <span class="n">debugEnabled</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+   <span class="nd">@Override</span>
+   <span class="kd">protected</span> <span class="n">Object</span> <span class="nf">doGetTransaction</span><span class="o">()</span> <span class="o">{</span>
+       <span class="n">DataSourceTransactionObject</span> <span class="n">txObject</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DataSourceTransactionObject</span><span class="o">();</span>
+       <span class="n">txObject</span><span class="o">.</span><span class="na">setSavepointAllowed</span><span class="o">(</span><span class="n">isNestedTransactionAllowed</span><span class="o">());</span>
+       <span class="n">ConnectionHolder</span> <span class="n">conHolder</span> <span class="o">=</span>
+               <span class="o">(</span><span class="n">ConnectionHolder</span><span class="o">)</span> <span class="n">TransactionSynchronizationManager</span><span class="o">.</span><span class="na">getResource</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">dataSource</span><span class="o">);</span>
+       <span class="n">txObject</span><span class="o">.</span><span class="na">setConnectionHolder</span><span class="o">(</span><span class="n">conHolder</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+       <span class="k">return</span> <span class="n">txObject</span><span class="o">;</span>
+   <span class="o">}</span>	
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="bhandleexistingtransaction-处理threadlocal获取connection不为空情况事务传播情况">(b).handleExistingTransaction 处理ThreadLocal获取Connection不为空情况；事务传播情况</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">private</span> <span class="n">TransactionStatus</span> <span class="nf">handleExistingTransaction</span><span class="o">(</span>
+           <span class="n">TransactionDefinition</span> <span class="n">definition</span><span class="o">,</span> <span class="n">Object</span> <span class="n">transaction</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">debugEnabled</span><span class="o">)</span>
+           <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+
+       <span class="c1">//以非事务方式执行操作，如果当前事务存在则抛出异常。
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="n">definition</span><span class="o">.</span><span class="na">getPropagationBehavior</span><span class="o">()</span> <span class="o">==</span> <span class="n">TransactionDefinition</span><span class="o">.</span><span class="na">PROPAGATION_NEVER</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalTransactionStateException</span><span class="o">(</span>
+                   <span class="s">&#34;Existing transaction found for transaction marked with propagation &#39;never&#39;&#34;</span><span class="o">);</span>
+       <span class="o">}</span>
+      <span class="c1">//以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="n">definition</span><span class="o">.</span><span class="na">getPropagationBehavior</span><span class="o">()</span> <span class="o">==</span> <span class="n">TransactionDefinition</span><span class="o">.</span><span class="na">PROPAGATION_NOT_SUPPORTED</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">debugEnabled</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Suspending current transaction&#34;</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="c1">//挂起事物；
+</span><span class="c1"></span>           <span class="n">Object</span> <span class="n">suspendedResources</span> <span class="o">=</span> <span class="n">suspend</span><span class="o">(</span><span class="n">transaction</span><span class="o">);</span>
+           <span class="kt">boolean</span> <span class="n">newSynchronization</span> <span class="o">=</span> <span class="o">(</span><span class="n">getTransactionSynchronization</span><span class="o">()</span> <span class="o">==</span> <span class="n">SYNCHRONIZATION_ALWAYS</span><span class="o">);</span>
+           <span class="c1">//创建事物行为状态
+</span><span class="c1"></span>           <span class="k">return</span> <span class="n">prepareTransactionStatus</span><span class="o">(</span>
+                   <span class="n">definition</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="n">newSynchronization</span><span class="o">,</span> <span class="n">debugEnabled</span><span class="o">,</span> <span class="n">suspendedResources</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="c1">//新建事务，如果当前存在事务，把当前事务挂起。
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="n">definition</span><span class="o">.</span><span class="na">getPropagationBehavior</span><span class="o">()</span> <span class="o">==</span> <span class="n">TransactionDefinition</span><span class="o">.</span><span class="na">PROPAGATION_REQUIRES_NEW</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">debugEnabled</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Suspending current transaction, creating new transaction with name [&#34;</span> <span class="o">+</span>
+                       <span class="n">definition</span><span class="o">.</span><span class="na">getName</span><span class="o">()</span> <span class="o">+</span> <span class="s">&#34;]&#34;</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="c1">//事务挂起。
+</span><span class="c1"></span>           <span class="n">SuspendedResourcesHolder</span> <span class="n">suspendedResources</span> <span class="o">=</span> <span class="n">suspend</span><span class="o">(</span><span class="n">transaction</span><span class="o">);</span>
+           <span class="k">try</span> <span class="o">{</span>
+               <span class="kt">boolean</span> <span class="n">newSynchronization</span> <span class="o">=</span> <span class="o">(</span><span class="n">getTransactionSynchronization</span><span class="o">()</span> <span class="o">!=</span> <span class="n">SYNCHRONIZATION_NEVER</span><span class="o">);</span>
+               <span class="n">DefaultTransactionStatus</span> <span class="n">status</span> <span class="o">=</span> <span class="n">newTransactionStatus</span><span class="o">(</span>
+                       <span class="n">definition</span><span class="o">,</span> <span class="n">transaction</span><span class="o">,</span> <span class="kc">true</span><span class="o">,</span> <span class="n">newSynchronization</span><span class="o">,</span> <span class="n">debugEnabled</span><span class="o">,</span> <span class="n">suspendedResources</span><span class="o">);</span>
+               <span class="c1">//重新创建一个Connection
+</span><span class="c1"></span>               <span class="n">doBegin</span><span class="o">(</span><span class="n">transaction</span><span class="o">,</span> <span class="n">definition</span><span class="o">);</span>
+               <span class="n">prepareSynchronization</span><span class="o">(</span><span class="n">status</span><span class="o">,</span> <span class="n">definition</span><span class="o">);</span>
+               <span class="k">return</span> <span class="n">status</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="k">catch</span> <span class="o">(</span><span class="n">RuntimeException</span> <span class="n">beginEx</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">resumeAfterBeginException</span><span class="o">(</span><span class="n">transaction</span><span class="o">,</span> <span class="n">suspendedResources</span><span class="o">,</span> <span class="n">beginEx</span><span class="o">);</span>
+               <span class="k">throw</span> <span class="n">beginEx</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="k">catch</span> <span class="o">(</span><span class="n">Error</span> <span class="n">beginErr</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">resumeAfterBeginException</span><span class="o">(</span><span class="n">transaction</span><span class="o">,</span> <span class="n">suspendedResources</span><span class="o">,</span> <span class="n">beginErr</span><span class="o">);</span>
+               <span class="k">throw</span> <span class="n">beginErr</span><span class="o">;</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+       <span class="c1">//如果当前存在事务，则在嵌套事务内执行。如果当前没有事务，则执行与propagation_required类似的操作
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="n">definition</span><span class="o">.</span><span class="na">getPropagationBehavior</span><span class="o">()</span> <span class="o">==</span> <span class="n">TransactionDefinition</span><span class="o">.</span><span class="na">PROPAGATION_NESTED</span><span class="o">)</span> <span class="o">{</span>
+           <span class="c1">//是否支持嵌套事务行为
+</span><span class="c1"></span>           <span class="k">if</span> <span class="o">(!</span><span class="n">isNestedTransactionAllowed</span><span class="o">())</span> <span class="o">{</span>
+               <span class="k">throw</span> <span class="k">new</span> <span class="n">NestedTransactionNotSupportedException</span><span class="o">(</span>
+                       <span class="s">&#34;Transaction manager does not allow nested transactions by default - &#34;</span> <span class="o">+</span>
+                       <span class="s">&#34;specify &#39;nestedTransactionAllowed&#39; property with value &#39;true&#39;&#34;</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">debugEnabled</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Creating nested transaction with name [&#34;</span> <span class="o">+</span> <span class="n">definition</span><span class="o">.</span><span class="na">getName</span><span class="o">()</span> <span class="o">+</span> <span class="s">&#34;]&#34;</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="c1">//返回是否对嵌套事务使用保存点。
+</span><span class="c1"></span>           <span class="k">if</span> <span class="o">(</span><span class="n">useSavepointForNestedTransaction</span><span class="o">())</span> <span class="o">{</span>
+               <span class="c1">// Create savepoint within existing Spring-managed transaction,
+</span><span class="c1"></span>               <span class="c1">//在现有的Spring管理的事务中创建保存点，
+</span><span class="c1"></span>               <span class="c1">// through the SavepointManager API implemented by TransactionStatus.
+</span><span class="c1"></span>               <span class="c1">//通过TransactionStatus实现的SavepointManager API。
+</span><span class="c1"></span>               <span class="c1">// Usually uses JDBC 3.0 savepoints. Never activates Spring synchronization.
+</span><span class="c1"></span>               <span class="c1">//通常使用JDBC 3.0保存点。, 永远不会激活Spring同步
+</span><span class="c1"></span>               <span class="n">DefaultTransactionStatus</span> <span class="n">status</span> <span class="o">=</span>
+                       <span class="n">prepareTransactionStatus</span><span class="o">(</span><span class="n">definition</span><span class="o">,</span> <span class="n">transaction</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="n">debugEnabled</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+               <span class="c1">//创建Savepoint
+</span><span class="c1"></span>               <span class="n">status</span><span class="o">.</span><span class="na">createAndHoldSavepoint</span><span class="o">();</span>
+               <span class="k">return</span> <span class="n">status</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="k">else</span> <span class="o">{</span>
+               <span class="c1">// Nested transaction through nested begin and commit/rollback calls.
+</span><span class="c1"></span>               <span class="c1">//嵌套事务通过嵌套的begin和commit / rollback调用。
+</span><span class="c1"></span>               <span class="c1">// Usually only for JTA: Spring synchronization might get activated here
+</span><span class="c1"></span>               <span class="c1">// in case of a pre-existing JTA transaction.
+</span><span class="c1"></span>               <span class="c1">//通常仅适用于JTA：如果存在预先存在的JTA事务，则可能会在此处激活Spring同步。
+</span><span class="c1"></span>               <span class="kt">boolean</span> <span class="n">newSynchronization</span> <span class="o">=</span> <span class="o">(</span><span class="n">getTransactionSynchronization</span><span class="o">()</span> <span class="o">!=</span> <span class="n">SYNCHRONIZATION_NEVER</span><span class="o">);</span>
+               <span class="n">DefaultTransactionStatus</span> <span class="n">status</span> <span class="o">=</span> <span class="n">newTransactionStatus</span><span class="o">(</span>
+                       <span class="n">definition</span><span class="o">,</span> <span class="n">transaction</span><span class="o">,</span> <span class="kc">true</span><span class="o">,</span> <span class="n">newSynchronization</span><span class="o">,</span> <span class="n">debugEnabled</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+               <span class="n">doBegin</span><span class="o">(</span><span class="n">transaction</span><span class="o">,</span> <span class="n">definition</span><span class="o">);</span>
+               <span class="n">prepareSynchronization</span><span class="o">(</span><span class="n">status</span><span class="o">,</span> <span class="n">definition</span><span class="o">);</span>
+               <span class="k">return</span> <span class="n">status</span><span class="o">;</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+
+       <span class="c1">// Assumably PROPAGATION_SUPPORTS or PROPAGATION_REQUIRED.
+</span><span class="c1"></span>       <span class="c1">// 操作  PROPAGATION_SUPPORTS or PROPAGATION_REQUIRED.
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="n">debugEnabled</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Participating in existing transaction&#34;</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">isValidateExistingTransaction</span><span class="o">())</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">definition</span><span class="o">.</span><span class="na">getIsolationLevel</span><span class="o">()</span> <span class="o">!=</span> <span class="n">TransactionDefinition</span><span class="o">.</span><span class="na">ISOLATION_DEFAULT</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">Integer</span> <span class="n">currentIsolationLevel</span> <span class="o">=</span> <span class="n">TransactionSynchronizationManager</span><span class="o">.</span><span class="na">getCurrentTransactionIsolationLevel</span><span class="o">();</span>
+               <span class="k">if</span> <span class="o">(</span><span class="n">currentIsolationLevel</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">currentIsolationLevel</span> <span class="o">!=</span> <span class="n">definition</span><span class="o">.</span><span class="na">getIsolationLevel</span><span class="o">())</span> <span class="o">{</span>
+                   <span class="n">Constants</span> <span class="n">isoConstants</span> <span class="o">=</span> <span class="n">DefaultTransactionDefinition</span><span class="o">.</span><span class="na">constants</span><span class="o">;</span>
+                   <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalTransactionStateException</span><span class="o">(</span><span class="s">&#34;Participating transaction with definition [&#34;</span> <span class="o">+</span>
+                           <span class="n">definition</span> <span class="o">+</span> <span class="s">&#34;] specifies isolation level which is incompatible with existing transaction: &#34;</span> <span class="o">+</span>
+                           <span class="o">(</span><span class="n">currentIsolationLevel</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">?</span>
+                                   <span class="n">isoConstants</span><span class="o">.</span><span class="na">toCode</span><span class="o">(</span><span class="n">currentIsolationLevel</span><span class="o">,</span> <span class="n">DefaultTransactionDefinition</span><span class="o">.</span><span class="na">PREFIX_ISOLATION</span><span class="o">)</span> <span class="o">:</span>
+                                   <span class="s">&#34;(unknown)&#34;</span><span class="o">));</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+           <span class="k">if</span> <span class="o">(!</span><span class="n">definition</span><span class="o">.</span><span class="na">isReadOnly</span><span class="o">())</span> <span class="o">{</span>
+               <span class="k">if</span> <span class="o">(</span><span class="n">TransactionSynchronizationManager</span><span class="o">.</span><span class="na">isCurrentTransactionReadOnly</span><span class="o">())</span> <span class="o">{</span>
+                   <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalTransactionStateException</span><span class="o">(</span><span class="s">&#34;Participating transaction with definition [&#34;</span> <span class="o">+</span>
+                           <span class="n">definition</span> <span class="o">+</span> <span class="s">&#34;] is not marked as read-only but existing transaction is&#34;</span><span class="o">);</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+       <span class="kt">boolean</span> <span class="n">newSynchronization</span> <span class="o">=</span> <span class="o">(</span><span class="n">getTransactionSynchronization</span><span class="o">()</span> <span class="o">!=</span> <span class="n">SYNCHRONIZATION_NEVER</span><span class="o">);</span>
+       <span class="k">return</span> <span class="n">prepareTransactionStatus</span><span class="o">(</span><span class="n">definition</span><span class="o">,</span> <span class="n">transaction</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="n">newSynchronization</span><span class="o">,</span> <span class="n">debugEnabled</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="ccommittransactionstatus-status-事物提交">(c).commit(TransactionStatus status) 事物提交</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">commit</span><span class="o">(</span><span class="n">TransactionStatus</span> <span class="n">status</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">isCompleted</span><span class="o">())</span> <span class="o">{</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalTransactionStateException</span><span class="o">(</span>
+                   <span class="s">&#34;Transaction is already completed - do not call commit or rollback more than once per transaction&#34;</span><span class="o">);</span>
+       <span class="o">}</span>
+
+       <span class="n">DefaultTransactionStatus</span> <span class="n">defStatus</span> <span class="o">=</span> <span class="o">(</span><span class="n">DefaultTransactionStatus</span><span class="o">)</span> <span class="n">status</span><span class="o">;</span>
+       <span class="c1">//处理回滚操作
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="n">defStatus</span><span class="o">.</span><span class="na">isLocalRollbackOnly</span><span class="o">())</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">defStatus</span><span class="o">.</span><span class="na">isDebug</span><span class="o">())</span> <span class="o">{</span>
+               <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Transactional code has requested rollback&#34;</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="n">processRollback</span><span class="o">(</span><span class="n">defStatus</span><span class="o">);</span>
+           <span class="k">return</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="c1">//全局事务标记为仅回滚，但事务代码请求提交
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(!</span><span class="n">shouldCommitOnGlobalRollbackOnly</span><span class="o">()</span> <span class="o">&amp;&amp;</span> <span class="n">defStatus</span><span class="o">.</span><span class="na">isGlobalRollbackOnly</span><span class="o">())</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">defStatus</span><span class="o">.</span><span class="na">isDebug</span><span class="o">())</span> <span class="o">{</span>
+               <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Global transaction is marked as rollback-only but transactional code requested commit&#34;</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="n">processRollback</span><span class="o">(</span><span class="n">defStatus</span><span class="o">);</span>
+           <span class="c1">// Throw UnexpectedRollbackException only at outermost transaction boundary
+</span><span class="c1"></span>           <span class="c1">// or if explicitly asked to.
+</span><span class="c1"></span>           <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">isNewTransaction</span><span class="o">()</span> <span class="o">||</span> <span class="n">isFailEarlyOnGlobalRollbackOnly</span><span class="o">())</span> <span class="o">{</span>
+               <span class="k">throw</span> <span class="k">new</span> <span class="n">UnexpectedRollbackException</span><span class="o">(</span>
+                       <span class="s">&#34;Transaction rolled back because it has been marked as rollback-only&#34;</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="k">return</span><span class="o">;</span>
+       <span class="o">}</span>
+       <span class="c1">//处理提交
+</span><span class="c1"></span>       <span class="n">processCommit</span><span class="o">(</span><span class="n">defStatus</span><span class="o">);</span>
+   <span class="o">}</span>
+   
+   <span class="kd">private</span> <span class="kt">void</span> <span class="nf">processCommit</span><span class="o">(</span><span class="n">DefaultTransactionStatus</span> <span class="n">status</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+       <span class="k">try</span> <span class="o">{</span>
+           <span class="kt">boolean</span> <span class="n">beforeCompletionInvoked</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+           <span class="k">try</span> <span class="o">{</span>
+               <span class="n">prepareForCommit</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+               <span class="n">triggerBeforeCommit</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+               <span class="n">triggerBeforeCompletion</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+               <span class="n">beforeCompletionInvoked</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+               <span class="kt">boolean</span> <span class="n">globalRollbackOnly</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+               <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">isNewTransaction</span><span class="o">()</span> <span class="o">||</span> <span class="n">isFailEarlyOnGlobalRollbackOnly</span><span class="o">())</span> <span class="o">{</span>
+                   <span class="n">globalRollbackOnly</span> <span class="o">=</span> <span class="n">status</span><span class="o">.</span><span class="na">isGlobalRollbackOnly</span><span class="o">();</span>
+               <span class="o">}</span>
+               <span class="c1">//是否Savepoint
+</span><span class="c1"></span>               <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">hasSavepoint</span><span class="o">())</span> <span class="o">{</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">isDebug</span><span class="o">())</span> <span class="o">{</span>
+                       <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Releasing transaction savepoint&#34;</span><span class="o">);</span>
+                   <span class="o">}</span>
+                   <span class="n">status</span><span class="o">.</span><span class="na">releaseHeldSavepoint</span><span class="o">();</span>
+               <span class="o">}</span>
+               <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">isNewTransaction</span><span class="o">())</span> <span class="o">{</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">isDebug</span><span class="o">())</span> <span class="o">{</span>
+                       <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Initiating transaction commit&#34;</span><span class="o">);</span>
+                   <span class="o">}</span>
+                   <span class="c1">//con.commit(); 处理提交
+</span><span class="c1"></span>                   <span class="n">doCommit</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+               <span class="o">}</span>
+               <span class="c1">// Throw UnexpectedRollbackException if we have a global rollback-only
+</span><span class="c1"></span>               <span class="c1">// marker but still didn&#39;t get a corresponding exception from commit.
+</span><span class="c1"></span>               <span class="c1">//如果我们有一个全局回滚专用标记，但仍未从提交中获得相应的异常，则抛出UnexpectedRollbackException。
+</span><span class="c1"></span>               <span class="k">if</span> <span class="o">(</span><span class="n">globalRollbackOnly</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="k">throw</span> <span class="k">new</span> <span class="n">UnexpectedRollbackException</span><span class="o">(</span>
+                           <span class="s">&#34;Transaction silently rolled back because it has been marked as rollback-only&#34;</span><span class="o">);</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+           <span class="k">catch</span> <span class="o">(</span><span class="n">UnexpectedRollbackException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+               <span class="c1">// can only be caused by doCommit
+</span><span class="c1"></span>               <span class="n">triggerAfterCompletion</span><span class="o">(</span><span class="n">status</span><span class="o">,</span> <span class="n">TransactionSynchronization</span><span class="o">.</span><span class="na">STATUS_ROLLED_BACK</span><span class="o">);</span>
+               <span class="k">throw</span> <span class="n">ex</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+               <span class="c1">// can only be caused by doCommit
+</span><span class="c1"></span>               <span class="k">if</span> <span class="o">(</span><span class="n">isRollbackOnCommitFailure</span><span class="o">())</span> <span class="o">{</span>
+                   <span class="n">doRollbackOnCommitException</span><span class="o">(</span><span class="n">status</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+               <span class="o">}</span>
+               <span class="k">else</span> <span class="o">{</span>
+                   <span class="n">triggerAfterCompletion</span><span class="o">(</span><span class="n">status</span><span class="o">,</span> <span class="n">TransactionSynchronization</span><span class="o">.</span><span class="na">STATUS_UNKNOWN</span><span class="o">);</span>
+               <span class="o">}</span>
+               <span class="k">throw</span> <span class="n">ex</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="k">catch</span> <span class="o">(</span><span class="n">RuntimeException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+               <span class="k">if</span> <span class="o">(!</span><span class="n">beforeCompletionInvoked</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="n">triggerBeforeCompletion</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+               <span class="o">}</span>
+               <span class="n">doRollbackOnCommitException</span><span class="o">(</span><span class="n">status</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+               <span class="k">throw</span> <span class="n">ex</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="k">catch</span> <span class="o">(</span><span class="n">Error</span> <span class="n">err</span><span class="o">)</span> <span class="o">{</span>
+               <span class="k">if</span> <span class="o">(!</span><span class="n">beforeCompletionInvoked</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="n">triggerBeforeCompletion</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+               <span class="o">}</span>
+               <span class="n">doRollbackOnCommitException</span><span class="o">(</span><span class="n">status</span><span class="o">,</span> <span class="n">err</span><span class="o">);</span>
+               <span class="k">throw</span> <span class="n">err</span><span class="o">;</span>
+           <span class="o">}</span>
+
+           <span class="c1">// Trigger afterCommit callbacks, with an exception thrown there
+</span><span class="c1"></span>           <span class="c1">// propagated to callers but the transaction still considered as committed.
+</span><span class="c1"></span>           <span class="k">try</span> <span class="o">{</span>
+               <span class="n">triggerAfterCommit</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="k">finally</span> <span class="o">{</span>
+               <span class="n">triggerAfterCompletion</span><span class="o">(</span><span class="n">status</span><span class="o">,</span> <span class="n">TransactionSynchronization</span><span class="o">.</span><span class="na">STATUS_COMMITTED</span><span class="o">);</span>
+           <span class="o">}</span>
+
+       <span class="o">}</span>
+       <span class="k">finally</span> <span class="o">{</span>
+           <span class="c1">//有传播事物，重置上个事物
+</span><span class="c1"></span>           <span class="n">cleanupAfterCompletion</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+       <span class="o">}</span>
+   <span class="o">}</span>	
+</code></pre></td></tr></table>
+</div>
+</div><h5 id="drollbacktransactionstatus-status--回滚">(d).rollback(TransactionStatus status)  回滚</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">rollback</span><span class="o">(</span><span class="n">TransactionStatus</span> <span class="n">status</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">isCompleted</span><span class="o">())</span> <span class="o">{</span>
+           <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalTransactionStateException</span><span class="o">(</span>
+                   <span class="s">&#34;Transaction is already completed - do not call commit or rollback more than once per transaction&#34;</span><span class="o">);</span>
+       <span class="o">}</span>
+
+       <span class="n">DefaultTransactionStatus</span> <span class="n">defStatus</span> <span class="o">=</span> <span class="o">(</span><span class="n">DefaultTransactionStatus</span><span class="o">)</span> <span class="n">status</span><span class="o">;</span>
+       <span class="n">processRollback</span><span class="o">(</span><span class="n">defStatus</span><span class="o">);</span>
+   <span class="o">}</span>
+
+   <span class="cm">/**
+</span><span class="cm">    * Process an actual rollback.
+</span><span class="cm">    * The completed flag has already been checked.
+</span><span class="cm">    * @param status object representing the transaction
+</span><span class="cm">    * @throws TransactionException in case of rollback failure
+</span><span class="cm">    */</span>
+   <span class="kd">private</span> <span class="kt">void</span> <span class="nf">processRollback</span><span class="o">(</span><span class="n">DefaultTransactionStatus</span> <span class="n">status</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">try</span> <span class="o">{</span>
+           <span class="k">try</span> <span class="o">{</span>
+               <span class="n">triggerBeforeCompletion</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+               <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">hasSavepoint</span><span class="o">())</span> <span class="o">{</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">isDebug</span><span class="o">())</span> <span class="o">{</span>
+                       <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Rolling back transaction to savepoint&#34;</span><span class="o">);</span>
+                   <span class="o">}</span>
+                   <span class="c1">//回滚Savepoint
+</span><span class="c1"></span>                   <span class="n">status</span><span class="o">.</span><span class="na">rollbackToHeldSavepoint</span><span class="o">();</span>
+               <span class="o">}</span>
+               <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">isNewTransaction</span><span class="o">())</span> <span class="o">{</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">isDebug</span><span class="o">())</span> <span class="o">{</span>
+                       <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Initiating transaction rollback&#34;</span><span class="o">);</span>
+                   <span class="o">}</span>
+                   <span class="c1">//con.rollback();回滚操作
+</span><span class="c1"></span>                   <span class="n">doRollback</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+               <span class="o">}</span>
+               <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">hasTransaction</span><span class="o">())</span> <span class="o">{</span>
+                   <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">isLocalRollbackOnly</span><span class="o">()</span> <span class="o">||</span> <span class="n">isGlobalRollbackOnParticipationFailure</span><span class="o">())</span> <span class="o">{</span>
+                       <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">isDebug</span><span class="o">())</span> <span class="o">{</span>
+                           <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Participating transaction failed - marking existing transaction as rollback-only&#34;</span><span class="o">);</span>
+                       <span class="o">}</span>
+                       <span class="c1">//txObject.setRollbackOnly(); 标示回滚操作
+</span><span class="c1"></span>                       <span class="n">doSetRollbackOnly</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+                   <span class="o">}</span>
+                   <span class="k">else</span> <span class="o">{</span>
+                       <span class="k">if</span> <span class="o">(</span><span class="n">status</span><span class="o">.</span><span class="na">isDebug</span><span class="o">())</span> <span class="o">{</span>
+                           <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Participating transaction failed - letting transaction originator decide on rollback&#34;</span><span class="o">);</span>
+                       <span class="o">}</span>
+                   <span class="o">}</span>
+               <span class="o">}</span>
+               <span class="k">else</span> <span class="o">{</span>
+                   <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Should roll back transaction but cannot - no transaction available&#34;</span><span class="o">);</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+           <span class="k">catch</span> <span class="o">(</span><span class="n">RuntimeException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">triggerAfterCompletion</span><span class="o">(</span><span class="n">status</span><span class="o">,</span> <span class="n">TransactionSynchronization</span><span class="o">.</span><span class="na">STATUS_UNKNOWN</span><span class="o">);</span>
+               <span class="k">throw</span> <span class="n">ex</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="k">catch</span> <span class="o">(</span><span class="n">Error</span> <span class="n">err</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">triggerAfterCompletion</span><span class="o">(</span><span class="n">status</span><span class="o">,</span> <span class="n">TransactionSynchronization</span><span class="o">.</span><span class="na">STATUS_UNKNOWN</span><span class="o">);</span>
+               <span class="k">throw</span> <span class="n">err</span><span class="o">;</span>
+           <span class="o">}</span>
+           <span class="n">triggerAfterCompletion</span><span class="o">(</span><span class="n">status</span><span class="o">,</span> <span class="n">TransactionSynchronization</span><span class="o">.</span><span class="na">STATUS_ROLLED_BACK</span><span class="o">);</span>
+       <span class="o">}</span>
+       <span class="k">finally</span> <span class="o">{</span>
+           <span class="c1">//有传播事物，重置上个事物
+</span><span class="c1"></span>           <span class="n">cleanupAfterCompletion</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+       <span class="o">}</span>
+   <span class="o">}</span> 
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="4createtransactionifnecessary-事物开启">(4).createTransactionIfNecessary 事物开启</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">protected</span> <span class="n">TransactionInfo</span> <span class="nf">createTransactionIfNecessary</span><span class="o">(</span>
+           <span class="n">PlatformTransactionManager</span> <span class="n">tm</span><span class="o">,</span> <span class="n">TransactionAttribute</span> <span class="n">txAttr</span><span class="o">,</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">joinpointIdentification</span><span class="o">)</span> <span class="o">{</span>
+
+       <span class="c1">// If no name specified, apply method identification as transaction name.
+</span><span class="c1"></span>       <span class="k">if</span> <span class="o">(</span><span class="n">txAttr</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">txAttr</span><span class="o">.</span><span class="na">getName</span><span class="o">()</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="n">txAttr</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DelegatingTransactionAttribute</span><span class="o">(</span><span class="n">txAttr</span><span class="o">)</span> <span class="o">{</span>
+               <span class="nd">@Override</span>
+               <span class="kd">public</span> <span class="n">String</span> <span class="nf">getName</span><span class="o">()</span> <span class="o">{</span>
+                   <span class="k">return</span> <span class="n">joinpointIdentification</span><span class="o">;</span>
+               <span class="o">}</span>
+           <span class="o">};</span>
+       <span class="o">}</span>
+
+       <span class="n">TransactionStatus</span> <span class="n">status</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">txAttr</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">tm</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+               <span class="n">status</span> <span class="o">=</span> <span class="n">tm</span><span class="o">.</span><span class="na">getTransaction</span><span class="o">(</span><span class="n">txAttr</span><span class="o">);</span><span class="c1">//开启事务，调用PlatformTransactionManager
+</span><span class="c1"></span>           <span class="o">}</span>
+           <span class="k">else</span> <span class="o">{</span>
+               <span class="k">if</span> <span class="o">(</span><span class="n">logger</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">())</span> <span class="o">{</span>
+                   <span class="n">logger</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Skipping transactional joinpoint [&#34;</span> <span class="o">+</span> <span class="n">joinpointIdentification</span> <span class="o">+</span>
+                           <span class="s">&#34;] because no transaction manager has been configured&#34;</span><span class="o">);</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+       <span class="c1">//创建TransactionInfo，保存Threadlocal
+</span><span class="c1"></span>       <span class="k">return</span> <span class="n">prepareTransactionInfo</span><span class="o">(</span><span class="n">tm</span><span class="o">,</span> <span class="n">txAttr</span><span class="o">,</span> <span class="n">joinpointIdentification</span><span class="o">,</span> <span class="n">status</span><span class="o">);</span>
+   <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="5completetransactionafterthrowingtxinfo-ex事物异常处理">(5).completeTransactionAfterThrowing(txInfo, ex);事物异常处理</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">completeTransactionAfterThrowing</span><span class="o">(</span><span class="n">TransactionInfo</span> <span class="n">txInfo</span><span class="o">,</span> <span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">if</span> <span class="o">(</span><span class="n">txInfo</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">txInfo</span><span class="o">.</span><span class="na">hasTransaction</span><span class="o">())</span> <span class="o">{</span>
+           <span class="k">if</span> <span class="o">(</span><span class="n">logger</span><span class="o">.</span><span class="na">isTraceEnabled</span><span class="o">())</span> <span class="o">{</span>
+               <span class="n">logger</span><span class="o">.</span><span class="na">trace</span><span class="o">(</span><span class="s">&#34;Completing transaction for [&#34;</span> <span class="o">+</span> <span class="n">txInfo</span><span class="o">.</span><span class="na">getJoinpointIdentification</span><span class="o">()</span> <span class="o">+</span>
+                       <span class="s">&#34;] after exception: &#34;</span> <span class="o">+</span> <span class="n">ex</span><span class="o">);</span>
+           <span class="o">}</span>
+           <span class="c1">// 默认(ex instanceof RuntimeException || ex instanceof Error);
+</span><span class="c1"></span>           <span class="k">if</span> <span class="o">(</span><span class="n">txInfo</span><span class="o">.</span><span class="na">transactionAttribute</span><span class="o">.</span><span class="na">rollbackOn</span><span class="o">(</span><span class="n">ex</span><span class="o">))</span> <span class="o">{</span><span class="c1">//验证配置回滚异常类
+</span><span class="c1"></span>               <span class="k">try</span> <span class="o">{</span>
+                   <span class="n">txInfo</span><span class="o">.</span><span class="na">getTransactionManager</span><span class="o">().</span><span class="na">rollback</span><span class="o">(</span><span class="n">txInfo</span><span class="o">.</span><span class="na">getTransactionStatus</span><span class="o">());</span><span class="c1">//进行回滚
+</span><span class="c1"></span>               <span class="o">}</span>
+               <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionSystemException</span> <span class="n">ex2</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="n">logger</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">&#34;Application exception overridden by rollback exception&#34;</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+                   <span class="n">ex2</span><span class="o">.</span><span class="na">initApplicationException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+                   <span class="k">throw</span> <span class="n">ex2</span><span class="o">;</span>
+               <span class="o">}</span>
+               <span class="k">catch</span> <span class="o">(</span><span class="n">RuntimeException</span> <span class="n">ex2</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="n">logger</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">&#34;Application exception overridden by rollback exception&#34;</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+                   <span class="k">throw</span> <span class="n">ex2</span><span class="o">;</span>
+               <span class="o">}</span>
+               <span class="k">catch</span> <span class="o">(</span><span class="n">Error</span> <span class="n">err</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="n">logger</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">&#34;Application exception overridden by rollback error&#34;</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+                   <span class="k">throw</span> <span class="n">err</span><span class="o">;</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+           <span class="k">else</span> <span class="o">{</span>
+               <span class="c1">// We don&#39;t roll back on this exception.
+</span><span class="c1"></span>               <span class="c1">// Will still roll back if TransactionStatus.isRollbackOnly() is true.
+</span><span class="c1"></span>               <span class="k">try</span> <span class="o">{</span>
+                   <span class="n">txInfo</span><span class="o">.</span><span class="na">getTransactionManager</span><span class="o">().</span><span class="na">commit</span><span class="o">(</span><span class="n">txInfo</span><span class="o">.</span><span class="na">getTransactionStatus</span><span class="o">());</span><span class="c1">//直接提交，不进行回滚
+</span><span class="c1"></span>               <span class="o">}</span>
+               <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionSystemException</span> <span class="n">ex2</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="n">logger</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">&#34;Application exception overridden by commit exception&#34;</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+                   <span class="n">ex2</span><span class="o">.</span><span class="na">initApplicationException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+                   <span class="k">throw</span> <span class="n">ex2</span><span class="o">;</span>
+               <span class="o">}</span>
+               <span class="k">catch</span> <span class="o">(</span><span class="n">RuntimeException</span> <span class="n">ex2</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="n">logger</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">&#34;Application exception overridden by commit exception&#34;</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+                   <span class="k">throw</span> <span class="n">ex2</span><span class="o">;</span>
+               <span class="o">}</span>
+               <span class="k">catch</span> <span class="o">(</span><span class="n">Error</span> <span class="n">err</span><span class="o">)</span> <span class="o">{</span>
+                   <span class="n">logger</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">&#34;Application exception overridden by commit error&#34;</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+                   <span class="k">throw</span> <span class="n">err</span><span class="o">;</span>
+               <span class="o">}</span>
+           <span class="o">}</span>
+       <span class="o">}</span>
+   <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二xml解析">二、XML解析</h2>
+<p>TransactionAttributeSource实现类是NameMatchTransactionAttributeSource；处理事物逻辑 TransactionInterceptor；这里就不做具体分析；</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2018-10-15 22:18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/spring-Transaction/">spring Transaction</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/spring/04.ApplicationContext%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">ApplicationContext源码解析</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/spring/02.spring%E7%9A%84AOP%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
+        <span class="next-text nav-default">Spring的AOP源码分析</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

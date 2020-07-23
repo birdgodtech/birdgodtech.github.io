@@ -1,0 +1,2310 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>SynchronousQueue - BirdGod 技术分享</title>
+    <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="BirdGod" /><meta name="description" content="SynchronousQueue源码分析 简介 SynchronousQueue是一种特殊的阻塞队列，它本身没有容量，只有当一个线程从队列取数据" /><meta name="keywords" content="Java" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.74.0-DEV with even 4.0.0" />
+
+
+<link rel="canonical" href="https://birdgodtech.github.io/post/concurrent/collection/05.SynchronousQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<link href="/post/concurrent/collection/05.SynchronousQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="alternate" type="application/rss+xml" title="BirdGod 技术分享" />
+<link href="/post/concurrent/collection/05.SynchronousQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="feed" type="application/rss+xml" title="BirdGod 技术分享" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.06658218.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/reset-even.css">
+
+
+<meta property="og:title" content="SynchronousQueue" />
+<meta property="og:description" content="SynchronousQueue源码分析 简介 SynchronousQueue是一种特殊的阻塞队列，它本身没有容量，只有当一个线程从队列取数据" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://birdgodtech.github.io/post/concurrent/collection/05.SynchronousQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" />
+<meta property="article:published_time" content="2017-06-20T22:11:08+00:00" />
+<meta property="article:modified_time" content="2017-06-20T22:11:08+00:00" />
+<meta itemprop="name" content="SynchronousQueue">
+<meta itemprop="description" content="SynchronousQueue源码分析 简介 SynchronousQueue是一种特殊的阻塞队列，它本身没有容量，只有当一个线程从队列取数据">
+<meta itemprop="datePublished" content="2017-06-20T22:11:08&#43;00:00" />
+<meta itemprop="dateModified" content="2017-06-20T22:11:08&#43;00:00" />
+<meta itemprop="wordCount" content="8812">
+
+
+
+<meta itemprop="keywords" content="SynchronousQueue," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="SynchronousQueue"/>
+<meta name="twitter:description" content="SynchronousQueue源码分析 简介 SynchronousQueue是一种特殊的阻塞队列，它本身没有容量，只有当一个线程从队列取数据"/>
+
+</head>
+<body>
+<div id="mobile-navbar" class="mobile-navbar">
+    <div class="mobile-header-logo">
+        <a href="/" class="logo">BirdGod 技术分享</a>
+    </div>
+    <div class="mobile-navbar-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+    <ul class="mobile-menu-list">
+        <a href="/">
+            <li class="mobile-menu-item" title="首页">首页</li>
+        </a>
+        <a href="/post/">
+            <li class="mobile-menu-item" title="归档">归档</li>
+        </a>
+        <a href="/categories/">
+            <li class="mobile-menu-item" title="分类">分类</li>
+        </a>
+        <a href="/tags/">
+            <li class="mobile-menu-item" title="标签">标签</li>
+        </a>
+        <a href="/about/">
+            <li class="mobile-menu-item" title="关于我">关于我</li>
+        </a>
+        
+    </ul>
+</nav>
+
+<div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+    <a href="/" class="logo">BirdGod 技术分享</a>
+</div>
+
+<nav class="site-navbar">
+    <ul id="menu" class="menu" data-sum="0">
+        
+        <li class="menu-item menu-item-home">
+            <a class="menu-item-link" href="/" title="首页">首页</a>
+        </li>
+        
+        <li class="menu-item menu-item-archives">
+            <a class="menu-item-link" href="/post/" title="归档">归档</a>
+        </li>
+        
+        <li class="menu-item menu-item-categories">
+            <a class="menu-item-link" href="/categories/" title="分类">分类</a>
+        </li>
+        
+        <li class="menu-item menu-item-tags">
+            <a class="menu-item-link" href="/tags/" title="标签">标签</a>
+        </li>
+        
+        <li class="menu-item menu-item-about">
+            <a class="menu-item-link" href="/about/" title="关于我">关于我</a>
+        </li>
+        
+    </ul>
+</nav>
+
+    </header>
+
+
+    <main id="main" class="main">
+        <div class="content-wrapper">
+            <div id="content" class="content">
+                <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">SynchronousQueue</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2017-06-20 22:11 </span>
+      <div class="post-category">
+        <a href="/categories/%E5%B9%B6%E5%8F%91/"> 并发 </a>
+        </div>
+      <span class="more-meta"> 约 8812 字 </span>
+      <span class="more-meta"> 预计阅读 18 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#简介">简介</a></li>
+    <li><a href="#一synchronousqueue数据结构实现">一、SynchronousQueue数据结构实现</a>
+      <ul>
+        <li><a href="#1-实现transferer抽象类型">1. 实现Transferer抽象类型</a></li>
+        <li><a href="#2-dual-stack的transferstack实现">2. Dual stack的TransferStack实现</a></li>
+        <li><a href="#3-dual-queue的transferqueue实现">3. Dual Queue的TransferQueue实现</a></li>
+        <li><a href="#4-synchronousqueue-构造">4. SynchronousQueue 构造</a></li>
+      </ul>
+    </li>
+    <li><a href="#二入队">二、入队</a>
+      <ul>
+        <li><a href="#1-offer方法">1. offer方法</a></li>
+        <li><a href="#2-add方法">2. add方法</a></li>
+        <li><a href="#3-put方法">3. put方法</a></li>
+      </ul>
+    </li>
+    <li><a href="#三出队">三、出队</a>
+      <ul>
+        <li><a href="#1-poll方法">1. poll方法</a></li>
+        <li><a href="#2-take方法">2. take方法</a></li>
+        <li><a href="#3-peek方法">3. peek方法</a></li>
+      </ul>
+    </li>
+    <li><a href="#四移除队列">四、移除队列</a>
+      <ul>
+        <li><a href="#1-remove方法">1. remove方法</a></li>
+        <li><a href="#2-clear方法">2. clear方法</a></li>
+        <li><a href="#3-drainto方法">3. drainTo方法</a></li>
+      </ul>
+    </li>
+    <li><a href="#五iterator-迭代器实现">五、Iterator 迭代器实现</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2017-06-20T22:11:08" title="June 20, 2017">June 20, 2017</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+  <div class="post-content">
+    <h1 id="synchronousqueue源码分析">SynchronousQueue源码分析</h1>
+<h2 id="简介">简介</h2>
+<ul>
+<li>SynchronousQueue是一种特殊的阻塞队列，它本身没有容量，只有当一个线程从队列取数据的同时，另一个线程才能放一个数据到队列中，
+反之亦然。存取过程相当于一个线程把数据(安全的)交给另一个线程的过程。</li>
+<li>SynchronousQueue也支持公平和非公平模式。</li>
+</ul>
+<h2 id="一synchronousqueue数据结构实现">一、SynchronousQueue数据结构实现</h2>
+<h3 id="1-实现transferer抽象类型">1. 实现Transferer抽象类型</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Shared internal API for dual stacks and queues.
+</span><span class="cm">     * 共享内部API的双栈和队列。
+</span><span class="cm">     */</span>
+    <span class="kd">abstract</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Transferer</span> <span class="o">{</span>
+        <span class="cm">/**
+</span><span class="cm">         * Performs a put or take.
+</span><span class="cm">         * 执行put或take。
+</span><span class="cm">         *
+</span><span class="cm">         * @param e if non-null, the item to be handed to a consumer;
+</span><span class="cm">         *          if null, requests that transfer return an item
+</span><span class="cm">         *          offered by producer.
+</span><span class="cm">         * @param timed if this operation should timeout
+</span><span class="cm">         * @param nanos the timeout, in nanoseconds
+</span><span class="cm">         * @return if non-null, the item provided or received; if null,
+</span><span class="cm">         *         the operation failed due to timeout or interrupt --
+</span><span class="cm">         *         the caller can distinguish which of these occurred
+</span><span class="cm">         *         by checking Thread.interrupted.
+</span><span class="cm">         */</span>
+        <span class="kd">abstract</span> <span class="n">Object</span> <span class="nf">transfer</span><span class="o">(</span><span class="n">Object</span> <span class="n">e</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">timed</span><span class="o">,</span> <span class="kt">long</span> <span class="n">nanos</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2-dual-stack的transferstack实现">2. Dual stack的TransferStack实现</h3>
+<h4 id="1-node节点实现">(1). Node节点实现</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">
+     <span class="cm">/** Node class for TransferStacks. */</span>
+     <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">SNode</span> <span class="o">{</span>
+         <span class="kd">volatile</span> <span class="n">SNode</span> <span class="n">next</span><span class="o">;</span>        <span class="c1">// next node in stack  下一个节点堆栈
+</span><span class="c1"></span>         <span class="kd">volatile</span> <span class="n">SNode</span> <span class="n">match</span><span class="o">;</span>       <span class="c1">// the node matched to this   和当前节点完成匹配的节点
+</span><span class="c1"></span>         <span class="kd">volatile</span> <span class="n">Thread</span> <span class="n">waiter</span><span class="o">;</span>     <span class="c1">// to control park/unpark 等待线程
+</span><span class="c1"></span>         <span class="n">Object</span> <span class="n">item</span><span class="o">;</span>                <span class="c1">// data; or null for REQUESTs 数据;或者是null 为 REQUEST模式
+</span><span class="c1"></span>         <span class="kt">int</span> <span class="n">mode</span><span class="o">;</span>                   <span class="c1">// 模式
+</span><span class="c1"></span>         <span class="c1">// Note: item and mode fields don&#39;t need to be volatile
+</span><span class="c1"></span>         <span class="c1">// since they are always written before, and read after,
+</span><span class="c1"></span>         <span class="c1">// other volatile/atomic operations.
+</span><span class="c1"></span>         <span class="c1">// 注意：项item and mode字段不需要是volatile，因为它们总是在其他volatile/atomic操作之前写入和读取之后。
+</span><span class="c1"></span>
+
+         <span class="n">SNode</span><span class="o">(</span><span class="n">Object</span> <span class="n">item</span><span class="o">)</span> <span class="o">{</span>
+             <span class="k">this</span><span class="o">.</span><span class="na">item</span> <span class="o">=</span> <span class="n">item</span><span class="o">;</span>
+         <span class="o">}</span>
+         <span class="c1">// CAS next
+</span><span class="c1"></span>         <span class="kt">boolean</span> <span class="nf">casNext</span><span class="o">(</span><span class="n">SNode</span> <span class="n">cmp</span><span class="o">,</span> <span class="n">SNode</span> <span class="n">val</span><span class="o">)</span> <span class="o">{</span>
+             <span class="k">return</span> <span class="n">cmp</span> <span class="o">==</span> <span class="n">next</span> <span class="o">&amp;&amp;</span>
+                 <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapObject</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">nextOffset</span><span class="o">,</span> <span class="n">cmp</span><span class="o">,</span> <span class="n">val</span><span class="o">);</span>
+         <span class="o">}</span>
+
+         <span class="cm">/**
+</span><span class="cm">          * Tries to match node s to this node, if so, waking up thread.
+</span><span class="cm">          * Fulfillers call tryMatch to identify their waiters.
+</span><span class="cm">          * Waiters block until they have been matched.
+</span><span class="cm">          *
+</span><span class="cm">          * 尝试匹配节点s和当前节点，如果匹配成功，唤醒等待线程。
+</span><span class="cm">          * (向消费者传递数据或向生产者获取数据)调用tryMatch方法
+</span><span class="cm">          * 来确定它们的等待线程，然后唤醒这个等待线程。
+</span><span class="cm">          * @param s the node to match
+</span><span class="cm">          * @return true if successfully matched to s
+</span><span class="cm">          */</span>
+         <span class="kt">boolean</span> <span class="nf">tryMatch</span><span class="o">(</span><span class="n">SNode</span> <span class="n">s</span><span class="o">)</span> <span class="o">{</span>
+             <span class="k">if</span> <span class="o">(</span><span class="n">match</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span>
+                 <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapObject</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">matchOffset</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">s</span><span class="o">))</span> <span class="o">{</span>
+                 <span class="n">Thread</span> <span class="n">w</span> <span class="o">=</span> <span class="n">waiter</span><span class="o">;</span>
+                 <span class="c1">//如果当前节点的match为空,那么CAS设置s为match，然后唤醒waiter。
+</span><span class="c1"></span>                 <span class="k">if</span> <span class="o">(</span><span class="n">w</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>    <span class="c1">// waiters need at most one unpark
+</span><span class="c1"></span>                     <span class="n">waiter</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                     <span class="n">LockSupport</span><span class="o">.</span><span class="na">unpark</span><span class="o">(</span><span class="n">w</span><span class="o">);</span>
+                 <span class="o">}</span>
+                 <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+             <span class="o">}</span>
+              <span class="c1">//如果match不为null，或者CAS设置match失败，那么比较match和s是否为相同对象。
+</span><span class="c1"></span>             <span class="c1">//如果相同，说明已经完成匹配，匹配成功。
+</span><span class="c1"></span>             <span class="k">return</span> <span class="n">match</span> <span class="o">==</span> <span class="n">s</span><span class="o">;</span>
+         <span class="o">}</span>
+
+         <span class="cm">/**
+</span><span class="cm">          * Tries to cancel a wait by matching node to itself.
+</span><span class="cm">          * 尝试取消当前节点(有线程等待)，通过将match设置为自身。
+</span><span class="cm">          */</span>
+         <span class="kt">void</span> <span class="nf">tryCancel</span><span class="o">()</span> <span class="o">{</span>
+             <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapObject</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">matchOffset</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="k">this</span><span class="o">);</span>
+         <span class="o">}</span>
+
+         <span class="kt">boolean</span> <span class="nf">isCancelled</span><span class="o">()</span> <span class="o">{</span>
+             <span class="k">return</span> <span class="n">match</span> <span class="o">==</span> <span class="k">this</span><span class="o">;</span>
+         <span class="o">}</span>
+
+         <span class="c1">// Unsafe mechanics
+</span><span class="c1"></span>         <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Unsafe</span> <span class="n">UNSAFE</span><span class="o">;</span>
+         <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">matchOffset</span><span class="o">;</span>
+         <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">nextOffset</span><span class="o">;</span>
+
+         <span class="kd">static</span> <span class="o">{</span>
+             <span class="k">try</span> <span class="o">{</span>
+                 <span class="n">UNSAFE</span> <span class="o">=</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Unsafe</span><span class="o">.</span><span class="na">getUnsafe</span><span class="o">();</span>
+                 <span class="n">Class</span> <span class="n">k</span> <span class="o">=</span> <span class="n">SNode</span><span class="o">.</span><span class="na">class</span><span class="o">;</span>
+                 <span class="n">matchOffset</span> <span class="o">=</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">objectFieldOffset</span>
+                     <span class="o">(</span><span class="n">k</span><span class="o">.</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&#34;match&#34;</span><span class="o">));</span>
+                 <span class="n">nextOffset</span> <span class="o">=</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">objectFieldOffset</span>
+                     <span class="o">(</span><span class="n">k</span><span class="o">.</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&#34;next&#34;</span><span class="o">));</span>
+             <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                 <span class="k">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+             <span class="o">}</span>
+         <span class="o">}</span>
+     <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2-transferstack-构造">(2). TransferStack 构造</h4>
+<p>TransferStack只有默认构造器</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/** Dual stack */</span>
+    <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">TransferStack</span> <span class="kd">extends</span> <span class="n">Transferer</span> <span class="o">{</span>
+        <span class="cm">/*
+</span><span class="cm">         * This extends Scherer-Scott dual stack algorithm, differing,
+</span><span class="cm">         * among other ways, by using &#34;covering&#34; nodes rather than
+</span><span class="cm">         * bit-marked pointers: Fulfilling operations push on marker
+</span><span class="cm">         * nodes (with FULFILLING bit set in mode) to reserve a spot
+</span><span class="cm">         * to match a waiting node.
+</span><span class="cm">         *  这扩展了Scherer-Scott双栈算法，不同之处在于使用&#34;covering&#34;节点而不是位标记指针：
+</span><span class="cm">         *  Fulfilling操作在标记节点上进行push（FULFILLING位设置为模式）以保留点以匹配等待节点。
+</span><span class="cm">         */</span>
+
+        <span class="cm">/* Modes for SNodes, ORed together in node fields */</span>
+        <span class="cm">/** Node represents an unfulfilled consumer */</span>
+        <span class="c1">//节点代表消费者等待消费资源
+</span><span class="c1"></span>        <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">REQUEST</span>    <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+        <span class="cm">/** Node represents an unfulfilled producer */</span>
+        <span class="c1">//节点代表生产者等待生产资源
+</span><span class="c1"></span>        <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">DATA</span>       <span class="o">=</span> <span class="n">1</span><span class="o">;</span>
+        <span class="cm">/** Node is fulfilling another unfulfilled DATA or REQUEST */</span>
+        <span class="c1">//节点正在履行另一个未完成的DATA或REQUEST
+</span><span class="c1"></span>        <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">FULFILLING</span> <span class="o">=</span> <span class="n">2</span><span class="o">;</span>
+
+        <span class="cm">/** Return true if m has fulfilling bit set */</span>
+        <span class="c1">//判断是否包含正在匹配(FULFILLING)的标记
+</span><span class="c1"></span>        <span class="kd">static</span> <span class="kt">boolean</span> <span class="nf">isFulfilling</span><span class="o">(</span><span class="kt">int</span> <span class="n">m</span><span class="o">)</span> <span class="o">{</span> <span class="k">return</span> <span class="o">(</span><span class="n">m</span> <span class="o">&amp;</span> <span class="n">FULFILLING</span><span class="o">)</span> <span class="o">!=</span> <span class="n">0</span><span class="o">;</span> <span class="o">}</span>
+        <span class="cm">/** The head (top) of the stack */</span>
+        <span class="c1">//堆栈的头(顶部)
+</span><span class="c1"></span>        <span class="kd">volatile</span> <span class="n">SNode</span> <span class="n">head</span><span class="o">;</span>
+        
+        <span class="c1">//设置头部
+</span><span class="c1"></span>        <span class="kt">boolean</span> <span class="nf">casHead</span><span class="o">(</span><span class="n">SNode</span> <span class="n">h</span><span class="o">,</span> <span class="n">SNode</span> <span class="n">nh</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">h</span> <span class="o">==</span> <span class="n">head</span> <span class="o">&amp;&amp;</span>
+                <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapObject</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">headOffset</span><span class="o">,</span> <span class="n">h</span><span class="o">,</span> <span class="n">nh</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Creates or resets fields of a node. Called only from transfer
+</span><span class="cm">         * where the node to push on stack is lazily created and
+</span><span class="cm">         * reused when possible to help reduce intervals between reads
+</span><span class="cm">         * and CASes of head and to avoid surges of garbage when CASes
+</span><span class="cm">         * to push nodes fail due to contention.
+</span><span class="cm">         *  创建或重置节点的字段。只能从transfer中调用，推迟堆栈的节点被延迟创建，并在可能时重新使用，
+</span><span class="cm">         *  以帮助减少读取和头部CASes之间的时间间隔，并避免由于争用导致节点CASes推送失败时浪费的浪费。
+</span><span class="cm">         */</span>
+        <span class="kd">static</span> <span class="n">SNode</span> <span class="nf">snode</span><span class="o">(</span><span class="n">SNode</span> <span class="n">s</span><span class="o">,</span> <span class="n">Object</span> <span class="n">e</span><span class="o">,</span> <span class="n">SNode</span> <span class="n">next</span><span class="o">,</span> <span class="kt">int</span> <span class="n">mode</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="n">s</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SNode</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+            <span class="n">s</span><span class="o">.</span><span class="na">mode</span> <span class="o">=</span> <span class="n">mode</span><span class="o">;</span>
+            <span class="n">s</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">next</span><span class="o">;</span>
+            <span class="k">return</span> <span class="n">s</span><span class="o">;</span>
+        <span class="o">}</span>
+
+      <span class="c1">// Unsafe mechanics
+</span><span class="c1"></span>      <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Unsafe</span> <span class="n">UNSAFE</span><span class="o">;</span>
+      <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">headOffset</span><span class="o">;</span>
+      <span class="kd">static</span> <span class="o">{</span>
+          <span class="k">try</span> <span class="o">{</span>
+              <span class="n">UNSAFE</span> <span class="o">=</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Unsafe</span><span class="o">.</span><span class="na">getUnsafe</span><span class="o">();</span>
+              <span class="n">Class</span> <span class="n">k</span> <span class="o">=</span> <span class="n">TransferStack</span><span class="o">.</span><span class="na">class</span><span class="o">;</span>
+              <span class="n">headOffset</span> <span class="o">=</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">objectFieldOffset</span>
+                  <span class="o">(</span><span class="n">k</span><span class="o">.</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&#34;head&#34;</span><span class="o">));</span>
+          <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+              <span class="k">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+          <span class="o">}</span>
+      <span class="o">}</span>
+ <span class="o">}</span>     
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="3transferput-or-takes-an-item">(3).transfer(Put or takes an item)</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span><span class="lnt">157
+</span><span class="lnt">158
+</span><span class="lnt">159
+</span><span class="lnt">160
+</span><span class="lnt">161
+</span><span class="lnt">162
+</span><span class="lnt">163
+</span><span class="lnt">164
+</span><span class="lnt">165
+</span><span class="lnt">166
+</span><span class="lnt">167
+</span><span class="lnt">168
+</span><span class="lnt">169
+</span><span class="lnt">170
+</span><span class="lnt">171
+</span><span class="lnt">172
+</span><span class="lnt">173
+</span><span class="lnt">174
+</span><span class="lnt">175
+</span><span class="lnt">176
+</span><span class="lnt">177
+</span><span class="lnt">178
+</span><span class="lnt">179
+</span><span class="lnt">180
+</span><span class="lnt">181
+</span><span class="lnt">182
+</span><span class="lnt">183
+</span><span class="lnt">184
+</span><span class="lnt">185
+</span><span class="lnt">186
+</span><span class="lnt">187
+</span><span class="lnt">188
+</span><span class="lnt">189
+</span><span class="lnt">190
+</span><span class="lnt">191
+</span><span class="lnt">192
+</span><span class="lnt">193
+</span><span class="lnt">194
+</span><span class="lnt">195
+</span><span class="lnt">196
+</span><span class="lnt">197
+</span><span class="lnt">198
+</span><span class="lnt">199
+</span><span class="lnt">200
+</span><span class="lnt">201
+</span><span class="lnt">202
+</span><span class="lnt">203
+</span><span class="lnt">204
+</span><span class="lnt">205
+</span><span class="lnt">206
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">        <span class="cm">/**
+</span><span class="cm">         * Puts or takes an item.
+</span><span class="cm">         */</span>
+        <span class="n">Object</span> <span class="nf">transfer</span><span class="o">(</span><span class="n">Object</span> <span class="n">e</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">timed</span><span class="o">,</span> <span class="kt">long</span> <span class="n">nanos</span><span class="o">)</span> <span class="o">{</span>
+            <span class="cm">/*
+</span><span class="cm">             * Basic algorithm is to loop trying one of three actions:
+</span><span class="cm">             * 基本算法是循环尝试，执行下面两个步中的，其中一个：
+</span><span class="cm">             * 
+</span><span class="cm">             * 1. If apparently empty or already containing nodes of same
+</span><span class="cm">             *    mode, try to push node on stack and wait for a match,
+</span><span class="cm">             *    returning it, or null if cancelled.
+</span><span class="cm">             *   如果显然为空或已经包含相同模式的节点，则尝试在堆栈上推送节点并等待匹配，返回该匹配;如果取消，则返回null。
+</span><span class="cm">             *   
+</span><span class="cm">             * 2. If apparently containing node of complementary mode,
+</span><span class="cm">             *    try to push a fulfilling node on to stack, match
+</span><span class="cm">             *    with corresponding waiting node, pop both from
+</span><span class="cm">             *    stack, and return matched item. The matching or
+</span><span class="cm">             *    unlinking might not actually be necessary because of
+</span><span class="cm">             *    other threads performing action 3:
+</span><span class="cm">             *    如果包含一个互补模式的节点（take(REQUEST)-&gt;put(DATA)；put(DATA)-&gt;take(REQUEST)），
+</span><span class="cm">             *     则尝试一个FULFILLING节点入栈，同时匹配等待的协同节点，两个节点同时出栈，返回匹配的元素。
+</span><span class="cm">             *     由于其他线程执行步骤3，实际匹配和解除链接指针动作不会发生。
+</span><span class="cm">             *
+</span><span class="cm">             * 3. If top of stack already holds another fulfilling node,
+</span><span class="cm">             *    help it out by doing its match and/or pop
+</span><span class="cm">             *    operations, and then continue. The code for helping
+</span><span class="cm">             *    is essentially the same as for fulfilling, except
+</span><span class="cm">             *    that it doesn&#39;t return the item.
+</span><span class="cm">             *    如果栈顶存在另外一个FULFILLING的节点，则匹配节点，并出栈。这段的代码
+</span><span class="cm">             *      与fulfilling相同，除非没有元素返回
+</span><span class="cm">             */</span>
+
+            <span class="n">SNode</span> <span class="n">s</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span> <span class="c1">// constructed/reused as needed 根据需要构建/重用
+</span><span class="c1"></span>            <span class="kt">int</span> <span class="n">mode</span> <span class="o">=</span> <span class="o">(</span><span class="n">e</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span> <span class="n">REQUEST</span> <span class="o">:</span> <span class="n">DATA</span><span class="o">;</span> 
+
+            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="n">SNode</span> <span class="n">h</span> <span class="o">=</span> <span class="n">head</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">h</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">h</span><span class="o">.</span><span class="na">mode</span> <span class="o">==</span> <span class="n">mode</span><span class="o">)</span> <span class="o">{</span>  <span class="c1">// empty or same-mode 1.头节点为空或者模式相同
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">timed</span> <span class="o">&amp;&amp;</span> <span class="n">nanos</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>      <span class="c1">// can&#39;t wait            没有等到时间
+</span><span class="c1"></span>                        <span class="k">if</span> <span class="o">(</span><span class="n">h</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">h</span><span class="o">.</span><span class="na">isCancelled</span><span class="o">())</span>                        <span class="n">头节点不为空并且头结点是否取消</span>
+                            <span class="nf">casHead</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="n">h</span><span class="o">.</span><span class="na">next</span><span class="o">);</span>     <span class="c1">// pop cancelled node            把头结点next设置为头节点  
+</span><span class="c1"></span>                        <span class="k">else</span>
+                            <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>                                 <span class="c1">//      头结点为空或者头结点不为取消节点就返回null
+</span><span class="c1"></span>                    <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">casHead</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="n">s</span> <span class="o">=</span> <span class="n">snode</span><span class="o">(</span><span class="n">s</span><span class="o">,</span> <span class="n">e</span><span class="o">,</span> <span class="n">h</span><span class="o">,</span> <span class="n">mode</span><span class="o">)))</span> <span class="o">{</span>   <span class="c1">//   CAS 头结点 snode创建或者重置节点
+</span><span class="c1"></span>                        <span class="n">SNode</span> <span class="n">m</span> <span class="o">=</span> <span class="n">awaitFulfill</span><span class="o">(</span><span class="n">s</span><span class="o">,</span> <span class="n">timed</span><span class="o">,</span> <span class="n">nanos</span><span class="o">);</span>         <span class="c1">//      自旋转或者等待线程
+</span><span class="c1"></span>                        <span class="k">if</span> <span class="o">(</span><span class="n">m</span> <span class="o">==</span> <span class="n">s</span><span class="o">)</span> <span class="o">{</span>               <span class="c1">// wait was cancelled          等待取消,清理next节点
+</span><span class="c1"></span>                            <span class="n">clean</span><span class="o">(</span><span class="n">s</span><span class="o">);</span>
+                            <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                        <span class="o">}</span>
+                        <span class="k">if</span> <span class="o">((</span><span class="n">h</span> <span class="o">=</span> <span class="n">head</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">h</span><span class="o">.</span><span class="na">next</span> <span class="o">==</span> <span class="n">s</span><span class="o">)</span>           <span class="c1">//      CAS 头节点
+</span><span class="c1"></span>                            <span class="n">casHead</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="n">s</span><span class="o">.</span><span class="na">next</span><span class="o">);</span>     <span class="c1">// help s&#39;s fulfiller
+</span><span class="c1"></span>                        <span class="k">return</span> <span class="o">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">REQUEST</span><span class="o">)</span> <span class="o">?</span> <span class="n">m</span><span class="o">.</span><span class="na">item</span> <span class="o">:</span> <span class="n">s</span><span class="o">.</span><span class="na">item</span><span class="o">;</span>      <span class="c1">//       REQUEST返回match.item,反之s.item
+</span><span class="c1"></span>                    <span class="o">}</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(!</span><span class="n">isFulfilling</span><span class="o">(</span><span class="n">h</span><span class="o">.</span><span class="na">mode</span><span class="o">))</span> <span class="o">{</span> <span class="c1">// try to fulfill       2.头节点模式不是FULFILLING
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">h</span><span class="o">.</span><span class="na">isCancelled</span><span class="o">())</span>            <span class="c1">// already cancelled        头结点取消，CAS 设置头节点    
+</span><span class="c1"></span>                        <span class="n">casHead</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="n">h</span><span class="o">.</span><span class="na">next</span><span class="o">);</span>         <span class="c1">// pop and retry                
+</span><span class="c1"></span>                    <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">casHead</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="n">s</span><span class="o">=</span><span class="n">snode</span><span class="o">(</span><span class="n">s</span><span class="o">,</span> <span class="n">e</span><span class="o">,</span> <span class="n">h</span><span class="o">,</span> <span class="n">FULFILLING</span><span class="o">|</span><span class="n">mode</span><span class="o">)))</span> <span class="o">{</span>     <span class="c1">//CAS 头结点 snode创建或者重置节点
+</span><span class="c1"></span>                        <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span> <span class="c1">// loop until matched or waiters disappear         循环直到匹配或waiters消失
+</span><span class="c1"></span>                            <span class="n">SNode</span> <span class="n">m</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>       <span class="c1">// m is s&#39;s match
+</span><span class="c1"></span>                            <span class="k">if</span> <span class="o">(</span><span class="n">m</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>        <span class="c1">// all waiters are gone             所有waiters都不见了
+</span><span class="c1"></span>                                <span class="n">casHead</span><span class="o">(</span><span class="n">s</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>   <span class="c1">// pop fulfill node
+</span><span class="c1"></span>                                <span class="n">s</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>           <span class="c1">// use new node next time
+</span><span class="c1"></span>                                <span class="k">break</span><span class="o">;</span>              <span class="c1">// restart main loop
+</span><span class="c1"></span>                            <span class="o">}</span>
+                            <span class="n">SNode</span> <span class="n">mn</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>                                      
+                            <span class="k">if</span> <span class="o">(</span><span class="n">m</span><span class="o">.</span><span class="na">tryMatch</span><span class="o">(</span><span class="n">s</span><span class="o">))</span> <span class="o">{</span>                                        <span class="c1">//
+</span><span class="c1"></span>                                <span class="n">casHead</span><span class="o">(</span><span class="n">s</span><span class="o">,</span> <span class="n">mn</span><span class="o">);</span>     <span class="c1">// pop both s and m
+</span><span class="c1"></span>                                <span class="k">return</span> <span class="o">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">REQUEST</span><span class="o">)</span> <span class="o">?</span> <span class="n">m</span><span class="o">.</span><span class="na">item</span> <span class="o">:</span> <span class="n">s</span><span class="o">.</span><span class="na">item</span><span class="o">;</span>
+                            <span class="o">}</span> <span class="k">else</span>                  <span class="c1">// lost match
+</span><span class="c1"></span>                                <span class="n">s</span><span class="o">.</span><span class="na">casNext</span><span class="o">(</span><span class="n">m</span><span class="o">,</span> <span class="n">mn</span><span class="o">);</span>   <span class="c1">// help unlink
+</span><span class="c1"></span>                        <span class="o">}</span>
+                    <span class="o">}</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>                            <span class="c1">// help a fulfiller              3.FULFILLING  模式
+</span><span class="c1"></span>                    <span class="n">SNode</span> <span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>               <span class="c1">// m is h&#39;s match             
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">m</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>                  <span class="c1">// waiter is gone                   waiter 没有
+</span><span class="c1"></span>                        <span class="n">casHead</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>           <span class="c1">// pop fulfilling node  
+</span><span class="c1"></span>                    <span class="k">else</span> <span class="o">{</span>
+                        <span class="n">SNode</span> <span class="n">mn</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>                                            
+                        <span class="k">if</span> <span class="o">(</span><span class="n">m</span><span class="o">.</span><span class="na">tryMatch</span><span class="o">(</span><span class="n">h</span><span class="o">))</span>          <span class="c1">// help match                      帮助match
+</span><span class="c1"></span>                            <span class="n">casHead</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="n">mn</span><span class="o">);</span>         <span class="c1">// pop both h and m
+</span><span class="c1"></span>                        <span class="k">else</span>                        <span class="c1">// lost match
+</span><span class="c1"></span>                            <span class="n">h</span><span class="o">.</span><span class="na">casNext</span><span class="o">(</span><span class="n">m</span><span class="o">,</span> <span class="n">mn</span><span class="o">);</span>       <span class="c1">// help unlink
+</span><span class="c1"></span>                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+         <span class="cm">/**
+</span><span class="cm">          * Spins/blocks until node s is matched by a fulfill operation.
+</span><span class="cm">          * 自旋或阻塞直到节点s匹配完成操作
+</span><span class="cm">          * 
+</span><span class="cm">          * @param s the waiting node
+</span><span class="cm">          * @param timed true if timed wait
+</span><span class="cm">          * @param nanos timeout value
+</span><span class="cm">          * @return matched node, or s if cancelled
+</span><span class="cm">          */</span>
+         <span class="n">SNode</span> <span class="nf">awaitFulfill</span><span class="o">(</span><span class="n">SNode</span> <span class="n">s</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">timed</span><span class="o">,</span> <span class="kt">long</span> <span class="n">nanos</span><span class="o">)</span> <span class="o">{</span>
+             <span class="cm">/*
+</span><span class="cm">              * When a node/thread is about to block, it sets its waiter
+</span><span class="cm">              * field and then rechecks state at least one more time
+</span><span class="cm">              * before actually parking, thus covering race vs
+</span><span class="cm">              * fulfiller noticing that waiter is non-null so should be
+</span><span class="cm">              * woken.
+</span><span class="cm">              *当一个节点/线程即将被阻塞时，它将设置其waiter字段，然后在实际parking之前至少再次检查状态，
+</span><span class="cm">              * 从而涵盖竞争与履行者注意到waiter是非空的，所以应该被唤醒。
+</span><span class="cm">              * 
+</span><span class="cm">              * 
+</span><span class="cm">              * When invoked by nodes that appear at the point of call
+</span><span class="cm">              * to be at the head of the stack, calls to park are
+</span><span class="cm">              * preceded by spins to avoid blocking when producers and
+</span><span class="cm">              * consumers are arriving very close in time.  This can
+</span><span class="cm">              * happen enough to bother only on multiprocessors.
+</span><span class="cm">              * 当被节点调用时，它会出现在堆栈的顶部，为了避免在生产者和消费者及时到达时，调用park进行自旋以避免阻塞。
+</span><span class="cm">              * 这种情况只会发生在多处理器上。
+</span><span class="cm">              *
+</span><span class="cm">              * The order of checks for returning out of main loop
+</span><span class="cm">              * reflects fact that interrupts have precedence over
+</span><span class="cm">              * normal returns, which have precedence over
+</span><span class="cm">              * timeouts. (So, on timeout, one last check for match is
+</span><span class="cm">              * done before giving up.) Except that calls from untimed
+</span><span class="cm">              * SynchronousQueue.{poll/offer} don&#39;t check interrupts
+</span><span class="cm">              * and don&#39;t wait at all, so are trapped in transfer
+</span><span class="cm">              * method rather than calling awaitFulfill.
+</span><span class="cm">              * 从主循环返回的检查顺序反映了中断优先于正常返回（优先于超时）的事实。 
+</span><span class="cm">              * （所以，在超时之后，最后一次检查匹配是在放弃之前完成的。）
+</span><span class="cm">              * 除了不计时的SynchronousQueue。{poll / offer}的调用不检查中断并且根本不等待，
+</span><span class="cm">              * 所以被困在传输方法中比呼唤awaitFulfill。
+</span><span class="cm">              */</span>
+             <span class="kt">long</span> <span class="n">lastTime</span> <span class="o">=</span> <span class="n">timed</span> <span class="o">?</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">()</span> <span class="o">:</span> <span class="n">0</span><span class="o">;</span>
+             <span class="n">Thread</span> <span class="n">w</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+             <span class="n">SNode</span> <span class="n">h</span> <span class="o">=</span> <span class="n">head</span><span class="o">;</span>
+             <span class="kt">int</span> <span class="n">spins</span> <span class="o">=</span> <span class="o">(</span><span class="n">shouldSpin</span><span class="o">(</span><span class="n">s</span><span class="o">)</span> <span class="o">?</span>                                 <span class="c1">//spins 自旋转的次数
+</span><span class="c1"></span>                          <span class="o">(</span><span class="n">timed</span> <span class="o">?</span> <span class="n">maxTimedSpins</span> <span class="o">:</span> <span class="n">maxUntimedSpins</span><span class="o">)</span> <span class="o">:</span> <span class="n">0</span><span class="o">);</span>  
+             <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                 <span class="k">if</span> <span class="o">(</span><span class="n">w</span><span class="o">.</span><span class="na">isInterrupted</span><span class="o">())</span>            
+                     <span class="n">s</span><span class="o">.</span><span class="na">tryCancel</span><span class="o">();</span>           <span class="c1">// 把节点match字段设置自己
+</span><span class="c1"></span>                 <span class="n">SNode</span> <span class="n">m</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="na">match</span><span class="o">;</span>           
+                 <span class="k">if</span> <span class="o">(</span><span class="n">m</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>              <span class="c1">// 节点match不为空，就返回match
+</span><span class="c1"></span>                     <span class="k">return</span> <span class="n">m</span><span class="o">;</span>
+                 <span class="k">if</span> <span class="o">(</span><span class="n">timed</span><span class="o">)</span> <span class="o">{</span>
+                     <span class="kt">long</span> <span class="n">now</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">();</span>    
+                     <span class="n">nanos</span> <span class="o">-=</span> <span class="n">now</span> <span class="o">-</span> <span class="n">lastTime</span><span class="o">;</span>      <span class="c1">//计算等待时间
+</span><span class="c1"></span>                     <span class="n">lastTime</span> <span class="o">=</span> <span class="n">now</span><span class="o">;</span>
+                     <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>            <span class="c1">//计算出等待时间小于0，进行取消状态。
+</span><span class="c1"></span>                         <span class="n">s</span><span class="o">.</span><span class="na">tryCancel</span><span class="o">();</span>       
+                         <span class="k">continue</span><span class="o">;</span>
+                     <span class="o">}</span>
+                 <span class="o">}</span>
+                 <span class="k">if</span> <span class="o">(</span><span class="n">spins</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span>                        <span class="c1">//进行自旋转操作
+</span><span class="c1"></span>                     <span class="n">spins</span> <span class="o">=</span> <span class="n">shouldSpin</span><span class="o">(</span><span class="n">s</span><span class="o">)</span> <span class="o">?</span> <span class="o">(</span><span class="n">spins</span><span class="o">-</span><span class="n">1</span><span class="o">)</span> <span class="o">:</span> <span class="n">0</span><span class="o">;</span>
+                 <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">s</span><span class="o">.</span><span class="na">waiter</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>           <span class="c1">// 设置等待线程   
+</span><span class="c1"></span>                     <span class="n">s</span><span class="o">.</span><span class="na">waiter</span> <span class="o">=</span> <span class="n">w</span><span class="o">;</span> <span class="c1">// establish waiter so can park next iter
+</span><span class="c1"></span>                 <span class="k">else</span> <span class="k">if</span> <span class="o">(!</span><span class="n">timed</span><span class="o">)</span>                    <span class="c1">// 判断是否等待超时时间，否 park 是parkNanos
+</span><span class="c1"></span>                     <span class="n">LockSupport</span><span class="o">.</span><span class="na">park</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+                 <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&gt;</span> <span class="n">spinForTimeoutThreshold</span><span class="o">)</span>
+                     <span class="n">LockSupport</span><span class="o">.</span><span class="na">parkNanos</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">nanos</span><span class="o">);</span>
+             <span class="o">}</span>
+         <span class="o">}</span>  
+        <span class="cm">/**
+</span><span class="cm">         * Returns true if node s is at head or there is an active
+</span><span class="cm">         * fulfiller.
+</span><span class="cm">         * 如果节点在头或有活跃的Fulfilling，则返回true。
+</span><span class="cm">         */</span>
+        <span class="kt">boolean</span> <span class="nf">shouldSpin</span><span class="o">(</span><span class="n">SNode</span> <span class="n">s</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">SNode</span> <span class="n">h</span> <span class="o">=</span> <span class="n">head</span><span class="o">;</span>
+            <span class="k">return</span> <span class="o">(</span><span class="n">h</span> <span class="o">==</span> <span class="n">s</span> <span class="o">||</span> <span class="n">h</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">isFulfilling</span><span class="o">(</span><span class="n">h</span><span class="o">.</span><span class="na">mode</span><span class="o">));</span>
+        <span class="o">}</span> 
+  <span class="cm">/**
+</span><span class="cm">         * Unlinks s from the stack.
+</span><span class="cm">         */</span>
+        <span class="kt">void</span> <span class="nf">clean</span><span class="o">(</span><span class="n">SNode</span> <span class="n">s</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">s</span><span class="o">.</span><span class="na">item</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>   <span class="c1">// forget item
+</span><span class="c1"></span>            <span class="n">s</span><span class="o">.</span><span class="na">waiter</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span> <span class="c1">// forget thread
+</span><span class="c1"></span>
+            <span class="cm">/*
+</span><span class="cm">             * At worst we may need to traverse entire stack to unlink
+</span><span class="cm">             * s. If there are multiple concurrent calls to clean, we
+</span><span class="cm">             * might not see s if another thread has already removed
+</span><span class="cm">             * it. But we can stop when we see any node known to
+</span><span class="cm">             * follow s. We use s.next unless it too is cancelled, in
+</span><span class="cm">             * which case we try the node one past. We don&#39;t check any
+</span><span class="cm">             * further because we don&#39;t want to doubly traverse just to
+</span><span class="cm">             * find sentinel.
+</span><span class="cm">             * 在最坏的情况下，我们可能需要遍历整个栈来取消链接。如果有多个并发调用需要清理，
+</span><span class="cm">             * 如果另一个线程已经删除了它，我们可能看不到s。但是当我们看到任何已知的节点时，我们可以停止。
+</span><span class="cm">             * 我们使用s.next，除非它被取消，在这种情况下，我们尝试一个过去的节点。
+</span><span class="cm">             * 我们不再进一步检查，因为我们不希望双重穿越而找到哨兵。
+</span><span class="cm">             */</span>
+
+            <span class="n">SNode</span> <span class="n">past</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">past</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">past</span><span class="o">.</span><span class="na">isCancelled</span><span class="o">())</span>
+                <span class="n">past</span> <span class="o">=</span> <span class="n">past</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+
+            <span class="c1">// Absorb cancelled nodes at head 在头部吸收取消的节点
+</span><span class="c1"></span>            <span class="n">SNode</span> <span class="n">p</span><span class="o">;</span>
+            <span class="k">while</span> <span class="o">((</span><span class="n">p</span> <span class="o">=</span> <span class="n">head</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">p</span> <span class="o">!=</span> <span class="n">past</span> <span class="o">&amp;&amp;</span> <span class="n">p</span><span class="o">.</span><span class="na">isCancelled</span><span class="o">())</span>
+                <span class="n">casHead</span><span class="o">(</span><span class="n">p</span><span class="o">,</span> <span class="n">p</span><span class="o">.</span><span class="na">next</span><span class="o">);</span>
+
+            <span class="c1">// Unsplice embedded nodes 无法嵌入节点
+</span><span class="c1"></span>            <span class="k">while</span> <span class="o">(</span><span class="n">p</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">p</span> <span class="o">!=</span> <span class="n">past</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">SNode</span> <span class="n">n</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">n</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">n</span><span class="o">.</span><span class="na">isCancelled</span><span class="o">())</span>
+                    <span class="n">p</span><span class="o">.</span><span class="na">casNext</span><span class="o">(</span><span class="n">n</span><span class="o">,</span> <span class="n">n</span><span class="o">.</span><span class="na">next</span><span class="o">);</span>
+                <span class="k">else</span>
+                    <span class="n">p</span> <span class="o">=</span> <span class="n">n</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>        
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3-dual-queue的transferqueue实现">3. Dual Queue的TransferQueue实现</h3>
+<h4 id="1-node节点实现-1">(1). Node节点实现</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/*
+</span><span class="cm">         * This extends Scherer-Scott dual queue algorithm, differing,
+</span><span class="cm">         * among other ways, by using modes within nodes rather than
+</span><span class="cm">         * marked pointers. The algorithm is a little simpler than
+</span><span class="cm">         * that for stacks because fulfillers do not need explicit
+</span><span class="cm">         * nodes, and matching is done by CAS&#39;ing QNode.item field
+</span><span class="cm">         * from non-null to null (for put) or vice versa (for take).
+</span><span class="cm">         * 本算法实现拓展了Scherer-Scott双队列算法，不同的是用节点模式，
+</span><span class="cm">         * 而不是标记指针来区分节点操作类型。这个算法比栈算法的实现简单，
+</span><span class="cm">         *  因为fulfillers需要明确指定节点，同时匹配节点用CAS操作QNode的
+</span><span class="cm">         *  元素field即可，put操作从非null到null，反则亦然，take从null到非null。
+</span><span class="cm">         */</span>
+
+        <span class="cm">/** Node class for TransferQueue. */</span>
+        <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">QNode</span> <span class="o">{</span>
+            <span class="kd">volatile</span> <span class="n">QNode</span> <span class="n">next</span><span class="o">;</span>          <span class="c1">// next node in queue
+</span><span class="c1"></span>            <span class="kd">volatile</span> <span class="n">Object</span> <span class="n">item</span><span class="o">;</span>         <span class="c1">// CAS&#39;ed to or from null
+</span><span class="c1"></span>            <span class="kd">volatile</span> <span class="n">Thread</span> <span class="n">waiter</span><span class="o">;</span>       <span class="c1">// to control park/unpark
+</span><span class="c1"></span>            <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">isData</span><span class="o">;</span>
+
+            <span class="n">QNode</span><span class="o">(</span><span class="n">Object</span> <span class="n">item</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">isData</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">this</span><span class="o">.</span><span class="na">item</span> <span class="o">=</span> <span class="n">item</span><span class="o">;</span>
+                <span class="k">this</span><span class="o">.</span><span class="na">isData</span> <span class="o">=</span> <span class="n">isData</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="kt">boolean</span> <span class="nf">casNext</span><span class="o">(</span><span class="n">QNode</span> <span class="n">cmp</span><span class="o">,</span> <span class="n">QNode</span> <span class="n">val</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="n">next</span> <span class="o">==</span> <span class="n">cmp</span> <span class="o">&amp;&amp;</span>
+                    <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapObject</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">nextOffset</span><span class="o">,</span> <span class="n">cmp</span><span class="o">,</span> <span class="n">val</span><span class="o">);</span>
+            <span class="o">}</span>
+
+            <span class="kt">boolean</span> <span class="nf">casItem</span><span class="o">(</span><span class="n">Object</span> <span class="n">cmp</span><span class="o">,</span> <span class="n">Object</span> <span class="n">val</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="n">item</span> <span class="o">==</span> <span class="n">cmp</span> <span class="o">&amp;&amp;</span>
+                    <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapObject</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">itemOffset</span><span class="o">,</span> <span class="n">cmp</span><span class="o">,</span> <span class="n">val</span><span class="o">);</span>
+            <span class="o">}</span>
+
+            <span class="cm">/**
+</span><span class="cm">             * Tries to cancel by CAS&#39;ing ref to this as item.
+</span><span class="cm">             */</span>
+            <span class="kt">void</span> <span class="nf">tryCancel</span><span class="o">(</span><span class="n">Object</span> <span class="n">cmp</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapObject</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">itemOffset</span><span class="o">,</span> <span class="n">cmp</span><span class="o">,</span> <span class="k">this</span><span class="o">);</span>
+            <span class="o">}</span>
+
+            <span class="kt">boolean</span> <span class="nf">isCancelled</span><span class="o">()</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="n">item</span> <span class="o">==</span> <span class="k">this</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="cm">/**
+</span><span class="cm">             * Returns true if this node is known to be off the queue
+</span><span class="cm">             * because its next pointer has been forgotten due to
+</span><span class="cm">             * an advanceHead operation.
+</span><span class="cm">             * 如果已知此节点不在队列中，则返回true，因为由于advanceHead操作，其下一个指针已被遗忘。
+</span><span class="cm">             *
+</span><span class="cm">             */</span>
+            <span class="kt">boolean</span> <span class="nf">isOffList</span><span class="o">()</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="n">next</span> <span class="o">==</span> <span class="k">this</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="c1">// Unsafe mechanics
+</span><span class="c1"></span>            <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Unsafe</span> <span class="n">UNSAFE</span><span class="o">;</span>
+            <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">itemOffset</span><span class="o">;</span>
+            <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">nextOffset</span><span class="o">;</span>
+
+            <span class="kd">static</span> <span class="o">{</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="n">UNSAFE</span> <span class="o">=</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Unsafe</span><span class="o">.</span><span class="na">getUnsafe</span><span class="o">();</span>
+                    <span class="n">Class</span> <span class="n">k</span> <span class="o">=</span> <span class="n">QNode</span><span class="o">.</span><span class="na">class</span><span class="o">;</span>
+                    <span class="n">itemOffset</span> <span class="o">=</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">objectFieldOffset</span>
+                        <span class="o">(</span><span class="n">k</span><span class="o">.</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&#34;item&#34;</span><span class="o">));</span>
+                    <span class="n">nextOffset</span> <span class="o">=</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">objectFieldOffset</span>
+                        <span class="o">(</span><span class="n">k</span><span class="o">.</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&#34;next&#34;</span><span class="o">));</span>
+                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="2-transferqueue构造">(2). TransferQueue构造</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/** Dual Queue */</span>
+    <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">TransferQueue</span> <span class="kd">extends</span> <span class="n">Transferer</span> <span class="o">{</span>
+       <span class="cm">/** Head of queue  头节点*/</span>
+        <span class="kd">transient</span> <span class="kd">volatile</span> <span class="n">QNode</span> <span class="n">head</span><span class="o">;</span>
+        <span class="cm">/** Tail of queue  尾节点*/</span>
+        <span class="kd">transient</span> <span class="kd">volatile</span> <span class="n">QNode</span> <span class="n">tail</span><span class="o">;</span>
+        <span class="cm">/**
+</span><span class="cm">         * Reference to a cancelled node that might not yet have been
+</span><span class="cm">         * unlinked from queue because it was the last inserted node
+</span><span class="cm">         * when it cancelled. 
+</span><span class="cm">         * 刚入队列的节点，取消等待，但还没有出队列的节点
+</span><span class="cm">         */</span>
+        <span class="kd">transient</span> <span class="kd">volatile</span> <span class="n">QNode</span> <span class="n">cleanMe</span><span class="o">;</span>
+
+        <span class="n">TransferQueue</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">QNode</span> <span class="n">h</span> <span class="o">=</span> <span class="k">new</span> <span class="n">QNode</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span> <span class="c1">// initialize to dummy node.
+</span><span class="c1"></span>            <span class="n">head</span> <span class="o">=</span> <span class="n">h</span><span class="o">;</span>
+            <span class="n">tail</span> <span class="o">=</span> <span class="n">h</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Tries to cas nh as new head; if successful, unlink
+</span><span class="cm">         * old head&#39;s next node to avoid garbage retention.
+</span><span class="cm">         * 尝试设置新的队头节点为nh，并比较旧头节点，成功则，解除旧队列头节点的next链接，及指向自己
+</span><span class="cm">         */</span>
+        <span class="kt">void</span> <span class="nf">advanceHead</span><span class="o">(</span><span class="n">QNode</span> <span class="n">h</span><span class="o">,</span> <span class="n">QNode</span> <span class="n">nh</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">h</span> <span class="o">==</span> <span class="n">head</span> <span class="o">&amp;&amp;</span>
+                <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapObject</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">headOffset</span><span class="o">,</span> <span class="n">h</span><span class="o">,</span> <span class="n">nh</span><span class="o">))</span>
+                <span class="n">h</span><span class="o">.</span><span class="na">next</span> <span class="o">=</span> <span class="n">h</span><span class="o">;</span> <span class="c1">// forget old next
+</span><span class="c1"></span>        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Tries to cas nt as new tail.
+</span><span class="cm">         */</span>
+        <span class="kt">void</span> <span class="nf">advanceTail</span><span class="o">(</span><span class="n">QNode</span> <span class="n">t</span><span class="o">,</span> <span class="n">QNode</span> <span class="n">nt</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">tail</span> <span class="o">==</span> <span class="n">t</span><span class="o">)</span>
+                <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapObject</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">tailOffset</span><span class="o">,</span> <span class="n">t</span><span class="o">,</span> <span class="n">nt</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="cm">/**
+</span><span class="cm">         * Tries to CAS cleanMe slot.
+</span><span class="cm">         */</span>
+        <span class="kt">boolean</span> <span class="nf">casCleanMe</span><span class="o">(</span><span class="n">QNode</span> <span class="n">cmp</span><span class="o">,</span> <span class="n">QNode</span> <span class="n">val</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">cleanMe</span> <span class="o">==</span> <span class="n">cmp</span> <span class="o">&amp;&amp;</span>
+                <span class="n">UNSAFE</span><span class="o">.</span><span class="na">compareAndSwapObject</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">cleanMeOffset</span><span class="o">,</span> <span class="n">cmp</span><span class="o">,</span> <span class="n">val</span><span class="o">);</span>
+        <span class="o">}</span>
+        
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Unsafe</span> <span class="n">UNSAFE</span><span class="o">;</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">headOffset</span><span class="o">;</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">tailOffset</span><span class="o">;</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">cleanMeOffset</span><span class="o">;</span>
+        <span class="kd">static</span> <span class="o">{</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">UNSAFE</span> <span class="o">=</span> <span class="n">sun</span><span class="o">.</span><span class="na">misc</span><span class="o">.</span><span class="na">Unsafe</span><span class="o">.</span><span class="na">getUnsafe</span><span class="o">();</span>
+                <span class="n">Class</span> <span class="n">k</span> <span class="o">=</span> <span class="n">TransferQueue</span><span class="o">.</span><span class="na">class</span><span class="o">;</span>
+                <span class="n">headOffset</span> <span class="o">=</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">objectFieldOffset</span>
+                    <span class="o">(</span><span class="n">k</span><span class="o">.</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&#34;head&#34;</span><span class="o">));</span>
+                <span class="n">tailOffset</span> <span class="o">=</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">objectFieldOffset</span>
+                    <span class="o">(</span><span class="n">k</span><span class="o">.</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&#34;tail&#34;</span><span class="o">));</span>
+                <span class="n">cleanMeOffset</span> <span class="o">=</span> <span class="n">UNSAFE</span><span class="o">.</span><span class="na">objectFieldOffset</span>
+                    <span class="o">(</span><span class="n">k</span><span class="o">.</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&#34;cleanMe&#34;</span><span class="o">));</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>        
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h4 id="3transferput-or-takes-an-item-1">(3).transfer(Put or takes an item)</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span><span class="lnt">157
+</span><span class="lnt">158
+</span><span class="lnt">159
+</span><span class="lnt">160
+</span><span class="lnt">161
+</span><span class="lnt">162
+</span><span class="lnt">163
+</span><span class="lnt">164
+</span><span class="lnt">165
+</span><span class="lnt">166
+</span><span class="lnt">167
+</span><span class="lnt">168
+</span><span class="lnt">169
+</span><span class="lnt">170
+</span><span class="lnt">171
+</span><span class="lnt">172
+</span><span class="lnt">173
+</span><span class="lnt">174
+</span><span class="lnt">175
+</span><span class="lnt">176
+</span><span class="lnt">177
+</span><span class="lnt">178
+</span><span class="lnt">179
+</span><span class="lnt">180
+</span><span class="lnt">181
+</span><span class="lnt">182
+</span><span class="lnt">183
+</span><span class="lnt">184
+</span><span class="lnt">185
+</span><span class="lnt">186
+</span><span class="lnt">187
+</span><span class="lnt">188
+</span><span class="lnt">189
+</span><span class="lnt">190
+</span><span class="lnt">191
+</span><span class="lnt">192
+</span><span class="lnt">193
+</span><span class="lnt">194
+</span><span class="lnt">195
+</span><span class="lnt">196
+</span><span class="lnt">197
+</span><span class="lnt">198
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">         * Puts or takes an item.
+</span><span class="cm">         */</span>
+        <span class="n">Object</span> <span class="nf">transfer</span><span class="o">(</span><span class="n">Object</span> <span class="n">e</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">timed</span><span class="o">,</span> <span class="kt">long</span> <span class="n">nanos</span><span class="o">)</span> <span class="o">{</span>
+            <span class="cm">/* Basic algorithm is to loop trying to take either of
+</span><span class="cm">             * two actions:
+</span><span class="cm">             * 基本算法是循环尝试，执行下面两个步中的，其中一个：
+</span><span class="cm">             *
+</span><span class="cm">             * 1. If queue apparently empty or holding same-mode nodes,
+</span><span class="cm">             *    try to add node to queue of waiters, wait to be
+</span><span class="cm">             *    fulfilled (or cancelled) and return matching item.
+</span><span class="cm">             *    如果队列为空，或队列中为相同模式的节点，尝试节点入队列等待，
+</span><span class="cm">             *      直到fulfilled，返回匹配元素，或者由于中断，超时取消等待。
+</span><span class="cm">             *
+</span><span class="cm">             * 2. If queue apparently contains waiting items, and this
+</span><span class="cm">             *    call is of complementary mode, try to fulfill by CAS&#39;ing
+</span><span class="cm">             *    item field of waiting node and dequeuing it, and then
+</span><span class="cm">             *    returning matching item.
+</span><span class="cm">             *    如果队列中包含节点，transfer方法被一个协同模式的节点调用，
+</span><span class="cm">             *    则尝试补给或填充等待线程节点的元素，并出队列，返回匹配元素。
+</span><span class="cm">             *    
+</span><span class="cm">             * In each case, along the way, check for and try to help
+</span><span class="cm">             * advance head and tail on behalf of other stalled/slow
+</span><span class="cm">             * threads.
+</span><span class="cm">             * 在每一种情况，执行的过程中，检查和尝试帮助其他stalled/slow线程移动队列头和尾节点
+</span><span class="cm">             * 
+</span><span class="cm">             * The loop starts off with a null check guarding against
+</span><span class="cm">             * seeing uninitialized head or tail values. This never
+</span><span class="cm">             * happens in current SynchronousQueue, but could if
+</span><span class="cm">             * callers held non-volatile/final ref to the
+</span><span class="cm">             * transferer. The check is here anyway because it places
+</span><span class="cm">             * null checks at top of loop, which is usually faster
+</span><span class="cm">             * than having them implicitly interspersed.
+</span><span class="cm">             *  循环开始，首先进行null检查，防止为初始队列头和尾节点。当然这种情况，
+</span><span class="cm">             *  在当前同步队列中，不可能发生，如果调用持有transferer的non-volatile/final引用，
+</span><span class="cm">             *  可能出现这种情况。一般在循环的开始，都要进行null检查，检查过程非常快，不用过多担心
+</span><span class="cm">             *  性能问题。
+</span><span class="cm">             *
+</span><span class="cm">             */</span>
+
+            <span class="n">QNode</span> <span class="n">s</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span> <span class="c1">// constructed/reused as needed
+</span><span class="c1"></span>            <span class="kt">boolean</span> <span class="n">isData</span> <span class="o">=</span> <span class="o">(</span><span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">);</span>
+
+            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="n">QNode</span> <span class="n">t</span> <span class="o">=</span> <span class="n">tail</span><span class="o">;</span>
+                <span class="n">QNode</span> <span class="n">h</span> <span class="o">=</span> <span class="n">head</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">t</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">h</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>         <span class="c1">// saw uninitialized value
+</span><span class="c1"></span>                    <span class="k">continue</span><span class="o">;</span>                       <span class="c1">// spin
+</span><span class="c1"></span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">h</span> <span class="o">==</span> <span class="n">t</span> <span class="o">||</span> <span class="n">t</span><span class="o">.</span><span class="na">isData</span> <span class="o">==</span> <span class="n">isData</span><span class="o">)</span> <span class="o">{</span> <span class="c1">// empty or same-mode  1. 如果队列为空，或当前节点与队尾模式相同
+</span><span class="c1"></span>                    <span class="n">QNode</span> <span class="n">tn</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">t</span> <span class="o">!=</span> <span class="n">tail</span><span class="o">)</span>                  <span class="c1">// inconsistent read      读取不一致性，这里有竞争问题。
+</span><span class="c1"></span>                        <span class="k">continue</span><span class="o">;</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">tn</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>               <span class="c1">// lagging tail              尾节点.next 不为空，CAS设置新尾节点
+</span><span class="c1"></span>                        <span class="n">advanceTail</span><span class="o">(</span><span class="n">t</span><span class="o">,</span> <span class="n">tn</span><span class="o">);</span>
+                        <span class="k">continue</span><span class="o">;</span>
+                    <span class="o">}</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">timed</span> <span class="o">&amp;&amp;</span> <span class="n">nanos</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span>        <span class="c1">// can&#39;t wait                不等待 返回null
+</span><span class="c1"></span>                        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+                        <span class="n">s</span> <span class="o">=</span> <span class="k">new</span> <span class="n">QNode</span><span class="o">(</span><span class="n">e</span><span class="o">,</span> <span class="n">isData</span><span class="o">);</span>                               <span class="c1">//根据元素和模式构造节点
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(!</span><span class="n">t</span><span class="o">.</span><span class="na">casNext</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="n">s</span><span class="o">))</span>        <span class="c1">// failed to link in    设置头节点.next     
+</span><span class="c1"></span>                        <span class="k">continue</span><span class="o">;</span>
+
+                    <span class="n">advanceTail</span><span class="o">(</span><span class="n">t</span><span class="o">,</span> <span class="n">s</span><span class="o">);</span>              <span class="c1">// swing tail and wait         把s节点设置尾节点
+</span><span class="c1"></span>                    <span class="n">Object</span> <span class="n">x</span> <span class="o">=</span> <span class="n">awaitFulfill</span><span class="o">(</span><span class="n">s</span><span class="o">,</span> <span class="n">e</span><span class="o">,</span> <span class="n">timed</span><span class="o">,</span> <span class="n">nanos</span><span class="o">);</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">s</span><span class="o">)</span> <span class="o">{</span>                   <span class="c1">// wait was cancelled          节点取消
+</span><span class="c1"></span>                        <span class="n">clean</span><span class="o">(</span><span class="n">t</span><span class="o">,</span> <span class="n">s</span><span class="o">);</span>                                              
+                        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+                    <span class="o">}</span>
+
+                    <span class="k">if</span> <span class="o">(!</span><span class="n">s</span><span class="o">.</span><span class="na">isOffList</span><span class="o">())</span> <span class="o">{</span>           <span class="c1">// not already unlinked  如果s节点已经不再队列中，next==this 在advanceHead设置头节点，以前头节点next指定自己本身
+</span><span class="c1"></span>                        <span class="n">advanceHead</span><span class="o">(</span><span class="n">t</span><span class="o">,</span> <span class="n">s</span><span class="o">);</span>          <span class="c1">// unlink if head       
+</span><span class="c1"></span>                        <span class="k">if</span> <span class="o">(</span><span class="n">x</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>              <span class="c1">// and forget fields
+</span><span class="c1"></span>                            <span class="n">s</span><span class="o">.</span><span class="na">item</span> <span class="o">=</span> <span class="n">s</span><span class="o">;</span>             <span class="c1">// 指定头节点只是取消节点。
+</span><span class="c1"></span>                        <span class="n">s</span><span class="o">.</span><span class="na">waiter</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                    <span class="o">}</span>
+                    <span class="k">return</span> <span class="o">(</span><span class="n">x</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span> <span class="n">x</span> <span class="o">:</span> <span class="n">e</span><span class="o">;</span>
+
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>                            <span class="c1">// complementary-mode     如果队列不为空，且与队头的模式不同，及匹配成功
+</span><span class="c1"></span>                    <span class="n">QNode</span> <span class="n">m</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>               <span class="c1">// node to fulfill        匹配头节点 next节点
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">t</span> <span class="o">!=</span> <span class="n">tail</span> <span class="o">||</span> <span class="n">m</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">h</span> <span class="o">!=</span> <span class="n">head</span><span class="o">)</span>
+                        <span class="k">continue</span><span class="o">;</span>                   <span class="c1">// inconsistent read
+</span><span class="c1"></span>
+                    <span class="n">Object</span> <span class="n">x</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="na">item</span><span class="o">;</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">isData</span> <span class="o">==</span> <span class="o">(</span><span class="n">x</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">||</span>    <span class="c1">// m already fulfilled  头节点isData模式
+</span><span class="c1"></span>                        <span class="n">x</span> <span class="o">==</span> <span class="n">m</span> <span class="o">||</span>                   <span class="c1">// m cancelled          取消节点
+</span><span class="c1"></span>                        <span class="o">!</span><span class="n">m</span><span class="o">.</span><span class="na">casItem</span><span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">e</span><span class="o">))</span> <span class="o">{</span>         <span class="c1">// lost CAS             更新头节点item值
+</span><span class="c1"></span>                        <span class="n">advanceHead</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="n">m</span><span class="o">);</span>          <span class="c1">// dequeue and retry
+</span><span class="c1"></span>                        <span class="k">continue</span><span class="o">;</span>
+                    <span class="o">}</span>
+
+                    <span class="n">advanceHead</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="n">m</span><span class="o">);</span>              <span class="c1">// successfully fulfilled 
+</span><span class="c1"></span>                    <span class="n">LockSupport</span><span class="o">.</span><span class="na">unpark</span><span class="o">(</span><span class="n">m</span><span class="o">.</span><span class="na">waiter</span><span class="o">);</span>
+                    <span class="k">return</span> <span class="o">(</span><span class="n">x</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span> <span class="n">x</span> <span class="o">:</span> <span class="n">e</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+  <span class="cm">/**
+</span><span class="cm">         * Spins/blocks until node s is fulfilled.
+</span><span class="cm">         * 自旋或阻塞直到节点被fulfilled
+</span><span class="cm">         * 
+</span><span class="cm">         * @param s the waiting node
+</span><span class="cm">         * @param e the comparison value for checking match
+</span><span class="cm">         * @param timed true if timed wait
+</span><span class="cm">         * @param nanos timeout value
+</span><span class="cm">         * @return matched item, or s if cancelled
+</span><span class="cm">         */</span>
+        <span class="n">Object</span> <span class="nf">awaitFulfill</span><span class="o">(</span><span class="n">QNode</span> <span class="n">s</span><span class="o">,</span> <span class="n">Object</span> <span class="n">e</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">timed</span><span class="o">,</span> <span class="kt">long</span> <span class="n">nanos</span><span class="o">)</span> <span class="o">{</span>
+            <span class="cm">/* Same idea as TransferStack.awaitFulfill */</span>
+            <span class="kt">long</span> <span class="n">lastTime</span> <span class="o">=</span> <span class="n">timed</span> <span class="o">?</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">()</span> <span class="o">:</span> <span class="n">0</span><span class="o">;</span>
+            <span class="n">Thread</span> <span class="n">w</span> <span class="o">=</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+            <span class="kt">int</span> <span class="n">spins</span> <span class="o">=</span> <span class="o">((</span><span class="n">head</span><span class="o">.</span><span class="na">next</span> <span class="o">==</span> <span class="n">s</span><span class="o">)</span> <span class="o">?</span>           <span class="c1">//自旋次数
+</span><span class="c1"></span>                         <span class="o">(</span><span class="n">timed</span> <span class="o">?</span> <span class="n">maxTimedSpins</span> <span class="o">:</span> <span class="n">maxUntimedSpins</span><span class="o">)</span> <span class="o">:</span> <span class="n">0</span><span class="o">);</span>
+            <span class="k">for</span> <span class="o">(;;)</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">w</span><span class="o">.</span><span class="na">isInterrupted</span><span class="o">())</span>      <span class="c1">//线程是否中断 中断把节点设置尾取消节点 
+</span><span class="c1"></span>                    <span class="n">s</span><span class="o">.</span><span class="na">tryCancel</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>     
+                <span class="n">Object</span> <span class="n">x</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="na">item</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">x</span> <span class="o">!=</span> <span class="n">e</span><span class="o">)</span>
+                    <span class="k">return</span> <span class="n">x</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">timed</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="kt">long</span> <span class="n">now</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">();</span>
+                    <span class="n">nanos</span> <span class="o">-=</span> <span class="n">now</span> <span class="o">-</span> <span class="n">lastTime</span><span class="o">;</span>        <span class="c1">//计算等待时间
+</span><span class="c1"></span>                    <span class="n">lastTime</span> <span class="o">=</span> <span class="n">now</span><span class="o">;</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">s</span><span class="o">.</span><span class="na">tryCancel</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>            <span class="c1">//设置取消节点
+</span><span class="c1"></span>                        <span class="k">continue</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">spins</span> <span class="o">&gt;</span> <span class="n">0</span><span class="o">)</span>                   <span class="c1">//自选次数
+</span><span class="c1"></span>                    <span class="o">--</span><span class="n">spins</span><span class="o">;</span>
+                <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">s</span><span class="o">.</span><span class="na">waiter</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>       <span class="c1">//设置等待线程
+</span><span class="c1"></span>                    <span class="n">s</span><span class="o">.</span><span class="na">waiter</span> <span class="o">=</span> <span class="n">w</span><span class="o">;</span>                
+                <span class="k">else</span> <span class="k">if</span> <span class="o">(!</span><span class="n">timed</span><span class="o">)</span>      
+                    <span class="n">LockSupport</span><span class="o">.</span><span class="na">park</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+                <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">nanos</span> <span class="o">&gt;</span> <span class="n">spinForTimeoutThreshold</span><span class="o">)</span>
+                    <span class="n">LockSupport</span><span class="o">.</span><span class="na">parkNanos</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">nanos</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>   
+       <span class="cm">/**
+</span><span class="cm">         * Gets rid of cancelled node s with original predecessor pred.
+</span><span class="cm">         * 移除队列中取消等待的线程节点
+</span><span class="cm">         */</span>
+        <span class="kt">void</span> <span class="nf">clean</span><span class="o">(</span><span class="n">QNode</span> <span class="n">pred</span><span class="o">,</span> <span class="n">QNode</span> <span class="n">s</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">s</span><span class="o">.</span><span class="na">waiter</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span> <span class="c1">// forget thread
+</span><span class="c1"></span>            <span class="cm">/*
+</span><span class="cm">             * At any given time, exactly one node on list cannot be
+</span><span class="cm">             * deleted -- the last inserted node. To accommodate this,
+</span><span class="cm">             * if we cannot delete s, we save its predecessor as
+</span><span class="cm">             * &#34;cleanMe&#34;, deleting the previously saved version
+</span><span class="cm">             * first. At least one of node s or the node previously
+</span><span class="cm">             * saved can always be deleted, so this always terminates.
+</span><span class="cm">             *  在任何时候，最后一个节点入队列时，队列中都有可能存在取消等待，但没有删除的节点。
+</span><span class="cm">             *  为了将这些节点删除，如果我们不能删除最后入队列的节点，我们可以用cleanMe记录它的前驱，
+</span><span class="cm">             *  删除cleanMe后继节点。s节点和cleanMe后继节点至少一个删除，则停止。
+</span><span class="cm">             */</span>
+            <span class="k">while</span> <span class="o">(</span><span class="n">pred</span><span class="o">.</span><span class="na">next</span> <span class="o">==</span> <span class="n">s</span><span class="o">)</span> <span class="o">{</span> <span class="c1">// Return early if already unlinked
+</span><span class="c1"></span>                <span class="n">QNode</span> <span class="n">h</span> <span class="o">=</span> <span class="n">head</span><span class="o">;</span>
+                <span class="n">QNode</span> <span class="n">hn</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>   <span class="c1">// Absorb cancelled first node as head 吸收取消的第一个节点作为头
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">hn</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">hn</span><span class="o">.</span><span class="na">isCancelled</span><span class="o">())</span> <span class="o">{</span>   <span class="c1">//如果队头不为空，且取消等待，设置后继为新的队头元素
+</span><span class="c1"></span>                    <span class="n">advanceHead</span><span class="o">(</span><span class="n">h</span><span class="o">,</span> <span class="n">hn</span><span class="o">);</span>
+                    <span class="k">continue</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="n">QNode</span> <span class="n">t</span> <span class="o">=</span> <span class="n">tail</span><span class="o">;</span>      <span class="c1">// Ensure consistent read for tail 确保tail一致
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">t</span> <span class="o">==</span> <span class="n">h</span><span class="o">)</span>
+                    <span class="k">return</span><span class="o">;</span>
+                <span class="n">QNode</span> <span class="n">tn</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">t</span> <span class="o">!=</span> <span class="n">tail</span><span class="o">)</span>
+                    <span class="k">continue</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">tn</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">advanceTail</span><span class="o">(</span><span class="n">t</span><span class="o">,</span> <span class="n">tn</span><span class="o">);</span>
+                    <span class="k">continue</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">!=</span> <span class="n">t</span><span class="o">)</span> <span class="o">{</span>        <span class="c1">// If not tail, try to unsplice  如果s不是tail，试着解开
+</span><span class="c1"></span>                    <span class="n">QNode</span> <span class="n">sn</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">sn</span> <span class="o">==</span> <span class="n">s</span> <span class="o">||</span> <span class="n">pred</span><span class="o">.</span><span class="na">casNext</span><span class="o">(</span><span class="n">s</span><span class="o">,</span> <span class="n">sn</span><span class="o">))</span>             <span class="c1">//CAS unlike节点
+</span><span class="c1"></span>                        <span class="k">return</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="n">QNode</span> <span class="n">dp</span> <span class="o">=</span> <span class="n">cleanMe</span><span class="o">;</span>   
+                <span class="k">if</span> <span class="o">(</span><span class="n">dp</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>    <span class="c1">// Try unlinking previous cancelled node  
+</span><span class="c1"></span>                    <span class="n">QNode</span> <span class="n">d</span> <span class="o">=</span> <span class="n">dp</span><span class="o">.</span><span class="na">next</span><span class="o">;</span>
+                    <span class="n">QNode</span> <span class="n">dn</span><span class="o">;</span>
+                    <span class="c1">//移除前一个取消等待的节点
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">d</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span>               <span class="c1">// d is gone or   
+</span><span class="c1"></span>                        <span class="n">d</span> <span class="o">==</span> <span class="n">dp</span> <span class="o">||</span>                 <span class="c1">// d is off list or   已移除
+</span><span class="c1"></span>                        <span class="o">!</span><span class="n">d</span><span class="o">.</span><span class="na">isCancelled</span><span class="o">()</span> <span class="o">||</span>        <span class="c1">// d not cancelled or 不是取消节点
+</span><span class="c1"></span>                        <span class="o">(</span><span class="n">d</span> <span class="o">!=</span> <span class="n">t</span> <span class="o">&amp;&amp;</span>                 <span class="c1">// d not tail and     删除节点不是尾节点并且next不为空且不等本身，cas更新
+</span><span class="c1"></span>                         <span class="o">(</span><span class="n">dn</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="na">next</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span>  <span class="c1">//   has successor
+</span><span class="c1"></span>                         <span class="n">dn</span> <span class="o">!=</span> <span class="n">d</span> <span class="o">&amp;&amp;</span>                <span class="c1">//   that is on list
+</span><span class="c1"></span>                         <span class="n">dp</span><span class="o">.</span><span class="na">casNext</span><span class="o">(</span><span class="n">d</span><span class="o">,</span> <span class="n">dn</span><span class="o">)))</span>       <span class="c1">// d unspliced
+</span><span class="c1"></span>                        <span class="n">casCleanMe</span><span class="o">(</span><span class="n">dp</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>        <span class="c1">//清楚上一个取消节点
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">dp</span> <span class="o">==</span> <span class="n">pred</span><span class="o">)</span>
+                        <span class="k">return</span><span class="o">;</span>      <span class="c1">// s is already saved node
+</span><span class="c1"></span>                <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">casCleanMe</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="n">pred</span><span class="o">))</span>     <span class="c1">//记录删除节点，前节点记录
+</span><span class="c1"></span>                    <span class="k">return</span><span class="o">;</span>          <span class="c1">// Postpone cleaning s
+</span><span class="c1"></span>            <span class="o">}</span>
+        <span class="o">}</span>
+     
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="4-synchronousqueue-构造">4. SynchronousQueue 构造</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">SynchronousQueue</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">AbstractQueue</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span>
+    <span class="kd">implements</span> <span class="n">BlockingQueue</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;,</span> <span class="n">java</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">Serializable</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="o">-</span><span class="n">3223113410248163686L</span><span class="o">;</span>
+    <span class="cm">/** The number of CPUs, for spin control  CPU的数量，用于旋转控制*/</span>
+    <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">NCPUS</span> <span class="o">=</span> <span class="n">Runtime</span><span class="o">.</span><span class="na">getRuntime</span><span class="o">().</span><span class="na">availableProcessors</span><span class="o">();</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * The number of times to spin before blocking in timed waits.
+</span><span class="cm">     * The value is empirically derived -- it works well across a
+</span><span class="cm">     * variety of processors and OSes. Empirically, the best value
+</span><span class="cm">     * seems not to vary with number of CPUs (beyond 2) so is just
+</span><span class="cm">     * a constant.
+</span><span class="cm">     * 定时等待阻塞之前旋转的次数。价值是从经验中得出的 - 它适用于各种处理器和操作系统。
+</span><span class="cm">     * 经验上，最好的价值似乎不会随着CPU数量（超过2）而变化，所以只是一个常数。
+</span><span class="cm">     */</span>
+    <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">maxTimedSpins</span> <span class="o">=</span> <span class="o">(</span><span class="n">NCPUS</span> <span class="o">&lt;</span> <span class="n">2</span><span class="o">)</span> <span class="o">?</span> <span class="n">0</span> <span class="o">:</span> <span class="n">32</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * The number of times to spin before blocking in untimed waits.
+</span><span class="cm">     * This is greater than timed value because untimed waits spin
+</span><span class="cm">     * faster since they don&#39;t need to check times on each spin.
+</span><span class="cm">     * 在不计时的等待中阻塞之前旋转的次数。这大于定时值，因为不需要在每次旋转时检查时间，所以不定时地等待旋转更快。
+</span><span class="cm">     */</span>
+    <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">maxUntimedSpins</span> <span class="o">=</span> <span class="n">maxTimedSpins</span> <span class="o">*</span> <span class="n">16</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * The number of nanoseconds for which it is faster to spin
+</span><span class="cm">     * rather than to use timed park. A rough estimate suffices.
+</span><span class="cm">     * 他用数秒的时间快速旋转，而不是使用定时停车。粗略的估计就足够了。
+</span><span class="cm">     */</span>
+    <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">spinForTimeoutThreshold</span> <span class="o">=</span> <span class="n">1000L</span><span class="o">;</span>
+   <span class="cm">/**
+</span><span class="cm">     * The transferer. Set only in constructor, but cannot be declared
+</span><span class="cm">     * as final without further complicating serialization.  Since
+</span><span class="cm">     * this is accessed only at most once per public method, there
+</span><span class="cm">     * isn&#39;t a noticeable performance penalty for using volatile
+</span><span class="cm">     * instead of final here.
+</span><span class="cm">     * transferer只在构造函数中设置，但不能在没有进一步复杂的序列化的情况下声明为final。
+</span><span class="cm">     * 由于每个公共方法最多只能访问一次，所以在这里使用volatile来代替final是没有明显的性能损失。
+</span><span class="cm">     */</span>
+    <span class="kd">private</span> <span class="kd">transient</span> <span class="kd">volatile</span> <span class="n">Transferer</span> <span class="n">transferer</span><span class="o">;</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a &lt;tt&gt;SynchronousQueue&lt;/tt&gt; with nonfair access policy.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">SynchronousQueue</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * Creates a &lt;tt&gt;SynchronousQueue&lt;/tt&gt; with the specified fairness policy.
+</span><span class="cm">     *
+</span><span class="cm">     * @param fair if true, waiting threads contend in FIFO order for
+</span><span class="cm">     *        access; otherwise the order is unspecified.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="nf">SynchronousQueue</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">fair</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">transferer</span> <span class="o">=</span> <span class="n">fair</span> <span class="o">?</span> <span class="k">new</span> <span class="n">TransferQueue</span><span class="o">()</span> <span class="o">:</span> <span class="k">new</span> <span class="n">TransferStack</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>  
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="二入队">二、入队</h2>
+<h3 id="1-offer方法">1. offer方法</h3>
+<ul>
+<li>offer(E e)</li>
+<li>offer(E e, long timeout, TimeUnit unit) 将指定元素插入该队列的尾部，如果队列已满，DelayQueue不支持等待时间,主要数据元素保存到优先队列中</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">     * Inserts the specified element into this queue, if another thread is
+</span><span class="cm">     * waiting to receive it.
+</span><span class="cm">     *
+</span><span class="cm">     * @param e the element to add
+</span><span class="cm">     * @return &lt;tt&gt;true&lt;/tt&gt; if the element was added to this queue, else
+</span><span class="cm">     *         &lt;tt&gt;false&lt;/tt&gt;
+</span><span class="cm">     * @throws NullPointerException if the specified element is null
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">offer</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="k">return</span> <span class="n">transferer</span><span class="o">.</span><span class="na">transfer</span><span class="o">(</span><span class="n">e</span><span class="o">,</span> <span class="kc">true</span><span class="o">,</span> <span class="n">0</span><span class="o">)</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * Inserts the specified element into this queue, waiting if necessary
+</span><span class="cm">     * up to the specified wait time for another thread to receive it.
+</span><span class="cm">     *
+</span><span class="cm">     * @return &lt;tt&gt;true&lt;/tt&gt; if successful, or &lt;tt&gt;false&lt;/tt&gt; if the
+</span><span class="cm">     *         specified waiting time elapses before a consumer appears.
+</span><span class="cm">     * @throws InterruptedException {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">offer</span><span class="o">(</span><span class="n">E</span> <span class="n">o</span><span class="o">,</span> <span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span>
+        <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">o</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">transferer</span><span class="o">.</span><span class="na">transfer</span><span class="o">(</span><span class="n">o</span><span class="o">,</span> <span class="kc">true</span><span class="o">,</span> <span class="n">unit</span><span class="o">.</span><span class="na">toNanos</span><span class="o">(</span><span class="n">timeout</span><span class="o">))</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">Thread</span><span class="o">.</span><span class="na">interrupted</span><span class="o">())</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">InterruptedException</span><span class="o">();</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2-add方法">2. add方法</h3>
+<p>//AbstractQueue类中</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">add</span><span class="o">(</span><span class="n">E</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">offer</span><span class="o">(</span><span class="n">e</span><span class="o">))</span>
+            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="k">else</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalStateException</span><span class="o">(</span><span class="s">&#34;Queue full&#34;</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3-put方法">3. put方法</h3>
+<ul>
+<li>将指定的元素插入到这个延迟队列中。由于队列是无限的，此方法将永不阻塞。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Adds the specified element to this queue, waiting if necessary for
+</span><span class="cm">     * another thread to receive it.
+</span><span class="cm">     *
+</span><span class="cm">     * @throws InterruptedException {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">put</span><span class="o">(</span><span class="n">E</span> <span class="n">o</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">o</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">transferer</span><span class="o">.</span><span class="na">transfer</span><span class="o">(</span><span class="n">o</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="n">0</span><span class="o">)</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">Thread</span><span class="o">.</span><span class="na">interrupted</span><span class="o">();</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">InterruptedException</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="三出队">三、出队</h2>
+<h3 id="1-poll方法">1. poll方法</h3>
+<ul>
+<li>poll() 获取并移除此队列的头，如果此队列为空，则返回 null</li>
+<li>E poll(long timeout, TimeUnit unit) 获取并移除此队列的头部，队列为空时，在指定的等待时间前等待可用的元素。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Retrieves and removes the head of this queue, if another thread
+</span><span class="cm">     * is currently making an element available.
+</span><span class="cm">     *
+</span><span class="cm">     * @return the head of this queue, or &lt;tt&gt;null&lt;/tt&gt; if no
+</span><span class="cm">     *         element is available.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">poll</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="o">(</span><span class="n">E</span><span class="o">)</span><span class="n">transferer</span><span class="o">.</span><span class="na">transfer</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">true</span><span class="o">,</span> <span class="n">0</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="cm">/**
+</span><span class="cm">     * Retrieves and removes the head of this queue, waiting
+</span><span class="cm">     * if necessary up to the specified wait time, for another thread
+</span><span class="cm">     * to insert it.
+</span><span class="cm">     *
+</span><span class="cm">     * @return the head of this queue, or &lt;tt&gt;null&lt;/tt&gt; if the
+</span><span class="cm">     *         specified waiting time elapses before an element is present.
+</span><span class="cm">     * @throws InterruptedException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">poll</span><span class="o">(</span><span class="kt">long</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">TimeUnit</span> <span class="n">unit</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="n">Object</span> <span class="n">e</span> <span class="o">=</span> <span class="n">transferer</span><span class="o">.</span><span class="na">transfer</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">true</span><span class="o">,</span> <span class="n">unit</span><span class="o">.</span><span class="na">toNanos</span><span class="o">(</span><span class="n">timeout</span><span class="o">));</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">||</span> <span class="o">!</span><span class="n">Thread</span><span class="o">.</span><span class="na">interrupted</span><span class="o">())</span>
+            <span class="k">return</span> <span class="o">(</span><span class="n">E</span><span class="o">)</span><span class="n">e</span><span class="o">;</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">InterruptedException</span><span class="o">();</span>
+    <span class="o">}</span>    
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2-take方法">2. take方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"> <span class="cm">/**
+</span><span class="cm">     * Retrieves and removes the head of this queue, waiting if necessary
+</span><span class="cm">     * for another thread to insert it.
+</span><span class="cm">     *
+</span><span class="cm">     * @return the head of this queue
+</span><span class="cm">     * @throws InterruptedException {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">E</span> <span class="nf">take</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="n">Object</span> <span class="n">e</span> <span class="o">=</span> <span class="n">transferer</span><span class="o">.</span><span class="na">transfer</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="n">0</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">return</span> <span class="o">(</span><span class="n">E</span><span class="o">)</span><span class="n">e</span><span class="o">;</span>
+        <span class="n">Thread</span><span class="o">.</span><span class="na">interrupted</span><span class="o">();</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">InterruptedException</span><span class="o">();</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3-peek方法">3. peek方法</h3>
+<p>peek方法返回为空，没用容量。</p>
+<h2 id="四移除队列">四、移除队列</h2>
+<h3 id="1-remove方法">1. remove方法</h3>
+<p>没有容量，没有移除值</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Always returns &lt;tt&gt;false&lt;/tt&gt;.
+</span><span class="cm">     * A &lt;tt&gt;SynchronousQueue&lt;/tt&gt; has no internal capacity.
+</span><span class="cm">     *
+</span><span class="cm">     * @param o the element to remove
+</span><span class="cm">     * @return &lt;tt&gt;false&lt;/tt&gt;
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">remove</span><span class="o">(</span><span class="n">Object</span> <span class="n">o</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="2-clear方法">2. clear方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="cm">/**
+</span><span class="cm">     * Does nothing.
+</span><span class="cm">     * A &lt;tt&gt;SynchronousQueue&lt;/tt&gt; has no internal capacity.
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">clear</span><span class="o">()</span> <span class="o">{</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="3-drainto方法">3. drainTo方法</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">     * @throws UnsupportedOperationException {@inheritDoc}
+</span><span class="cm">     * @throws ClassCastException            {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException          {@inheritDoc}
+</span><span class="cm">     * @throws IllegalArgumentException      {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">drainTo</span><span class="o">(</span><span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">E</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="k">this</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">();</span>
+        <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+        <span class="n">E</span> <span class="n">e</span><span class="o">;</span>
+        <span class="k">while</span> <span class="o">(</span> <span class="o">(</span><span class="n">e</span> <span class="o">=</span> <span class="n">poll</span><span class="o">())</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">c</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+            <span class="o">++</span><span class="n">n</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">n</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+</span><span class="cm">     * @throws UnsupportedOperationException {@inheritDoc}
+</span><span class="cm">     * @throws ClassCastException            {@inheritDoc}
+</span><span class="cm">     * @throws NullPointerException          {@inheritDoc}
+</span><span class="cm">     * @throws IllegalArgumentException      {@inheritDoc}
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">drainTo</span><span class="o">(</span><span class="n">Collection</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">E</span><span class="o">&gt;</span> <span class="n">c</span><span class="o">,</span> <span class="kt">int</span> <span class="n">maxElements</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">NullPointerException</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">c</span> <span class="o">==</span> <span class="k">this</span><span class="o">)</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">();</span>
+        <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+        <span class="n">E</span> <span class="n">e</span><span class="o">;</span>
+        <span class="k">while</span> <span class="o">(</span><span class="n">n</span> <span class="o">&lt;</span> <span class="n">maxElements</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">e</span> <span class="o">=</span> <span class="n">poll</span><span class="o">())</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">c</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+            <span class="o">++</span><span class="n">n</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">n</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="五iterator-迭代器实现">五、Iterator 迭代器实现</h2>
+<p>没有容量没有实现迭代器</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="kd">public</span> <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">iterator</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">Collections</span><span class="o">.</span><span class="na">emptyIterator</span><span class="o">();</span>
+    <span class="o">}</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">BirdGod</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2017-06-20 22:11
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a target="_blank" rel="license noopener" href="https://github.com/birdgodtech/blog/master/LICENSE">MIT</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/tags/SynchronousQueue/">SynchronousQueue</a>
+      </div>
+    <nav class="post-nav" style="height: 27px">
+      <a class="prev" href="/post/concurrent/collection/06.LinkedTransferQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">LinkedTransferQueue</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/concurrent/collection/04.DelayQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <span class="next-text nav-default">DelayQueue</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+  <script src="https://utteranc.es/client.js"
+          repo="birdgodtech/birdgodtech.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterance.</a></noscript>
+</article>
+            </div>
+            
+
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="social-links">
+  <a href="mailto:birdgodtech@163.com" class="iconfont icon-email" title="email" rel="noopener" target="_blank" data-title="email"> </a>
+  <a href="https://github.com/birdgodtech" class="iconfont icon-github" title="github" rel="noopener" target="_blank" data-title="github"> </a>
+  <a href="https://birdgodtech.github.io/index.xml" type="application/rss+xml" rel="noopener" target="_blank" class="iconfont icon-rss" title="rss"></a>
+
+
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+    <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">BirdGod</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "zh-CN".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.47f727f4.min.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-84813914-2', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+
+
+
+
+</body>
+</html>

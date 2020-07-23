@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ThreadLocal on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/ThreadLocal/</link>
+    <description>Recent content in ThreadLocal on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Tue, 11 Apr 2017 21:11:08 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/ThreadLocal/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>ThreadLocal</title>
+      <link>https://birdgodtech.github.io/post/concurrent/11.ThreadLocal%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Tue, 11 Apr 2017 21:11:08 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/11.ThreadLocal%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>ThreadLocal源码分析 简介 ThreadLocal类顾名思义可以理解为线程本地变量。也就是说如果定义了一个ThreadLocal，每个</description>
+    </item>
+    
+  </channel>
+</rss>

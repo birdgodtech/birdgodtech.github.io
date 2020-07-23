@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ReentrantReadWriteLock on BirdGod 技术分享</title>
+    <link>https://birdgodtech.github.io/tags/ReentrantReadWriteLock/</link>
+    <description>Recent content in ReentrantReadWriteLock on BirdGod 技术分享</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Sat, 25 Mar 2017 21:00:11 +0000</lastBuildDate>
+    
+	<atom:link href="https://birdgodtech.github.io/tags/ReentrantReadWriteLock/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>ReentrantReadWriteLock</title>
+      <link>https://birdgodtech.github.io/post/concurrent/06.ReentrantReadWriteLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+      <pubDate>Sat, 25 Mar 2017 21:00:11 +0000</pubDate>
+      
+      <guid>https://birdgodtech.github.io/post/concurrent/06.ReentrantReadWriteLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+      <description>分析 读写锁ReentrantReadWriteLock 简介 提供了读写锁的机制，读锁使用AQS的共享模式，写锁使用独占模式。 实现写重入锁 支持公</description>
+    </item>
+    
+  </channel>
+</rss>
